@@ -33,7 +33,7 @@ Client
   │
   ▼
 Hono app (src/index.ts)
-  ├─ CORS middleware (per-request; meant to read CORS_ORIGINS, see Known issues)
+  ├─ CORS middleware (per-request; allowed origins from CORS_ORIGINS)
   ├─ /health                         → liveness check
   ├─ /openapi.json                   → generated from route schemas
   ├─ /api/auth/*                     → delegated to Better Auth
@@ -89,6 +89,15 @@ Postgres pool (`src/db/index.ts`). `/api/auth/*` is routed directly to Better Au
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
 while everything under `/api/*` requires a valid bearer session.
 
+**Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
+`CORS_ORIGINS`. `getAllowedOrigins()` (`src/utils/helpers.ts`) parses that variable from the process
+environment on every call, and two things consume it: the CORS middleware in `src/index.ts`, and Better
+Auth's `trustedOrigins` in `src/utils/auth.ts`. Better Auth also always trusts its own base URL
+(`BETTER_AUTH_URL`). An origin missing from both lists gets no CORS headers, and cookie-carrying requests
+to `/api/auth/*` from it get `403 INVALID_ORIGIN`. The environment is read through `process.env` and not
+Hono's `c.env`: under Bun, `c.env` is the server object, whereas on Cloudflare Workers it holds the
+environment bindings.
+
 **OpenAPI generation:** `/openapi.json` is generated at request time by `openAPIRouteHandler`
 from the same `describeRoute` + Zod schema definitions attached to each route, so the docs cannot
 drift from the actual validators.
@@ -131,14 +140,10 @@ newer image does not change existing data until `docker compose down -v`.
   Chinook tables, and `src/db/schema.ts` mirrors it so Drizzle's snapshots match the real database.
   If the two drift, the next `drizzle-kit generate` proposes the difference as a migration, so check
   that diff against the image before applying it.
-
-## Known issues
-
-- **`CORS_ORIGINS` is not applied.** `src/index.ts` reads `c.env.CORS_ORIGINS`, but under Bun `c.env`
-  is the server object and not the process environment. The allowed-origins list is therefore always
-  empty, and responses omit `Access-Control-Allow-Origin`, so a browser on another origin is blocked.
-  Reading `process.env.CORS_ORIGINS` instead makes the header appear. This matters for the
-  project's purpose as a frontend sandbox.
+- **One origin list drives both CORS and Better Auth.** Keeping them in step means a frontend only
+  has to be listed once, but an origin that may call the API is also trusted for cookie-carrying auth
+  requests; the two cannot be granted separately. Better Auth skips its origin check when
+  `NODE_ENV=test`, so the tests in `src/index.test.ts` import the app under another value to exercise it.
 
 ## Where to look next
 
@@ -146,5 +151,6 @@ newer image does not change existing data until `docker compose down -v`.
 - `src/routes/*.ts` — per-resource route handlers (albums, artists, genres, media-types,
   playlists, tracks all follow the same list/detail pattern shown above)
 - `src/utils/schema/index.ts` — shared Zod schemas for query params, path params, and pagination
+- `src/index.test.ts` — CORS and Better Auth origin tests, served through `Bun.serve` as in production (`bun test`)
 - `docker-compose.yml` — the app and db services, the healthcheck dependency and the data volume
 - `README.md` — local setup, Docker Compose usage, and the full auth endpoint reference
