@@ -154,7 +154,8 @@ artist that still has albums, or a track that appears on an invoice line, fails 
 
 ## Example Endpoints
 
-Authenticated endpoints require a valid token or session.
+Authenticated endpoints require a valid token or session. For a step-by-step walkthrough of creating an
+account, signing in and calling every endpoint with Insomnia, see [docs/INSOMNIA.md](docs/INSOMNIA.md).
 
 ```
 GET /api/artists
