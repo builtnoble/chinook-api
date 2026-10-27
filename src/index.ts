@@ -10,7 +10,11 @@ const app = new Hono();
 
 app.use('*', async (c: Context, next) => {
     const corsMiddlewareHandler = cors({
-        origin: c.env.CORS_ORIGINS || [],
+        // Comma-separated list. Under Bun `c.env` is the server object, not the process environment.
+        origin: (process.env.CORS_ORIGINS ?? '')
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter(Boolean),
         allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: ['POST', 'GET', 'OPTIONS'],
         exposeHeaders: ['Content-Length'],
