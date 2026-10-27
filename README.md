@@ -89,7 +89,7 @@ By keeping the backend lightweight and predictable, it lets me focus on **fronte
 ```env
 APP_PORT=3000
 
-# Comma-separated origins allowed to call the API from a browser, e.g. http://localhost:5173,http://localhost:3001
+# Comma-separated browser origins allowed to call the API and trusted by Better Auth, e.g. http://localhost:5173,http://localhost:3001
 CORS_ORIGINS=
 
 BETTER_AUTH_SECRET=
@@ -106,6 +106,10 @@ DB_URL=postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME
 `CORS_ORIGINS` must list the origin of any frontend that calls the API from a browser (for example your
 Vite dev server). Requests from origins that are not listed receive no CORS headers and are blocked by the
 browser. Leave it empty to allow no cross-origin browser requests.
+
+Better Auth trusts the same list, so a listed frontend can also sign in and out when its requests carry
+cookies; Better Auth's own base URL (`BETTER_AUTH_URL`) is always trusted. An origin that is in neither place
+gets `403 INVALID_ORIGIN` on those requests.
 
 ---
 
