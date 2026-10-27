@@ -15,6 +15,13 @@
       "when": 1762884589649,
       "tag": "0001_happy_matthew_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793121814140,
+      "tag": "0002_cascade_child_fks",
+      "breakpoints": true
     }
   ]
 }

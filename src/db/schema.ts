@@ -107,7 +107,7 @@ export const invoice_lines = pgTable(
             columns: [table.invoice_id],
             foreignColumns: [invoices.id],
             name: 'invoice_line_invoice_id_fkey',
-        }),
+        }).onDelete('cascade'),
         foreignKey({
             columns: [table.track_id],
             foreignColumns: [tracks.id],
@@ -249,12 +249,12 @@ export const playlist_tracks = pgTable(
             columns: [table.playlist_id],
             foreignColumns: [playlists.id],
             name: 'playlist_track_playlist_id_fkey',
-        }),
+        }).onDelete('cascade'),
         foreignKey({
             columns: [table.track_id],
             foreignColumns: [tracks.id],
             name: 'playlist_track_track_id_fkey',
-        }),
+        }).onDelete('cascade'),
         primaryKey({ columns: [table.playlist_id, table.track_id], name: 'playlist_tracks_pkey' }),
     ],
 );
