@@ -19,6 +19,13 @@ export const getPageUrls = (
     return { prevPageUrl, nextPageUrl };
 };
 
+// Browser origins allowed to call the API: a comma-separated list in CORS_ORIGINS.
+export const getAllowedOrigins = (): string[] =>
+    (process.env.CORS_ORIGINS ?? '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean);
+
 export const snakeCaseKeys = <T extends CamelCasedPropertiesDeep<object>>(obj: T): SnakeCase<T> => {
     return transform(
         obj,

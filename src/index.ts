@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import api from '@/api';
 import { auth } from '@/utils/auth';
+import { getAllowedOrigins } from '@/utils/helpers';
 
 const port = process.env.APP_PORT || 3000;
 
@@ -10,11 +11,8 @@ const app = new Hono();
 
 app.use('*', async (c: Context, next) => {
     const corsMiddlewareHandler = cors({
-        // Comma-separated list. Under Bun `c.env` is the server object, not the process environment.
-        origin: (process.env.CORS_ORIGINS ?? '')
-            .split(',')
-            .map((origin) => origin.trim())
-            .filter(Boolean),
+        // Under Bun `c.env` is the server object, not the process environment.
+        origin: getAllowedOrigins(),
         allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: ['POST', 'GET', 'OPTIONS'],
         exposeHeaders: ['Content-Length'],
