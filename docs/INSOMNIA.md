@@ -10,17 +10,21 @@ Insomnia 13.x; menu names move around a little between versions.
 ## 1. Start the API
 
 ```sh
-docker compose up -d db        # the Chinook database
+docker compose up -d --build   # the Chinook database and the API, on http://localhost:3000
 bunx drizzle-kit migrate       # first run only: creates the auth tables
-bun run dev                    # the API, on http://localhost:3000
 ```
 
 Check it is up: `curl localhost:3000/health` returns `{"status":"ok","message":"API healthy"}`.
 
-`docker compose up` without `db` also starts the `app` container, which currently cannot reach the
-database: `.env` sets `DB_HOST=localhost`, which inside the container is the container itself. Sign-up and
-sign-in then return `500` (`docker compose logs app` shows `ECONNREFUSED 127.0.0.1:5432`). If that
-container is running, `docker compose stop app` first, because it also holds port 3000.
+To run the API from source instead, for example while changing it, start only the database and run the
+server on your machine:
+
+```sh
+docker compose up -d db
+bun run dev
+```
+
+If the `app` container is running, stop it first (`docker compose stop app`), because it also uses port 3000.
 
 ## 2. Set up Insomnia
 
@@ -87,7 +91,7 @@ The response headers include `set-auth-token` (the session token) and
 | --- | --- | --- |
 | Password shorter than 8 | `400` | `{"code":"PASSWORD_TOO_SHORT","message":"Password too short"}` |
 | Email already registered | `422` | `{"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}` |
-| `name` missing | `422` | `{"code":"FAILED_TO_CREATE_USER","message":"Failed to create user","details":{…}}` |
+| `name` missing | `422` | `{"code":"FAILED_TO_CREATE_USER","message":"Failed to create user"}` |
 
 ## 4. Sign in
 
@@ -191,11 +195,12 @@ Bearer token). Returns `200` `{"success":true}`, and the token stops working: th
 
 ## Troubleshooting
 
-- **`500` on sign-up or sign-in.** The API cannot reach the database. See [Start the API](#1-start-the-api).
-  Sign-up and sign-in also fail until the auth tables exist: run `bunx drizzle-kit migrate`.
+- **`500` on sign-up or sign-in.** The API cannot reach the database (`docker compose ps` should show `db` as
+  healthy), or the auth tables do not exist yet: run `bunx drizzle-kit migrate`.
 - **`401` on data routes.** You are not signed in, the session was signed out, or the session expired
   (7 days).
-- **Port 3000 already in use.** Stop the `app` container (`docker compose stop app`).
+- **Port 3000 already in use.** If you run the API with `bun run dev`, stop the `app` container first
+  (`docker compose stop app`).
 - **Browser origins.** `CORS_ORIGINS` and Better Auth's trusted origins only apply to requests that carry an
   `Origin` header, which means browsers. Insomnia is not a browser, so they do not affect it. See the
   README for configuring a frontend.
