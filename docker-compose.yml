@@ -25,3 +25,8 @@ services:
       - POSTGRES_USER=${DB_USER:-postgres}
       - POSTGRES_DB=${DB_NAME:-chinook}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - chinook-data:/var/lib/postgresql/data
+
+volumes:
+  chinook-data:
