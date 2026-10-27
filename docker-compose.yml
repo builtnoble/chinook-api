@@ -13,7 +13,8 @@ services:
       - APP_PORT=${APP_PORT:-3000}
       - DB_URL=${DB_URL}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: builtnoble/chinook-postgres:1
