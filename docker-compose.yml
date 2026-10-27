@@ -16,7 +16,7 @@ services:
       - db
 
   db:
-    image: builtnoble/chinook-postgres
+    image: builtnoble/chinook-postgres:1
     ports:
       - "${DB_PORT:-5432}:${DB_PORT:-5432}"
     env_file:
