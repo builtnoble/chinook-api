@@ -89,6 +89,7 @@ By keeping the backend lightweight and predictable, it lets me focus on **fronte
 ```env
 APP_PORT=3000
 
+# Comma-separated origins allowed to call the API from a browser, e.g. http://localhost:5173,http://localhost:3001
 CORS_ORIGINS=
 
 BETTER_AUTH_SECRET=
@@ -101,6 +102,10 @@ DB_PORT=
 DB_NAME=
 DB_URL=postgres://$DB_USER:$DB_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME
 ```
+
+`CORS_ORIGINS` must list the origin of any frontend that calls the API from a browser (for example your
+Vite dev server). Requests from origins that are not listed receive no CORS headers and are blocked by the
+browser. Leave it empty to allow no cross-origin browser requests.
 
 ---
 
