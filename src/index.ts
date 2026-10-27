@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import api from '@/api';
 import { auth } from '@/utils/auth';
-import { getAllowedOrigins } from '@/utils/helpers';
+import { getAllowedOrigins, stripErrorDetails } from '@/utils/helpers';
 
 const port = process.env.APP_PORT || 3000;
 
@@ -23,8 +23,8 @@ app.use('*', async (c: Context, next) => {
     return await corsMiddlewareHandler(c, next);
 });
 
-app.on(['POST', 'GET'], '/api/auth/*', (c) => {
-    return auth.handler(c.req.raw);
+app.on(['POST', 'GET'], '/api/auth/*', async (c) => {
+    return stripErrorDetails(await auth.handler(c.req.raw));
 });
 
 app.get('/health', async (c) =>
