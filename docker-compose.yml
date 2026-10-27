@@ -11,7 +11,9 @@ services:
       - .env
     environment:
       - APP_PORT=${APP_PORT:-3000}
-      - DB_URL=${DB_URL}
+      # Inside the compose network the database is the `db` service on 5432, not DB_HOST from .env
+      # (which is for commands run on the host, such as drizzle-kit).
+      - DB_URL=postgres://${DB_USER:-postgres}:${DB_PASSWORD}@db:5432/${DB_NAME:-chinook}
     depends_on:
       db:
         condition: service_healthy
