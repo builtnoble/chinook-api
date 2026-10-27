@@ -117,7 +117,8 @@ gets `403 INVALID_ORIGIN` on those requests.
 
 The `docker-compose.yml` file starts:
 
-1. A **PostgreSQL** service preloaded with the Chinook dataset (from my published image)
+1. A **PostgreSQL** service preloaded with the Chinook dataset (from my published image,
+   [`builtnoble/chinook-postgres:1`](https://github.com/builtnoble/chinook-postgres))
 2. The **Bun-compiled API** container
 
 Command to run:
@@ -128,6 +129,26 @@ docker compose up --build
 
 API will be available at:
 👉 [http://localhost:3000](http://localhost:3000)
+
+#### Data persistence and resetting
+
+Database data lives in the `chinook-data` named volume, so changes (including Better Auth accounts) survive
+`docker compose down`. The seed data is only loaded into an empty volume, so pulling a newer image does not
+change data that already exists.
+
+To get back to the original Chinook data:
+
+```sh
+# In place: restores the Chinook tables and leaves the auth tables alone
+docker compose exec db chinook-reset
+
+# Or discard the volume entirely; it re-seeds on the next `up`
+docker compose down -v
+bunx drizzle-kit migrate   # recreates the auth tables
+```
+
+Deleting a playlist, track or invoice also deletes its `playlist_tracks` or `invoice_lines` rows. Deleting an
+artist that still has albums, or a track that appears on an invoice line, fails with a foreign key error.
 
 ---
 
