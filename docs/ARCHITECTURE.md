@@ -87,7 +87,10 @@ Runtime and framework choices:
 `verifications` in `src/db/schema.ts`) alongside the Chinook domain tables, sharing the same
 Postgres pool (`src/db/index.ts`). `/api/auth/*` is routed directly to Better Auth's handler,
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
-while everything under `/api/*` requires a valid bearer session.
+while everything under `/api/*` requires a valid bearer session. Because that route skips the `/api`
+middleware, its responses keep Better Auth's camelCase keys, and its error responses pass through
+`stripErrorDetails()` (`src/utils/helpers.ts`): Better Auth attaches the raw error, such as a failing SQL
+statement with its values, as `details` to some failures, and that must not reach the client.
 
 **Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
 `CORS_ORIGINS`. `getAllowedOrigins()` (`src/utils/helpers.ts`) parses that variable from the process
