@@ -43,6 +43,23 @@ app.get(
                 version: '1.0.0',
                 description: 'An API for Chinook sample database.',
             },
+            tags: [
+                { name: 'Albums', description: 'Albums, each with the artist who made it.' },
+                { name: 'Artists', description: 'Artists who have made albums.' },
+                { name: 'Genres', description: 'Musical genres that tracks belong to.' },
+                { name: 'Media Types', description: 'File formats that tracks are encoded as.' },
+                { name: 'Playlists', description: 'Named playlists.' },
+                { name: 'Tracks', description: 'Tracks, with their album, genre and media type.' },
+            ],
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        description: 'The `token` returned in the body of the sign-up and sign-in responses.',
+                    },
+                },
+            },
             servers: [
                 {
                     url: `http://localhost:${port}`,

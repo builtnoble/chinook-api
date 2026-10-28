@@ -1,32 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { genres } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { genreSchema, paginationSchema, paramSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { genreSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const genreRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(genreSchema),
-    pagination: paginationSchema,
-});
-
-const getGenres: DescribeRouteOptions = {
+const getGenres = describeList({
     operationId: 'getGenres',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Genres',
+    summary: 'List all genres',
+    description: 'Returns a paginated list of genres.',
+    schema: genreSchema,
+});
 
 genreRoutes.get(
     '/',
@@ -48,19 +37,13 @@ genreRoutes.get(
     },
 );
 
-const getGenreByID: DescribeRouteOptions = {
+const getGenreByID = describeByID({
     operationId: 'getGenreByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(genreSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Genres',
+    summary: 'Retrieve a genre',
+    description: 'Returns the genre with the given id. An unknown id returns 200 with no `data`.',
+    schema: genreSchema,
+});
 
 genreRoutes.get('/:id', describeRoute(getGenreByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');

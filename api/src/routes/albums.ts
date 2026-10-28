@@ -1,32 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { albums } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { albumSchema, paginationSchema, paramSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { albumSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const albumRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(albumSchema),
-    pagination: paginationSchema,
-});
-
-const getAlbums: DescribeRouteOptions = {
+const getAlbums = describeList({
     operationId: 'getAlbums',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Albums',
+    summary: 'List all albums',
+    description: 'Returns a paginated list of albums. Each album includes its artist.',
+    schema: albumSchema,
+});
 
 albumRoutes.get(
     '/',
@@ -51,19 +40,14 @@ albumRoutes.get(
     },
 );
 
-const getAlbumByID: DescribeRouteOptions = {
+const getAlbumByID = describeByID({
     operationId: 'getAlbumByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(albumSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Albums',
+    summary: 'Retrieve a album',
+    description:
+        'Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no `data`.',
+    schema: albumSchema,
+});
 
 albumRoutes.get('/:id', describeRoute(getAlbumByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');

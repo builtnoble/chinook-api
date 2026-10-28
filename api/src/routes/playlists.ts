@@ -1,32 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { playlists } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { paginationSchema, paramSchema, playlistSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { paramSchema, playlistSchema, querySchema } from '@/utils/schema';
 
 const playlistRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(playlistSchema),
-    pagination: paginationSchema,
-});
-
-const getPlaylists: DescribeRouteOptions = {
+const getPlaylists = describeList({
     operationId: 'getPlaylists',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Playlists',
+    summary: 'List all playlists',
+    description: 'Returns a paginated list of playlists.',
+    schema: playlistSchema,
+});
 
 playlistRoutes.get(
     '/',
@@ -48,19 +37,13 @@ playlistRoutes.get(
     },
 );
 
-const getPlaylistByID: DescribeRouteOptions = {
+const getPlaylistByID = describeByID({
     operationId: 'getPlaylistByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(playlistSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Playlists',
+    summary: 'Retrieve a playlist',
+    description: 'Returns the playlist with the given id. An unknown id returns 200 with no `data`.',
+    schema: playlistSchema,
+});
 
 playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');

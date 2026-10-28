@@ -1,32 +1,22 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { paginationSchema, paramSchema, querySchema, trackSchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { paramSchema, querySchema, trackSchema } from '@/utils/schema';
 
 const trackRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(trackSchema),
-    pagination: paginationSchema,
-});
-
-const getTracks: DescribeRouteOptions = {
+const getTracks = describeList({
     operationId: 'getTracks',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Tracks',
+    summary: 'List all tracks',
+    description:
+        'Returns a paginated list of tracks. Each track includes its album (with the album artist), genre and media type, ordered by id.',
+    schema: trackSchema,
+});
 
 trackRoutes.get(
     '/',
@@ -58,19 +48,15 @@ trackRoutes.get(
     },
 );
 
-const getTrackByID: DescribeRouteOptions = {
+const getTrackByID = describeByID({
     operationId: 'getTrackByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(trackSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Tracks',
+    summary: 'Retrieve a track',
+    description:
+        'Returns the track with the given id. The track includes its album (with the album artist), genre and media type. An unknown id returns 200 with an empty response body.',
+    schema: trackSchema,
+    wrapped: false,
+});
 
 trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');

@@ -1,32 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { media_types } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { mediaTypeSchema, paginationSchema, paramSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { mediaTypeSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const mediaTypeRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(mediaTypeSchema),
-    pagination: paginationSchema,
-});
-
-const getMediaTypes: DescribeRouteOptions = {
+const getMediaTypes = describeList({
     operationId: 'getMediaTypes',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Media Types',
+    summary: 'List all media types',
+    description: 'Returns a paginated list of media types.',
+    schema: mediaTypeSchema,
+});
 
 mediaTypeRoutes.get(
     '/',
@@ -48,19 +37,13 @@ mediaTypeRoutes.get(
     },
 );
 
-const getMediaTypeByID: DescribeRouteOptions = {
+const getMediaTypeByID = describeByID({
     operationId: 'getMediaTypeByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(mediaTypeSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Media Types',
+    summary: 'Retrieve a media type',
+    description: 'Returns the media type with the given id. An unknown id returns 200 with no `data`.',
+    schema: mediaTypeSchema,
+});
 
 mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');

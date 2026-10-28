@@ -1,32 +1,21 @@
 import { eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { type DescribeRouteOptions, describeRoute, resolver, validator } from 'hono-openapi';
-import z from 'zod';
+import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { artists } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { artistSchema, paginationSchema, paramSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeList } from '@/utils/openapi';
+import { artistSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const artistRoutes = new Hono();
 
-const paginatedResponseSchema = z.object({
-    data: z.array(artistSchema),
-    pagination: paginationSchema,
-});
-
-const getArtists: DescribeRouteOptions = {
+const getArtists = describeList({
     operationId: 'getArtists',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(paginatedResponseSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Artists',
+    summary: 'List all artists',
+    description: 'Returns a paginated list of artists.',
+    schema: artistSchema,
+});
 
 artistRoutes.get(
     '/',
@@ -48,19 +37,13 @@ artistRoutes.get(
     },
 );
 
-const getArtistByID: DescribeRouteOptions = {
+const getArtistByID = describeByID({
     operationId: 'getArtistByID',
-    responses: {
-        200: {
-            description: 'Successful response',
-            content: {
-                'application/json': {
-                    schema: resolver(artistSchema),
-                },
-            },
-        },
-    },
-};
+    tag: 'Artists',
+    summary: 'Retrieve a artist',
+    description: 'Returns the artist with the given id. An unknown id returns 200 with no `data`.',
+    schema: artistSchema,
+});
 
 artistRoutes.get('/:id', describeRoute(getArtistByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
