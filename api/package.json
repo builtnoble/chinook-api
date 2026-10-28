@@ -3,7 +3,8 @@
     "scripts": {
         "dev": "bun --env-file=../.env run --hot src/index.ts",
         "test": "bun --env-file=../.env test",
-        "lint": "biome check .."
+        "lint": "biome check ..",
+        "openapi:export": "bun scripts/export-openapi.ts"
     },
     "dependencies": {
         "@hono/standard-validator": "^0.1.5",
