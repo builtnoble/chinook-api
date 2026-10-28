@@ -1,7 +1,9 @@
 {
     "name": "bun-chinook-api",
     "scripts": {
-        "dev": "bun run --hot src/index.ts"
+        "dev": "bun --env-file=../.env run --hot src/index.ts",
+        "test": "bun --env-file=../.env test",
+        "lint": "biome check .."
     },
     "dependencies": {
         "@hono/standard-validator": "^0.1.5",

@@ -3,8 +3,8 @@ name: chinook
 services:
   app:
     build:
-      context: .
-      dockerfile: docker/app/Dockerfile
+      context: ./api
+      dockerfile: Dockerfile
     ports:
       - "${APP_PORT:-3000}:${APP_PORT:-3000}"
     env_file:

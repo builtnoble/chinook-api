@@ -1,5 +1,8 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import { defineConfig } from 'drizzle-kit';
+
+// The shared .env lives at the repo root, next to docker-compose.yml.
+config({ path: '../.env' });
 
 export default defineConfig({
     out: './drizzle',
