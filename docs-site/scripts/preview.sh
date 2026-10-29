@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Previews the docs site: exports the spec, generates the pages into a copy of the private theme, and starts the
-# theme's dev server. The theme itself is never modified.
+# theme's dev server, then keeps the pages in step with docs/ and the API. The theme itself is never modified.
 #
 #   THEME_DIR    the chinook-docs-theme checkout (default: next to this repository)
 #   PREVIEW_DIR  where the copy lives (default: docs-site/.preview, ignored by git)
@@ -31,8 +31,12 @@ rsync -a --delete --exclude .git --exclude node_modules --exclude .next --exclud
 echo "Generating the pages..."
 bun generator/index.ts --spec "$PREVIEW_DIR/openapi.json" --pages content/pages.json --out "$SITE"
 
+# Regenerates the pages when docs/, the generator or the API change; the dev server hot-reloads what it writes.
+bun scripts/watch.ts "$SITE" "$PREVIEW_DIR/openapi.json" &
+trap 'kill $! 2>/dev/null' EXIT
+
 cd "$SITE"
 [ -d node_modules ] || npm ci
 
-echo "Docs at http://127.0.0.1:$PORT (stop with Ctrl+C; run again to pick up changes to the API or docs/)"
-exec npm run dev -- -p "$PORT"
+echo "Docs at http://127.0.0.1:$PORT (stop with Ctrl+C; edits to docs/ and the API reload by themselves)"
+npm run dev -- -p "$PORT"

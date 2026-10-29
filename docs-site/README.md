@@ -21,7 +21,8 @@ If you only want to use the docs, you do not need any of this: `docker compose u
 | `content/pages.json` | Which files in `docs/` are published, with their titles and card descriptions   |
 | `Dockerfile`         | Builds the site into an nginx image                                             |
 | `nginx.conf`         | Serves the static export (`/albums` is `albums.html`)                           |
-| `scripts/preview.sh` | Runs the site locally against your copy of the theme                            |
+| `scripts/preview.sh` | Runs the site locally against your copy of the theme, reloading as the sources change |
+| `scripts/watch.ts`   | Regenerates the pages when `docs/`, the generator or the API change             |
 | `scripts/third-party-licenses.mjs` | Writes the license notices for the packages bundled into the site (see below) |
 
 Pages are written into the theme at build time and the theme is never read by the generator, so the generator and the
@@ -37,8 +38,10 @@ bun run preview        # http://127.0.0.1:3001
 ```
 
 It exports the spec, copies the theme to `docs-site/.preview/` (ignored by git), generates the pages into the copy
-and starts the theme's dev server. Run it again to pick up a change to the API or to `docs/`. The first run installs
-the theme's dependencies. Set `PORT` to use another port.
+and starts the theme's dev server. It then watches `docs/`, `docs-site/content`, `docs-site/generator` and `api/src`
+and regenerates the pages when any of them change, so an edit shows up in the open browser tab without restarting.
+Leave it running. The first run installs the theme's dependencies. Set `PORT` to use another port, for example when
+`docker compose up` already serves the published docs on 3001.
 
 ## Build the image
 

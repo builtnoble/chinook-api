@@ -51,6 +51,24 @@ export const generate = (spec: Spec, { introduction, guides = [] }: Content = {}
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
+// Writes the generated files under `out`, leaving untouched any file whose contents already match, so a dev server
+// watching `out` only recompiles the pages that changed. Returns the paths it wrote.
+export const writeChanged = async (out: string, files: Record<string, string>): Promise<string[]> => {
+    const written: string[] = [];
+
+    for (const [path, contents] of Object.entries(files)) {
+        const target = join(out, path);
+        const current = await readFile(target, 'utf8').catch(() => undefined);
+        if (current === contents) continue;
+
+        await mkdir(dirname(target), { recursive: true });
+        await writeFile(target, contents);
+        written.push(path);
+    }
+
+    return written;
+};
+
 type PageEntry = { file: string; title: string; description?: string };
 
 // Where the published Markdown lives. Paths are relative to this file, and `root` is the repository root, so that
@@ -110,13 +128,9 @@ if (import.meta.main) {
         const spec = JSON.parse(await readFile(values.spec, 'utf8')) as Spec;
         const files = generate(spec, values.pages ? await loadPages(values.pages) : {});
 
-        for (const [path, contents] of Object.entries(files)) {
-            const target = join(values.out, path);
-            await mkdir(dirname(target), { recursive: true });
-            await writeFile(target, contents);
-        }
+        const written = await writeChanged(values.out, files);
 
-        console.log(`Wrote ${Object.keys(files).length} files to ${values.out}`);
+        console.log(`Wrote ${written.length} of ${Object.keys(files).length} files to ${values.out}`);
     } catch (error) {
         console.error(error instanceof Error ? error.message : error);
         process.exit(1);
