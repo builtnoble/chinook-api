@@ -26,8 +26,8 @@ COPY docs-site/content docs-site/content
 COPY --from=spec /out/openapi.json /out/openapi.json
 RUN bun docs-site/generator/index.ts --spec /out/openapi.json --pages docs-site/content/pages.json --out /out/content
 
-# 3. Build the static site: the private theme with the generated pages written into it.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS site
+# 3. The theme with the generated pages written into it, installed and ready to build.
+FROM --platform=$BUILDPLATFORM node:22-alpine AS site-src
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /site
 COPY --from=theme package.json package-lock.json ./
@@ -36,12 +36,24 @@ COPY --from=theme . .
 COPY --from=content /out/content/ ./
 ARG GIT_SHA=
 ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
+
+# 3a. Build the static site that is served.
+FROM site-src AS site
 RUN npm run build
 
-# 4. Serve it.
+# 3b. Build it again with source maps, only to learn which packages are bundled into its JavaScript, and write their
+# license notices. The maps and this build are not part of the image. The CSS framework's code is in the output too, so
+# it is listed by name.
+FROM site-src AS licenses
+COPY docs-site/scripts/third-party-licenses.mjs /tools/third-party-licenses.mjs
+RUN SOURCEMAPS=true npm run build \
+    && node /tools/third-party-licenses.mjs /site /third-party-licenses.txt --also tailwindcss,@tailwindcss/typography
+
+# 4. Serve it. Only static files and the license notices are copied in.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY docs-site/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=site /site/out /usr/share/nginx/html
+COPY --from=licenses /third-party-licenses.txt /usr/share/nginx/html/third-party-licenses.txt
 EXPOSE 8080
 HEALTHCHECK --interval=10s --timeout=3s --start-period=5s --retries=3 \
     CMD wget -q --spider http://127.0.0.1:8080/ || exit 1

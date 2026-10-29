@@ -102,14 +102,16 @@ jobs:
           provenance: false
           sbom: false
 
-      - name: Check that the image holds only the built site
+      - name: Check that the image holds only the built site and its notices
         env:
           REFERENCE: ${{ env.IMAGE }}@${{ steps.build.outputs.digest }}
         run: |
           docker run --rm --platform linux/amd64 --entrypoint sh "$REFERENCE" -c '
             test -f /usr/share/nginx/html/index.html || { echo "no index.html"; exit 1; }
+            test -s /usr/share/nginx/html/third-party-licenses.txt || { echo "no third-party-licenses.txt"; exit 1; }
+            if [ -n "$(find /usr/share/nginx/html -name "*.map")" ]; then echo "source maps in the image"; exit 1; fi
             source_files="$(find / -xdev \( -name "*.tsx" -o -name "*.mdx" -o -name package.json -o -name LICENSE.md \) \
               -not -path "/proc/*" 2>/dev/null)"
             if [ -n "$source_files" ]; then echo "theme source found in the image:"; echo "$source_files"; exit 1; fi
-            echo "ok: static files only"
+            echo "ok: static files and license notices only"
           '
