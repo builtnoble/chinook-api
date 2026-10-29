@@ -76,15 +76,6 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-          # The defaults come from the GitHub repository, so its name and license would describe the image wrongly.
-          # The site's design is the Tailwind Plus Protocol template, which is not under the repository's license.
-          labels: |
-            org.opencontainers.image.title=Chinook API docs
-            org.opencontainers.image.description=The Chinook API documentation site: a static site generated from the API's OpenAPI document and guides, served by nginx on port 8080.
-            org.opencontainers.image.source=https://github.com/builtnoble/chinook-api
-            org.opencontainers.image.documentation=https://github.com/builtnoble/chinook-api/blob/main/docs-site/README.md
-            org.opencontainers.image.licenses=NOASSERTION
-            io.github.builtnoble.chinook-docs.design-license=The site's design is derived from the Tailwind Plus Protocol template and is used under the Tailwind Plus license (https://tailwindcss.com/plus/license). The image holds only the compiled static site.
 
       # No cache-from or cache-to: a cache would hold layers made from the theme's source. The stages that build the
       # site run on the runner's own architecture, so building for both platforms needs no emulation.
@@ -98,7 +89,14 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          # The static labels (title, description, source, licenses) are in the Dockerfile. The metadata action's own
+          # defaults for those come from the GitHub repository (its name, its description, its MIT license), and a
+          # label passed here replaces the Dockerfile's, so only the labels that change per build are passed.
+          labels: |
+            org.opencontainers.image.created=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            org.opencontainers.image.revision=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+            org.opencontainers.image.version=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+            org.opencontainers.image.url=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.url'] }}
           provenance: false
           sbom: false
 

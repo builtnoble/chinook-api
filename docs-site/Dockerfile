@@ -51,6 +51,14 @@ RUN SOURCEMAPS=true npm run build \
 
 # 4. Serve it. Only static files and the license notices are copied in.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+# The nginx base image sets `maintainer` to the nginx maintainers, so it is emptied. The licenses label asserts nothing
+# because the site's design is the Tailwind Plus Protocol template, which is not under the repository's MIT license.
+LABEL org.opencontainers.image.title="chinook-docs" \
+      org.opencontainers.image.description="Documentation site for the Chinook API, generated from its OpenAPI spec and served by nginx" \
+      org.opencontainers.image.source="https://github.com/builtnoble/chinook-api" \
+      org.opencontainers.image.licenses="NOASSERTION" \
+      io.github.builtnoble.chinook-docs.design-license="Design derived from the Tailwind Plus Protocol template, used under the Tailwind Plus license (https://tailwindcss.com/plus/license). The image holds only the compiled static site." \
+      maintainer=""
 COPY docs-site/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=site /site/out /usr/share/nginx/html
 COPY --from=licenses /third-party-licenses.txt /usr/share/nginx/html/third-party-licenses.txt

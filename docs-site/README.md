@@ -79,6 +79,12 @@ The `docs-publish` workflow builds the image and pushes it. Its Docker Hub tags 
 `1.2.3`, `1.2`, `1` and `latest` for `v*` tags, for `linux/amd64` and `linux/arm64`. The setup it needs (the private
 theme, a deploy key and three secrets) is described at the top of `.github/workflows/docs-publish.yml`.
 
+The image's static labels (title, description, source, licenses) are in the Dockerfile, as in `chinook-postgres`. The
+workflow passes only the labels that change per build (created, revision, version, url), which also replace the ones
+the nginx base image sets about itself. The metadata action's defaults for the static labels are not used, because they
+would come from the GitHub repository and claim its MIT license for an image whose design is under the Tailwind Plus
+license.
+
 [`DOCKERHUB.md`](DOCKERHUB.md) is the text for the Docker Hub repository's Overview. Docker Hub does not read it from
 the repository, so paste it into the repository settings when it changes. Keep the Docker Hub repository public, so
 that compose can pull the image without logging in.
