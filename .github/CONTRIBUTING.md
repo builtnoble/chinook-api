@@ -192,3 +192,4 @@ Please include relevant context, screenshots (if applicable), and reference any 
 -   Don’t introduce new dependencies without discussion.
 -   Security-sensitive changes (especially around auth) should be discussed via issue first.
 -   Be mindful that this repository also serves as a **learning tool**, so clarity in examples is valued as much as functionality.
+-   By contributing you agree that your contribution is released under the repository's [MIT License](../LICENSE).

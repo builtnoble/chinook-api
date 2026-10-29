@@ -263,3 +263,14 @@ bun run test             # the API's tests
 ```
 
 The docs generator has its own tests: `cd docs-site && bun test`.
+
+---
+
+## License
+
+The code and documents in this repository are released under the [MIT License](LICENSE).
+
+The Chinook table definitions mirror the [Chinook database](https://github.com/lerocha/chinook-database) by Luis Rocha,
+also MIT-licensed; its notice is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The design of the published docs
+image comes from a Tailwind Plus template that is licensed separately and is not part of this repository; see the same
+file.
