@@ -4,7 +4,7 @@
     "introduction": {
         "file": "../../docs/INTRODUCTION.md",
         "title": "Introduction",
-        "description": "What the Chinook API is for, how it is built, and where to look in the code."
+        "description": "What the Chinook API is for and how it is built."
     },
     "guides": [
         {

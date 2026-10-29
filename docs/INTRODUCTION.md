@@ -8,7 +8,8 @@ as a **testing ground for frontend experimentation** while also demonstrating ho
 type-safe, authenticated API can be built with modern TypeScript tooling.
 
 The schema covers all of those tables, but only albums, artists, genres, media types, playlists and
-tracks have routes so far, and every route is a read-only `GET`. The database itself accepts writes.
+tracks have routes so far, and every route is a read-only `GET`; write and delete routes are still to come. The
+database itself accepts writes.
 
 Goals that shaped the design:
 
@@ -82,10 +83,12 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
    Zod schema (`api/src/utils/schema/index.ts`), then, for list endpoints, runs `paginationMiddleware`.
 5. `paginationMiddleware` does a `db.$count()` against the target table, derives
    `currentPage` / `perPage` / `offset`, and rejects out-of-range pages with `400` before the
-   main query runs.
+   main query runs. A route can pass a `where` to narrow the count to the rows it lists: the tracks
+   route passes "not soft-deleted", so a deleted track does not count towards `total_items`.
 6. The route handler queries Drizzle's relational query builder (`db.query.tracks.findMany`),
    eager-loading related rows (`album.artist`, `genre`, `media_type`) in one round trip via the
-   relations defined in `api/src/db/relations.ts`.
+   relations defined in `api/src/db/relations.ts`. The track routes also leave out soft-deleted rows
+   (`deleted_at IS NULL`) and never select the `deleted_at` column.
 7. Response flows back through `snakeCaseKeysMiddleware`, which re-serializes the JSON body with
    snake_case keys before it reaches the client.
 
@@ -150,8 +153,15 @@ newer image does not change existing data until `docker compose down -v`.
 - **Route-level Zod schemas double as OpenAPI source.** Avoids maintaining a separate OpenAPI
   spec by hand, but means validation logic and documentation are as accurate as the schemas
   authors write — there's no drift-detection beyond code review.
+- **Tracks are soft-deleted; nothing else is.** `invoice_lines` keep pointing at the tracks that were sold, and
+  a purchase history that loses lines, or a delete that is always refused for a sold track, are both worse than a
+  flag. Deleting a track sets `tracks.deleted_at` and leaves the row, so the foreign key from `invoice_lines` stays
+  valid and invoice totals still add up. The cost is that every read of tracks must remember the filter, because
+  the database does not hide the row. The column is created by the image, so `chinook-reset` keeps it, and
+  migration `0003` adds it to volumes made from an older image.
 - **Foreign key rules are declared twice.** The image's `init.sql` is the source of truth for the
-  Chinook tables, and `api/src/db/schema.ts` mirrors it so Drizzle's snapshots match the real database.
+  Chinook tables (including `tracks.deleted_at`, which it adds for soft deletes), and `api/src/db/schema.ts`
+  mirrors it so Drizzle's snapshots match the real database.
   If the two drift, the next `drizzle-kit generate` proposes the difference as a migration, so check
   that diff against the image before applying it.
 - **The docs are generated, never written twice.** The reference pages come from the OpenAPI document and the
@@ -165,15 +175,3 @@ newer image does not change existing data until `docker compose down -v`.
   has to be listed once, but an origin that may call the API is also trusted for cookie-carrying auth
   requests; the two cannot be granted separately. Better Auth skips its origin check when
   `NODE_ENV=test`, so the tests in `api/src/index.test.ts` import the app under another value to exercise it.
-
-## Where to look next
-
-- [`api/src/db/schema.ts`](../api/src/db/schema.ts) / [`api/src/db/relations.ts`](../api/src/db/relations.ts) — full table and relationship definitions
-- [`api/src/routes/`](../api/src/routes) — per-resource route handlers (albums, artists, genres, media-types,
-  playlists, tracks all follow the same list/detail pattern shown above)
-- [`api/src/utils/schema/index.ts`](../api/src/utils/schema/index.ts) — shared Zod schemas for query params, path params, and pagination
-- [`api/src/index.test.ts`](../api/src/index.test.ts) — CORS and Better Auth origin tests, served through `Bun.serve` as in production (`bun test`)
-- [`docker-compose.yml`](../docker-compose.yml) — the app and db services, the healthcheck dependency and the data volume
-- [`proxy/Caddyfile`](../proxy/Caddyfile) — the hostnames the proxy serves
-- [`docs-site/README.md`](../docs-site/README.md) — how this site is generated, previewed and published
-- [`README.md`](../README.md) — local setup, Docker Compose usage, and the full auth endpoint reference
