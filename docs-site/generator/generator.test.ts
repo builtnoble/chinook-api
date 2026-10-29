@@ -7,7 +7,7 @@ import { UnsupportedError } from './schema';
 import type { Operation, Spec } from './types';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
-const guidesDir = new URL('./fixtures/guides', import.meta.url).pathname;
+const contentDir = new URL('./fixtures/content', import.meta.url).pathname;
 
 // A one-operation spec, so each test states only what it changes.
 const specWith = (operation: Partial<Operation>, extra: Partial<Spec> = {}): Spec => ({
@@ -35,26 +35,26 @@ const okResponse = (schema: object) => ({
 
 describe('generate', () => {
     it('writes one page per tag plus navigation and metadata', async () => {
-        const files = generate(fixture, await readGuides(guidesDir));
+        const files = generate(fixture, {
+            introduction: readFileSync(`${contentDir}/introduction.mdx`, 'utf8'),
+            guides: await readGuides(`${contentDir}/guides`),
+        });
 
         expect(Object.keys(files).sort()).toEqual([
             'src/app/albums/page.mdx',
             'src/app/artists/page.mdx',
-            'src/app/authentication/page.mdx',
+            'src/app/insomnia/page.mdx',
             'src/app/page.mdx',
             'src/generated/meta.json',
             'src/generated/navigation.json',
         ]);
+        // The introduction stands alone, outside Guides and Resources.
         expect(JSON.parse(files['src/generated/navigation.json'])).toEqual([
+            { links: [{ title: 'Introduction', href: '/' }] },
             {
                 title: 'Guides',
                 links: [
-                    { title: 'Introduction', href: '/' },
-                    {
-                        title: 'Authentication',
-                        href: '/authentication',
-                        description: 'Learn how to authenticate your API requests.',
-                    },
+                    { title: 'Insomnia', href: '/insomnia', description: 'Send your first requests from Insomnia.' },
                 ],
             },
             {
@@ -70,6 +70,12 @@ describe('generate', () => {
             version: '1.0.0',
             baseUrl: 'http://localhost:3000',
         });
+    });
+
+    it('leaves the introduction out of the navigation when there is none', () => {
+        const navigation = JSON.parse(generate(fixture)['src/generated/navigation.json']);
+
+        expect(navigation.map((group: { title?: string }) => group.title)).toEqual(['Guides', 'Resources']);
     });
 
     it('matches the recorded pages', () => {

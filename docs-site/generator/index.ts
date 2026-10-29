@@ -6,13 +6,23 @@ import type { Guide, Spec } from './types';
 
 type GuideIndexEntry = { title: string; href: string; description?: string; file: string };
 
+type Content = {
+    // The home page, shown in the sidebar outside Guides and Resources.
+    introduction?: string;
+    guides?: Guide[];
+};
+
 // Maps each output path (relative to the theme root) to its contents. Pure, so tests can call it directly.
-export const generate = (spec: Spec, guides: Guide[] = []): Record<string, string> => {
+export const generate = (spec: Spec, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
 
+    if (introduction !== undefined) {
+        files['src/app/page.mdx'] = introduction;
+    }
+
     for (const guide of guides) {
-        files[guide.href === '/' ? 'src/app/page.mdx' : `src/app${guide.href}/page.mdx`] = guide.source;
+        files[`src/app${guide.href}/page.mdx`] = guide.source;
     }
 
     const resources = [];
@@ -27,6 +37,7 @@ export const generate = (spec: Spec, guides: Guide[] = []): Record<string, strin
     }
 
     files['src/generated/navigation.json'] = json([
+        ...(introduction !== undefined ? [{ links: [{ title: 'Introduction', href: '/' }] }] : []),
         { title: 'Guides', links: guides.map(({ title, href, description }) => ({ title, href, description })) },
         { title: 'Resources', links: resources },
     ]);
@@ -51,17 +62,27 @@ export const readGuides = async (dir: string): Promise<Guide[]> => {
 
 if (import.meta.main) {
     const { values } = parseArgs({
-        options: { spec: { type: 'string' }, guides: { type: 'string' }, out: { type: 'string' } },
+        options: {
+            spec: { type: 'string' },
+            introduction: { type: 'string' },
+            guides: { type: 'string' },
+            out: { type: 'string' },
+        },
     });
 
     if (!values.spec || !values.out) {
-        console.error('Usage: bun generator/index.ts --spec openapi.json --out <dir> [--guides <dir>]');
+        console.error(
+            'Usage: bun generator/index.ts --spec openapi.json --out <dir> [--introduction <file>] [--guides <dir>]',
+        );
         process.exit(2);
     }
 
     try {
         const spec = JSON.parse(await readFile(values.spec, 'utf8')) as Spec;
-        const files = generate(spec, values.guides ? await readGuides(values.guides) : []);
+        const files = generate(spec, {
+            introduction: values.introduction ? await readFile(values.introduction, 'utf8') : undefined,
+            guides: values.guides ? await readGuides(values.guides) : [],
+        });
 
         for (const [path, contents] of Object.entries(files)) {
             const target = join(values.out, path);
