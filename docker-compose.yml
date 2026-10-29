@@ -31,5 +31,27 @@ services:
     volumes:
       - chinook-data:/var/lib/postgresql/data
 
+  # The API reference and guides, generated from the API's /openapi.json and docs/. The image is built and published
+  # by CI (see docs-site/README.md), so `docker compose up` does not need the private theme it is built with.
+  docs:
+    image: builtnoble/chinook-docs:${DOCS_TAG:-edge}
+    ports:
+      - "${DOCS_PORT:-3001}:8080"
+
+  # Serves http://api.chinook.localhost and http://docs.chinook.localhost on PROXY_PORT (80 by default).
+  proxy:
+    image: caddy:2.10-alpine
+    ports:
+      - "${PROXY_PORT:-80}:80"
+    environment:
+      - APP_PORT=${APP_PORT:-3000}
+    volumes:
+      - ./proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      app:
+        condition: service_started
+      docs:
+        condition: service_healthy
+
 volumes:
   chinook-data:

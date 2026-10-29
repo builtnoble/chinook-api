@@ -1,0 +1,19 @@
+# Gives the API and the docs a hostname each. *.localhost resolves to the local machine in browsers and curl, so no
+# hosts-file entries are needed. Plain HTTP on purpose: this is for local use.
+{
+	auto_https off
+	admin off
+}
+
+http://api.chinook.localhost {
+	reverse_proxy app:{$APP_PORT:3000}
+}
+
+http://docs.chinook.localhost {
+	reverse_proxy docs:8080
+}
+
+# Anything else on this port is a mistake, so say so.
+http:// {
+	respond "Unknown host. Use api.chinook.localhost or docs.chinook.localhost." 404
+}
