@@ -61,6 +61,16 @@ The Dockerfile has four stages. Only the last one is in the image, so the theme'
 The theme is passed as a named build context, so it never has to be in this repository's build context. The
 published image is built by the `docs-publish` workflow, which checks the theme out with a read-only deploy key.
 
+## Publishing
+
+The `docs-publish` workflow builds the image and pushes it. Its Docker Hub tags are `edge` for `main` and
+`1.2.3`, `1.2`, `1` and `latest` for `v*` tags, for `linux/amd64` and `linux/arm64`. The setup it needs (the private
+theme, a deploy key and three secrets) is described at the top of `.github/workflows/docs-publish.yml`.
+
+[`DOCKERHUB.md`](DOCKERHUB.md) is the text for the Docker Hub repository's Overview. Docker Hub does not read it from
+the repository, so paste it into the repository settings when it changes. Keep the Docker Hub repository public, so
+that compose can pull the image without logging in.
+
 ## The contract with the theme
 
 The generator writes these files into the theme:
