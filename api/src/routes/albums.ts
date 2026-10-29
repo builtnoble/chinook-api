@@ -15,6 +15,7 @@ const getAlbums = describeList({
     summary: 'List all albums',
     description: 'Returns a paginated list of albums. Each album includes its artist.',
     schema: albumSchema,
+    path: '/api/albums',
 });
 
 albumRoutes.get(

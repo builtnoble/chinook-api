@@ -15,6 +15,7 @@ const getMediaTypes = describeList({
     summary: 'List all media types',
     description: 'Returns a paginated list of media types.',
     schema: mediaTypeSchema,
+    path: '/api/media-types',
 });
 
 mediaTypeRoutes.get(

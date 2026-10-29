@@ -16,6 +16,7 @@ const getTracks = describeList({
     description:
         'Returns a paginated list of tracks. Each track includes its album (with the album artist), genre and media type, ordered by id.',
     schema: trackSchema,
+    path: '/api/tracks',
 });
 
 trackRoutes.get(

@@ -15,6 +15,7 @@ const getArtists = describeList({
     summary: 'List all artists',
     description: 'Returns a paginated list of artists.',
     schema: artistSchema,
+    path: '/api/artists',
 });
 
 artistRoutes.get(

@@ -15,6 +15,7 @@ const getPlaylists = describeList({
     summary: 'List all playlists',
     description: 'Returns a paginated list of playlists.',
     schema: playlistSchema,
+    path: '/api/playlists',
 });
 
 playlistRoutes.get(

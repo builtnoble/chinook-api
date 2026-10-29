@@ -15,6 +15,7 @@ const getGenres = describeList({
     summary: 'List all genres',
     description: 'Returns a paginated list of genres.',
     schema: genreSchema,
+    path: '/api/genres',
 });
 
 genreRoutes.get(
