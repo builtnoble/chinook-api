@@ -156,7 +156,7 @@ for how it is built.
 -   **A new route** needs a tag, a summary and a description on its `describeRoute` options, for example through
     `describeList` and `describeByID` in `api/src/utils/openapi.ts`. A test fails without them, and its reference page
     appears on the site by itself.
--   **The Introduction and the Insomnia guide** are `docs/INTRODUCTION.md` and `docs/INSOMNIA.md`. Edit the Markdown.
+-   **The Introduction and the Insomnia guide** are `docs/INTRODUCTION.md` and `docs/guides/INSOMNIA.md`. Edit the Markdown.
     Avoid HTML comments and GitHub-only alerts such as `> [!NOTE]`, which MDX cannot take; the generator names the
     line, and a test compiles the real files.
 -   **The site's design** is a licensed template kept in a private repository, so it cannot be changed in a pull

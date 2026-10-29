@@ -8,7 +8,7 @@
     },
     "guides": [
         {
-            "file": "../../docs/INSOMNIA.md",
+            "file": "../../docs/guides/INSOMNIA.md",
             "href": "/insomnia",
             "title": "Insomnia",
             "description": "Create an account and call the API from Insomnia."

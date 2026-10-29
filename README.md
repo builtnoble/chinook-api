@@ -130,7 +130,7 @@ gets `403 INVALID_ORIGIN` on those requests.
 > **Upgrading an existing `.env`:** `BETTER_AUTH_URL` used to be `http://localhost:3000`. To call the API from a
 > browser at `http://api.chinook.localhost`, set it to that address (or list the origin in `CORS_ORIGINS`).
 > curl sends no `Origin` header, so it works either way. Insomnia needs one once it holds a session cookie; see
-> [docs/INSOMNIA.md](docs/INSOMNIA.md).
+> [docs/guides/INSOMNIA.md](docs/guides/INSOMNIA.md).
 
 ---
 
@@ -192,7 +192,7 @@ artist that still has albums, or a track that appears on an invoice line, fails 
 ## Example Endpoints
 
 Authenticated endpoints require a valid token or session. For a step-by-step walkthrough of creating an
-account, signing in and calling every endpoint with Insomnia, see [docs/INSOMNIA.md](docs/INSOMNIA.md), or the same
+account, signing in and calling every endpoint with Insomnia, see [docs/guides/INSOMNIA.md](docs/guides/INSOMNIA.md), or the same
 guide on the docs site. The docs site also has a reference page for every resource, built from the API's own spec.
 
 ```
@@ -219,7 +219,7 @@ The docs site at [http://docs.chinook.localhost](http://docs.chinook.localhost) 
 to edit each page:
 
 -   **The Introduction and the Insomnia guide** are [docs/INTRODUCTION.md](docs/INTRODUCTION.md) and
-    [docs/INSOMNIA.md](docs/INSOMNIA.md). They read fine on GitHub and become pages on the site.
+    [docs/guides/INSOMNIA.md](docs/guides/INSOMNIA.md). They read fine on GitHub and become pages on the site.
 -   **The reference for each resource** comes from `/openapi.json`, which comes from the route definitions. A new route
     needs a tag, a summary and a description, which a test checks.
 

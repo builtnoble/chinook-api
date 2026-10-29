@@ -3,7 +3,7 @@
 The API documentation for `chinook.docs`. It is generated, not written here:
 
 - **The API reference** (one page per resource) comes from the API's `/openapi.json`.
-- **The Introduction and the Insomnia guide** come from `docs/INTRODUCTION.md` and `docs/INSOMNIA.md`. Edit those
+- **The Introduction and the Insomnia guide** come from `docs/INTRODUCTION.md` and `docs/guides/INSOMNIA.md`. Edit those
   files, which are the only copy.
 
 This directory holds the generator that turns both into pages, and the Dockerfile that builds the site. It holds none
@@ -111,6 +111,6 @@ README lists the changes it makes to Protocol.
   appears. The generator fails, naming the operation, if a tag or summary is missing.
 - **Editing a document**: change the Markdown in `docs/`. Avoid HTML comments and GitHub-only alerts (`> [!NOTE]`),
   which MDX cannot take. The generator reports the line, and a test compiles the real documents, so CI catches it.
-- **A new guide**: add the Markdown file to `docs/` and an entry to `content/pages.json`.
+- **A new guide**: add the Markdown file to `docs/guides/` and an entry to `content/pages.json`.
 - **Linking to other files in the repository** works with ordinary relative links. Links to other published documents
   become site links, and links to anything else point at GitHub.
