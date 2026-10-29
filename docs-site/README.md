@@ -22,6 +22,7 @@ If you only want to use the docs, you do not need any of this: `docker compose u
 | `Dockerfile`         | Builds the site into an nginx image                                             |
 | `nginx.conf`         | Serves the static export (`/albums` is `albums.html`)                           |
 | `scripts/preview.sh` | Runs the site locally against your copy of the theme                            |
+| `scripts/third-party-licenses.mjs` | Writes the license notices for the packages bundled into the site (see below) |
 
 Pages are written into the theme at build time and the theme is never read by the generator, so the generator and the
 theme only share the contract below.
@@ -60,6 +61,17 @@ The Dockerfile has four stages. Only the last one is in the image, so the theme'
 
 The theme is passed as a named build context, so it never has to be in this repository's build context. The
 published image is built by the `docs-publish` workflow, which checks the theme out with a read-only deploy key.
+
+## License notices
+
+The site's minified JavaScript carries no license comments, and the libraries bundled into it (MIT, Apache-2.0) require
+their notices to travel with copies. So the image build makes a second build of the site with source maps, reads
+which packages they list, and writes `third-party-licenses.txt` into the image; the footer links to it. The maps and
+that build are not part of the image, and the publish workflow checks that no `.map` files are served.
+
+The step fails the image build if a bundled package has no license text and no declared license, or a license that is
+not permissive (GPL, LGPL, MPL and the like), so a new dependency that needs a decision cannot slip in. The script
+has its own tests, which run without the theme.
 
 ## Publishing
 

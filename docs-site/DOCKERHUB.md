@@ -43,3 +43,7 @@ The generator, the Dockerfile and the documents are in the
 The site's design is derived from the [Protocol](https://tailwindcss.com/plus/templates/protocol) template from
 Tailwind Plus and is used under the [Tailwind Plus license](https://tailwindcss.com/plus/license). The template's source
 is not published, and this image contains only the compiled site.
+
+The open-source libraries bundled into the site are listed with their licenses at `/third-party-licenses.txt`, which the
+site's footer links to. The image is built on `nginxinc/nginx-unprivileged`, whose software stays under its own
+licenses.
