@@ -43,22 +43,21 @@ export const describeList = ({
     },
 });
 
-// Every by-ID route wraps its result in `data` except tracks, so `wrapped` lets tracks describe what it returns.
+// `data` is absent when no item has the requested id.
 export const describeByID = ({
     operationId,
     tag,
     summary,
     description,
     schema,
-    wrapped = true,
-}: RouteDescription & { wrapped?: boolean }): DescribeRouteOptions => ({
+}: RouteDescription): DescribeRouteOptions => ({
     operationId,
     tags: [tag],
     summary,
     description,
     security: [{ bearerAuth: [] }],
     responses: {
-        200: jsonResponse('The requested item.', wrapped ? z.object({ data: schema.optional() }) : schema),
+        200: jsonResponse('The requested item.', z.object({ data: schema.optional() })),
         400: jsonResponse('The id is not a number.', validationErrorSchema),
         401: unauthorized,
     },

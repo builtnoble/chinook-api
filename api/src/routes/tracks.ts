@@ -53,9 +53,8 @@ const getTrackByID = describeByID({
     tag: 'Tracks',
     summary: 'Retrieve a track',
     description:
-        'Returns the track with the given id. The track includes its album (with the album artist), genre and media type. An unknown id returns 200 with an empty response body.',
+        'Returns the track with the given id. The track includes its album (with the album artist), genre and media type. An unknown id returns 200 with no `data`.',
     schema: trackSchema,
-    wrapped: false,
 });
 
 trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSchema), async (c) => {
@@ -74,7 +73,7 @@ trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSch
         },
     });
 
-    return c.json(data);
+    return c.json({ data });
 });
 
 export default trackRoutes;

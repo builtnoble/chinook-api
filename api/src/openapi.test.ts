@@ -58,6 +58,16 @@ describe('openapi.json', () => {
         }
     });
 
+    it('wraps every by-id response in data, as the handlers do', () => {
+        for (const [name, operation] of operations.filter(([name]) => name.endsWith('/{id}'))) {
+            const schema = (operation.responses?.[200] as { content: Record<string, { schema: object }> }).content[
+                'application/json'
+            ].schema;
+
+            expect([name, Object.keys((schema as { properties: object }).properties)]).toEqual([name, ['data']]);
+        }
+    });
+
     it('documents the 400 and 401 responses and requires the bearer scheme', () => {
         expect(spec.components.securitySchemes).toHaveProperty('bearerAuth');
 

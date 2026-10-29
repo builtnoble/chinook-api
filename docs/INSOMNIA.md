@@ -164,8 +164,7 @@ GET {{ _.base_url }}/api/artists?limit=2
 }
 ```
 
-Single records come back as `{ "data": { … } }`, except `GET /api/tracks/{id}`, which returns the track
-object directly with no `data` wrapper.
+Single records come back as `{ "data": { … } }`.
 
 ### Errors
 
@@ -175,7 +174,7 @@ object directly with no `data` wrapper.
 | `?page=` beyond the last page | `400` | `{"error":"Page cannot exceed 28."}` |
 | `?limit=` larger than the table | `400` | `{"error":"Limit cannot exceed 25."}` |
 | Non-numeric id, e.g. `/api/artists/abc` | `400` | `{"data":{"id":"abc"},"error":[…],"success":false}` |
-| An id that does not exist | `200` | `{}` for most routes; an empty body for `/api/tracks/{id}` |
+| An id that does not exist | `200` | `{}` |
 
 There are no `404`s: a missing id is a `200` with an empty result.
 
@@ -189,7 +188,7 @@ Bearer token). Returns `200` `{"success":true}`, and the token stops working: th
 
 1. Sign up (step 3), then sign in (step 4).
 2. `GET /api/artists?limit=2`, then `GET /api/artists/1`.
-3. `GET /api/tracks/1` and compare its shape with `GET /api/albums/1`.
+3. `GET /api/tracks/1` and `GET /api/albums/1`, which both nest the record under `data`.
 4. `GET /api/artists?page=9999` and `GET /api/artists/abc` for the error shapes.
 5. Sign out, then repeat step 2 and confirm the `401`.
 
