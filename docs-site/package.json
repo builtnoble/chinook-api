@@ -6,7 +6,8 @@
         "generate": "bun generator/index.ts",
         "test": "bun test",
         "lint": "biome check ..",
-        "preview": "scripts/preview.sh"
+        "preview": "scripts/preview.sh",
+        "check": "bun generator/check.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "2.2.2",
