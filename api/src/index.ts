@@ -62,6 +62,10 @@ app.get(
             },
             servers: [
                 {
+                    url: 'http://api.chinook.localhost',
+                    description: 'Through the docker compose proxy',
+                },
+                {
                     url: `http://localhost:${port}`,
                     description: 'Local Server',
                 },

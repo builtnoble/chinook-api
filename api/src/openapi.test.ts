@@ -12,6 +12,7 @@ type Operation = {
 };
 
 type Spec = {
+    servers: { url: string }[];
     tags: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { securitySchemes: Record<string, unknown> };
@@ -46,6 +47,13 @@ describe('openapi.json', () => {
             expect([name, typeof operation.summary]).toEqual([name, 'string']);
             expect([name, typeof operation.description]).toEqual([name, 'string']);
         }
+    });
+
+    it('lists the compose proxy first and the direct port second', () => {
+        expect(spec.servers.map((server) => server.url)).toEqual([
+            'http://api.chinook.localhost',
+            expect.stringMatching(/^http:\/\/localhost:\d+$/),
+        ]);
     });
 
     it('only uses tags that are declared with a description', () => {
