@@ -44,7 +44,7 @@ albumRoutes.get(
 const getAlbumByID = describeByID({
     operationId: 'getAlbumByID',
     tag: 'Albums',
-    summary: 'Retrieve a album',
+    summary: 'Retrieve an album',
     description:
         'Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no `data`.',
     schema: albumSchema,

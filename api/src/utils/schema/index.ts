@@ -59,7 +59,7 @@ export const paginationSchema = snakeCaseSchema(
         prevPageUrl: z.string().nullable().describe('Path of the previous page, or null on the first page.'),
         nextPageUrl: z.string().nullable().describe('Path of the next page, or null on the last page.'),
     }),
-);
+).describe('Where the returned page sits among all pages.');
 
 // Sample rows from the Chinook database, used as response examples in the docs.
 const artistExample = { id: 1, name: 'AC/DC' };

@@ -41,7 +41,7 @@ artistRoutes.get(
 const getArtistByID = describeByID({
     operationId: 'getArtistByID',
     tag: 'Artists',
-    summary: 'Retrieve a artist',
+    summary: 'Retrieve an artist',
     description: 'Returns the artist with the given id. An unknown id returns 200 with no `data`.',
     schema: artistSchema,
 });
