@@ -6,9 +6,11 @@
 #   docker buildx build -f docs-site/Dockerfile --build-context theme=../chinook-docs-theme -t builtnoble/chinook-docs .
 #
 # Only the last stage ends up in the image: static files and nginx. The theme's source stays in the earlier stages.
+# The first three stages run on the build machine's own architecture, since the site they produce is the same for
+# every platform; only the nginx stage differs, and it only copies files, so a multi-platform build needs no emulation.
 
 # 1. Export /openapi.json without a database or a running server.
-FROM oven/bun:1.2-debian AS spec
+FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS spec
 WORKDIR /repo/api
 COPY api/package.json api/bun.lock ./
 RUN bun install --frozen-lockfile
@@ -16,7 +18,7 @@ COPY api/ ./
 RUN bun run openapi:export /out/openapi.json
 
 # 2. Turn the spec and the Markdown in docs/ into the theme's pages. The generator has no dependencies.
-FROM oven/bun:1.2-debian AS content
+FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS content
 WORKDIR /repo
 COPY docs/ docs/
 COPY docs-site/generator docs-site/generator
@@ -25,7 +27,7 @@ COPY --from=spec /out/openapi.json /out/openapi.json
 RUN bun docs-site/generator/index.ts --spec /out/openapi.json --pages docs-site/content/pages.json --out /out/content
 
 # 3. Build the static site: the private theme with the generated pages written into it.
-FROM node:22-alpine AS site
+FROM --platform=$BUILDPLATFORM node:22-alpine AS site
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /site
 COPY --from=theme package.json package-lock.json ./
