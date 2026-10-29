@@ -10,18 +10,22 @@ Insomnia 13.x; menu names move around a little between versions.
 ## 1. Start the API
 
 ```sh
-docker compose up -d --build   # the Chinook database and the API, on http://localhost:3000
-bunx drizzle-kit migrate       # first run only: creates the auth tables
+docker compose up -d --build   # the Chinook database, the API, the docs site and the proxy
+cd api && bun install && bunx drizzle-kit migrate   # first run only: creates the auth tables
 ```
 
-Check it is up: `curl localhost:3000/health` returns `{"status":"ok","message":"API healthy"}`.
+The API is then at `http://api.chinook.localhost` (through the proxy) and at `http://localhost:3000` (directly). The
+`.localhost` names point at your own machine, so there is nothing to configure. If port 80 is taken, set `PROXY_PORT`
+in `.env` and add the port to the address, or use `http://localhost:3000` throughout.
 
-To run the API from source instead, for example while changing it, start only the database and run the
-server on your machine:
+Check it is up: `curl http://api.chinook.localhost/health` returns `{"status":"ok","message":"API healthy"}`.
+
+To run the API from source instead, for example while changing it, start only the database and run the server on your
+machine, which listens on `http://localhost:3000`:
 
 ```sh
 docker compose up -d db
-bun run dev
+cd api && bun run dev
 ```
 
 If the `app` container is running, stop it first (`docker compose stop app`), because it also uses port 3000.
@@ -34,21 +38,24 @@ Create a base environment with the API's address:
 
 ```json
 {
-  "base_url": "http://localhost:3000"
+  "base_url": "http://api.chinook.localhost"
 }
 ```
+
+Use `http://localhost:3000` instead if you run the API from source.
 
 Use it in request URLs as `{{ _.base_url }}`. In any text field, `Control+Space` opens a list of
 variables to pick from, which inserts the exact syntax for your version.
 
 ### Import the data endpoints (optional)
 
-The API publishes its own OpenAPI document at `http://localhost:3000/openapi.json`. Importing it from that
+The API publishes its own OpenAPI document at `http://api.chinook.localhost/openapi.json`. Importing it from that
 URL creates a request for each of the 12 data routes (a list and a by-id request for albums, artists,
 genres, media types, playlists and tracks). Three things to know:
 
-- Imported requests use the spec's own server URL, `http://localhost:3000`, not your environment variable.
-- The spec declares no security scheme, so imported requests have no auth set. See
+- Imported requests use the spec's first server URL, `http://api.chinook.localhost`, not your environment variable.
+- The spec declares a bearer security scheme and marks every data route as requiring it, but how Insomnia applies that
+  on import depends on its version. If imported requests come back `401`, set the auth yourself as in
   [Authenticate requests](#5-authenticate-requests).
 - It does not include `/api/auth/*`. Create those requests by hand (next sections).
 
@@ -200,23 +207,27 @@ Bearer token). Returns `200` `{"success":true}`, and the token stops working: th
   (7 days).
 - **Port 3000 already in use.** If you run the API with `bun run dev`, stop the `app` container first
   (`docker compose stop app`).
+- **`api.chinook.localhost` does not resolve, or port 80 is in use.** Most systems resolve `*.localhost` to the local
+  machine by themselves. If yours does not, or the proxy cannot bind port 80, use `http://localhost:3000` (set
+  `base_url` accordingly), or set `PROXY_PORT` in `.env` and put that port in the address.
 - **Browser origins.** `CORS_ORIGINS` and Better Auth's trusted origins only apply to requests that carry an
-  `Origin` header, which means browsers. Insomnia is not a browser, so they do not affect it. See the
-  README for configuring a frontend.
+  `Origin` header, which means browsers. Insomnia is not a browser, so they do not affect it. A browser request from
+  `http://api.chinook.localhost` gets `403 INVALID_ORIGIN` unless `BETTER_AUTH_URL` in `.env` is that address (older
+  copies of `.env` have `http://localhost:3000`). See the README for configuring a frontend.
 - **Start over.** `docker compose down -v` deletes the database volume, accounts included, and re-seeds on
   the next start (then run the migrations again).
 
 ## The same requests with curl
 
 ```sh
-curl -X POST localhost:3000/api/auth/sign-up/email -H 'Content-Type: application/json' \
+curl -X POST http://api.chinook.localhost/api/auth/sign-up/email -H 'Content-Type: application/json' \
   -d '{"name":"Your Name","email":"you@example.com","password":"at-least-8-characters"}'
 
-curl -X POST localhost:3000/api/auth/sign-in/email -H 'Content-Type: application/json' \
+curl -X POST http://api.chinook.localhost/api/auth/sign-in/email -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com","password":"at-least-8-characters"}'
 
-curl 'localhost:3000/api/artists?limit=2' -H 'Authorization: Bearer <token>'
+curl 'http://api.chinook.localhost/api/artists?limit=2' -H 'Authorization: Bearer <token>'
 
-curl -X POST localhost:3000/api/auth/sign-out -H 'Content-Type: application/json' \
+curl -X POST http://api.chinook.localhost/api/auth/sign-out -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <token>' -d '{}'
 ```

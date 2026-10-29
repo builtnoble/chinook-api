@@ -60,6 +60,12 @@ Runtime and framework choices:
 | Validation / docs | Zod + hono-openapi | Route schemas double as request validators and as the source for the generated `/openapi.json` |
 | Database | PostgreSQL, preloaded via a custom Docker image (`builtnoble/chinook-postgres:1`) | Chinook ships as SQL; baking it into an image means `docker compose up` yields a populated database with no separate seed step. The image has a healthcheck that the app waits on, and a named volume keeps the data between runs |
 
+The compose stack around the API has four services: `db` (the Postgres image), `app` (the compiled API), `docs` (the
+static docs site, a published image) and `proxy` (Caddy). The proxy serves the API at `api.chinook.localhost` and the
+docs at `docs.chinook.localhost`; `*.localhost` resolves to the local machine in browsers and curl, so the two behave
+as separate origins with no hosts-file changes. The API and the docs are also published on their own ports (`3000` and
+`3001`).
+
 ## Data flow and integration points
 
 **Request path (e.g. `GET /api/tracks`):**
@@ -103,7 +109,9 @@ environment bindings.
 
 **OpenAPI generation:** `/openapi.json` is generated at request time by `openAPIRouteHandler`
 from the same `describeRoute` + Zod schema definitions attached to each route, so the docs cannot
-drift from the actual validators.
+drift from the actual validators. The docs site is built from it: `bun run openapi:export` (in `api/`) writes the
+document without a database or a running server, and the generator in `docs-site/` turns it into one reference page per
+tag. Every route therefore needs a tag, a summary and a description, which `api/src/openapi.test.ts` checks.
 
 **External dependency:** the Postgres image (`builtnoble/chinook-postgres`, pinned to the `1`
 release line in `docker-compose.yml`) is the one piece of infrastructure not defined in this repo.
@@ -143,6 +151,13 @@ newer image does not change existing data until `docker compose down -v`.
   Chinook tables, and `api/src/db/schema.ts` mirrors it so Drizzle's snapshots match the real database.
   If the two drift, the next `drizzle-kit generate` proposes the difference as a migration, so check
   that diff against the image before applying it.
+- **The docs are generated, never written twice.** The reference pages come from the OpenAPI document and the
+  Introduction and guide come from the Markdown in `docs/`, so each page has one source and the site cannot disagree
+  with the code. The cost is a build step, and Markdown limited to what MDX accepts (no HTML comments).
+- **The site's design is a licensed template kept out of this repository.** The template's license does not allow
+  publishing it, so CI builds the site with a private copy and publishes only the compiled static files as an image,
+  which `docker compose` pulls. Contributors can work on everything else, including the generator and its tests, without
+  the template.
 - **One origin list drives both CORS and Better Auth.** Keeping them in step means a frontend only
   has to be listed once, but an origin that may call the API is also trusted for cookie-carrying auth
   requests; the two cannot be granted separately. Better Auth skips its origin check when
@@ -156,4 +171,6 @@ newer image does not change existing data until `docker compose down -v`.
 - [`api/src/utils/schema/index.ts`](../api/src/utils/schema/index.ts) — shared Zod schemas for query params, path params, and pagination
 - [`api/src/index.test.ts`](../api/src/index.test.ts) — CORS and Better Auth origin tests, served through `Bun.serve` as in production (`bun test`)
 - [`docker-compose.yml`](../docker-compose.yml) — the app and db services, the healthcheck dependency and the data volume
+- [`proxy/Caddyfile`](../proxy/Caddyfile) — the hostnames the proxy serves
+- [`docs-site/README.md`](../docs-site/README.md) — how this site is generated, previewed and published
 - [`README.md`](../README.md) — local setup, Docker Compose usage, and the full auth endpoint reference

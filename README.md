@@ -30,7 +30,8 @@ This project was my first experience with both tools, and I was impressed by how
 -   Ready-to-use **Chinook dataset** served through REST endpoints
 -   Full **email/password authentication** powered by **Better Auth**
 -   Fully typed schema and queries with **Drizzle ORM**
--   **Docker Compose** setup that starts both the API and a preloaded Postgres image
+-   **Docker Compose** setup that starts the API, a preloaded Postgres image, and the docs site
+-   **API docs site** generated from the API's own `/openapi.json`, with guides, served next to the API
 -   **Compiled binary** using Bun — no Node.js required in production
 -   Clean, consistent developer experience with **Biome**
 
@@ -84,7 +85,14 @@ By keeping the backend lightweight and predictable, it lets me focus on **fronte
 -   [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/)
 -   A `.env` file with configuration values for your environment
 
-### Example `.env`
+### Configure `.env`
+
+Copy the example file and fill in the blanks (`BETTER_AUTH_SECRET`, `DB_PASSWORD` and the `DB_*` values for commands you
+run on your machine):
+
+```sh
+cp .env.example .env
+```
 
 ```env
 APP_PORT=3000
@@ -93,7 +101,15 @@ APP_PORT=3000
 CORS_ORIGINS=
 
 BETTER_AUTH_SECRET=
-BETTER_AUTH_URL=
+# The address clients use for the API. Through the compose proxy that is http://api.chinook.localhost; use
+# http://localhost:3000 (your APP_PORT) if you call the API directly.
+BETTER_AUTH_URL=http://api.chinook.localhost
+
+# Host ports for the docs site and for the proxy that serves api.chinook.localhost and docs.chinook.localhost.
+# DOCS_TAG picks the docs image: edge follows main, or use a release such as 1.
+DOCS_PORT=3001
+PROXY_PORT=80
+DOCS_TAG=edge
 
 DB_USER=
 DB_PASSWORD=
@@ -111,6 +127,10 @@ Better Auth trusts the same list, so a listed frontend can also sign in and out 
 cookies; Better Auth's own base URL (`BETTER_AUTH_URL`) is always trusted. An origin that is in neither place
 gets `403 INVALID_ORIGIN` on those requests.
 
+> **Upgrading an existing `.env`:** `BETTER_AUTH_URL` used to be `http://localhost:3000`. To call the API from a
+> browser at `http://api.chinook.localhost`, set it to that address (or list the origin in `CORS_ORIGINS`).
+> Insomnia and curl send no `Origin` header, so they work either way.
+
 ---
 
 ### Run with Docker Compose
@@ -120,15 +140,31 @@ The `docker-compose.yml` file starts:
 1. A **PostgreSQL** service preloaded with the Chinook dataset (from my published image,
    [`builtnoble/chinook-postgres:1`](https://github.com/builtnoble/chinook-postgres))
 2. The **Bun-compiled API** container
+3. The **docs site**, a published image (`builtnoble/chinook-docs`) that holds the API reference and guides
+4. A small **Caddy proxy** that gives the API and the docs a hostname each
 
 Command to run:
 
 ```sh
-docker compose up --build
+docker compose up -d --build
 ```
 
-API will be available at:
-👉 [http://localhost:3000](http://localhost:3000)
+| What          | Through the proxy                                          | Directly                                      |
+| ------------- | ---------------------------------------------------------- | --------------------------------------------- |
+| API           | [http://api.chinook.localhost](http://api.chinook.localhost) | [http://localhost:3000](http://localhost:3000) |
+| API docs      | [http://docs.chinook.localhost](http://docs.chinook.localhost) | [http://localhost:3001](http://localhost:3001) |
+
+`*.localhost` names point at your own machine in browsers and curl, so there is nothing to add to a hosts file. The
+proxy listens on port 80; set `PROXY_PORT` if that is taken and add the port to the URLs
+(`http://api.chinook.localhost:8080`).
+
+The first time, create the Better Auth tables (this needs [Bun](https://bun.sh)):
+
+```sh
+cd api
+bun install
+bunx drizzle-kit migrate
+```
 
 #### Data persistence and resetting
 
@@ -144,7 +180,7 @@ docker compose exec db chinook-reset
 
 # Or discard the volume entirely; it re-seeds on the next `up`
 docker compose down -v
-bunx drizzle-kit migrate   # recreates the auth tables
+(cd api && bunx drizzle-kit migrate)   # recreates the auth tables
 ```
 
 Deleting a playlist, track or invoice also deletes its `playlist_tracks` or `invoice_lines` rows. Deleting an
@@ -155,10 +191,11 @@ artist that still has albums, or a track that appears on an invoice line, fails 
 ## Example Endpoints
 
 Authenticated endpoints require a valid token or session. For a step-by-step walkthrough of creating an
-account, signing in and calling every endpoint with Insomnia, see [docs/INSOMNIA.md](docs/INSOMNIA.md).
+account, signing in and calling every endpoint with Insomnia, see [docs/INSOMNIA.md](docs/INSOMNIA.md), or the same
+guide on the docs site. The docs site also has a reference page for every resource, built from the API's own spec.
 
 ```
-GET /api/artists
+GET /api/artists/1
 Authorization: Bearer <access_token>
 ```
 
@@ -175,14 +212,33 @@ Example response:
 
 ---
 
+## Documentation
+
+The docs site at [http://docs.chinook.localhost](http://docs.chinook.localhost) is generated, so there is one place
+to edit each page:
+
+-   **The Introduction and the Insomnia guide** are [docs/INTRODUCTION.md](docs/INTRODUCTION.md) and
+    [docs/INSOMNIA.md](docs/INSOMNIA.md). They read fine on GitHub and become pages on the site.
+-   **The reference for each resource** comes from `/openapi.json`, which comes from the route definitions. A new route
+    needs a tag, a summary and a description, which a test checks.
+
+How the site is built, previewed and published is in [docs-site/README.md](docs-site/README.md). The site's look comes
+from a licensed template that lives in a private repository, so the published image is what `docker compose` pulls.
+
+---
+
 ## Development Notes
+
+The repository holds two projects: [`api/`](api) (the Hono app) and [`docs-site/`](docs-site) (the docs generator and
+image). `.env` and `docker-compose.yml` stay at the root.
 
 ### Local Development
 
 ```sh
+cd api
 bun install
 
-# Run only the database container
+# Run only the database container (from the repository root)
 docker compose up -d db
 
 # Migrate the database
@@ -191,13 +247,19 @@ bunx drizzle-kit migrate
 bun run dev
 ```
 
-Bun automatically reads `.env` and compiles TypeScript natively.
+The scripts read the root `.env` (`bun --env-file=../.env`), and Bun compiles TypeScript natively. The server is at
+`http://localhost:3000`. If the compose `app` container is running, stop it first (`docker compose stop app`), as it
+uses the same port.
 
-### Linting & Formatting
+### Linting, Formatting & Tests
 
-Run Biome to check or fix code:
+Biome is installed in `api/` (and in `docs-site/`), so run it from there. It checks the whole repository:
 
 ```sh
-bunx biome check .
-bunx biome check . --apply
+cd api
+bun run lint             # check
+bun run lint --write     # fix what it can
+bun run test             # the API's tests
 ```
+
+The docs generator has its own tests: `cd docs-site && bun test`.
