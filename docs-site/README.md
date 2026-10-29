@@ -98,7 +98,7 @@ The generator writes these files into the theme:
 
 | Path                            | Contents                                                                                      |
 | ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `src/app/page.mdx`              | The Introduction, with the `Guides` and `Resources` cards after its heading                   |
+| `src/app/page.mdx`              | The Introduction, ending with the `Guides` and `Resources` cards                              |
 | `src/app/<guide>/page.mdx`      | One page per guide in `content/pages.json`                                                    |
 | `src/app/<tag>/page.mdx`        | One page per API tag, such as `src/app/media-types/page.mdx`                                  |
 | `src/generated/navigation.json` | `[{ title?, links: [{ title, href, description? }] }]`: the Introduction, then Guides, then Resources |

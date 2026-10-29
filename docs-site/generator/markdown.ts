@@ -10,7 +10,7 @@ export type MarkdownOptions = {
     repository: string;
     title: string;
     description?: string;
-    // The home page also shows the Guides and Resources cards after its heading.
+    // The home page also ends with the Guides and Resources cards.
     home?: boolean;
 };
 
@@ -129,7 +129,6 @@ export const markdownToMdx = (source: string, options: MarkdownOptions): string 
     let fence: { marker: string; length: number } | undefined;
     let heading = false;
     let lead: 'waiting' | 'open' | 'done' = 'waiting';
-    let cardsAt = 0;
 
     lines.forEach((line, index) => {
         const where = `${options.path}:${index + 1}`;
@@ -152,7 +151,6 @@ export const markdownToMdx = (source: string, options: MarkdownOptions): string 
         if (!heading && /^# /.test(line)) {
             heading = true;
             body.push(convertInline(line, options, where));
-            cardsAt = body.length;
             return;
         }
 
@@ -166,7 +164,6 @@ export const markdownToMdx = (source: string, options: MarkdownOptions): string 
             converted += " {{ className: 'lead' }}";
             lead = 'done';
             body.push(converted);
-            cardsAt = body.length;
             return;
         }
 
@@ -181,7 +178,9 @@ export const markdownToMdx = (source: string, options: MarkdownOptions): string 
     }
 
     if (options.home) {
-        body.splice(cardsAt, 0, '', '<Guides />', '', '<Resources />');
+        // The source ends with a newline, which would leave two blank lines before the cards.
+        while (body.at(-1) === '') body.pop();
+        body.push('', '<Guides />', '', '<Resources />');
     }
 
     const description = options.description ?? sentenceStart(plainText(firstParagraph(lines)));

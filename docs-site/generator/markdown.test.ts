@@ -62,20 +62,26 @@ describe('markdownToMdx', () => {
         expect(mdx).toContain('[c](https://x.dev/y), [d](#here), [e](/)');
     });
 
-    it('shows the Guides and Resources cards after the heading and its lead on the home page', async () => {
+    it('ends the home page with the Guides and Resources cards', async () => {
         const mdx = convert('# Introduction\n\nLead text.\n\n## First\n\nBody.\n', { home: true });
 
         expect(mdx.indexOf('<HeroPattern />')).toBeLessThan(mdx.indexOf('# Introduction'));
-        expect(mdx.indexOf('Lead text.')).toBeLessThan(mdx.indexOf('<Guides />'));
-        expect(mdx.indexOf('<Resources />')).toBeLessThan(mdx.indexOf('## First'));
+        expect(mdx.indexOf('Body.')).toBeLessThan(mdx.indexOf('<Guides />'));
+        expect(mdx.indexOf('<Guides />')).toBeLessThan(mdx.indexOf('<Resources />'));
+        expect(mdx).toContain('Body.\n\n<Guides />\n\n<Resources />\n');
+        expect(mdx.trimEnd().endsWith('<Resources />')).toBe(true);
         expect(mdx.startsWith("import { Guides } from '@/components/Guides'")).toBe(true);
         await expect(compile(mdx)).resolves.toBeDefined();
     });
 
-    it('puts the cards straight after the heading when there is no lead', () => {
-        const mdx = convert('# Introduction\n\n## First\n\nBody.\n', { home: true });
+    it('still marks the first paragraph after the heading as the lead on the home page', () => {
+        const mdx = convert('# Introduction\n\nLead text.\n\n## First\n\nBody.\n', { home: true });
 
-        expect(mdx.indexOf('<Guides />')).toBeLessThan(mdx.indexOf('## First'));
+        expect(mdx).toContain("Lead text. {{ className: 'lead' }}");
+    });
+
+    it('adds no cards to a guide', () => {
+        expect(convert('# Guide\n\ntext\n')).not.toContain('<Guides />');
     });
 
     it('rejects what MDX cannot take, naming the line', () => {

@@ -15,12 +15,21 @@ describe('the published documents', () => {
         }
     });
 
-    it('link the introduction and the guide to each other and to the repository', async () => {
+    it('leaves no relative link unresolved in the introduction or the guides', async () => {
+        const pages = await loadPages(new URL('../content/pages.json', import.meta.url).pathname);
+        const documents = [pages.introduction, ...(pages.guides ?? []).map((guide) => guide.source)];
+
+        for (const mdx of documents) {
+            const targets = [...(mdx ?? '').matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]);
+
+            // Anchors, site paths and absolute URLs are fine; a relative path would 404 on the site.
+            expect(targets.filter((target) => !/^(https?:\/\/|#|\/)/.test(target))).toEqual([]);
+        }
+    });
+
+    it('keeps the Insomnia guide anchors', async () => {
         const pages = await loadPages(new URL('../content/pages.json', import.meta.url).pathname);
 
-        expect(pages.introduction).toContain(
-            'https://github.com/builtnoble/chinook-api/blob/main/api/src/db/schema.ts',
-        );
         expect(pages.guides?.[0].source).toContain('](#5-authenticate-requests)');
     });
 });
