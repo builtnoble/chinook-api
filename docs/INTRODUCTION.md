@@ -124,6 +124,9 @@ only manages what the API adds on top:
 - `0002` aligns three foreign keys with the image's cascading deletes (`invoice_lines` →
   `invoices`, `playlist_tracks` → `playlists` and `tracks`). It upgrades databases created from the
   pre-1.0 image and is a no-op on the current one.
+- `0003` adds `tracks.deleted_at`, which the API sets instead of removing a track (a soft delete), so invoice lines
+  keep pointing at a real track. The track routes leave soft-deleted rows out. Image 1.1 and later create the column
+  themselves, so like `0002` it only changes databases made from an older image.
 
 The `app` service waits for the image's healthcheck (`depends_on: condition: service_healthy`).
 Data lives in the `chinook-data` named volume. The seed only loads into an empty volume, so pulling a

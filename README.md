@@ -184,8 +184,10 @@ docker compose down -v
 (cd api && bunx drizzle-kit migrate)   # recreates the auth tables
 ```
 
-Deleting a playlist, track or invoice also deletes its `playlist_tracks` or `invoice_lines` rows. Deleting an
-artist that still has albums, or a track that appears on an invoice line, fails with a foreign key error.
+In the database, deleting a playlist, track or invoice also deletes its `playlist_tracks` or `invoice_lines` rows, while
+deleting an artist that still has albums, or a track that appears on an invoice line, fails with a foreign key error. The
+API soft-deletes tracks (it sets `tracks.deleted_at`, a column the image adds) so that sold tracks never hit that error.
+A database created from an older image gets the column from the first `drizzle-kit migrate`.
 
 ---
 
