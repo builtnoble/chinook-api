@@ -3,10 +3,6 @@
 How to create an account and call the Chinook API from [Insomnia](https://insomnia.rest). Written for
 Insomnia 13.x; menu names move around a little between versions.
 
-> **Status:** the requests, bodies, headers and responses below were checked against a running API.
-> The Insomnia-specific steps (importing, environments, chaining) have not been walked through end to end
-> yet. If a label differs in your version, fix it here and delete this note.
-
 ## 1. Start the API
 
 ```sh
