@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { compile } from '@mdx-js/mdx';
-import { generate, readGuides } from './index';
+import { generate, loadPages } from './index';
 import { escapeMdx } from './render';
 import { UnsupportedError } from './schema';
-import type { Operation, Spec } from './types';
+import type { Operation, Schema, Spec } from './types';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
 const contentDir = new URL('./fixtures/content', import.meta.url).pathname;
@@ -29,16 +29,13 @@ const specWith = (operation: Partial<Operation>, extra: Partial<Spec> = {}): Spe
     ...extra,
 });
 
-const okResponse = (schema: object) => ({
+const okResponse = (schema: Schema) => ({
     200: { description: 'OK', content: { 'application/json': { schema } } },
 });
 
 describe('generate', () => {
     it('writes one page per tag plus navigation and metadata', async () => {
-        const files = generate(fixture, {
-            introduction: readFileSync(`${contentDir}/introduction.mdx`, 'utf8'),
-            guides: await readGuides(`${contentDir}/guides`),
-        });
+        const files = generate(fixture, await loadPages(`${contentDir}/pages.json`));
 
         expect(Object.keys(files).sort()).toEqual([
             'src/app/albums/page.mdx',

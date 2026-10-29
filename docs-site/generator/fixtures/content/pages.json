@@ -1,0 +1,13 @@
+{
+    "root": ".",
+    "repository": "https://github.com/example/repo",
+    "introduction": { "file": "docs/INTRODUCTION.md", "title": "Introduction" },
+    "guides": [
+        {
+            "file": "docs/INSOMNIA.md",
+            "href": "/insomnia",
+            "title": "Insomnia",
+            "description": "Send your first requests from Insomnia."
+        }
+    ]
+}

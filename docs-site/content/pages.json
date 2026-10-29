@@ -1,0 +1,17 @@
+{
+    "root": "../..",
+    "repository": "https://github.com/builtnoble/chinook-api",
+    "introduction": {
+        "file": "../../docs/INTRODUCTION.md",
+        "title": "Introduction",
+        "description": "What the Chinook API is for, how it is built, and where to look in the code."
+    },
+    "guides": [
+        {
+            "file": "../../docs/INSOMNIA.md",
+            "href": "/insomnia",
+            "title": "Insomnia",
+            "description": "Create an account and call the API from Insomnia."
+        }
+    ]
+}
