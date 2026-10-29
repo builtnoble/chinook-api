@@ -50,14 +50,18 @@ describe('generate', () => {
                 title: 'Guides',
                 links: [
                     { title: 'Introduction', href: '/' },
-                    { title: 'Authentication', href: '/authentication' },
+                    {
+                        title: 'Authentication',
+                        href: '/authentication',
+                        description: 'Learn how to authenticate your API requests.',
+                    },
                 ],
             },
             {
                 title: 'Resources',
                 links: [
-                    { title: 'Albums', href: '/albums' },
-                    { title: 'Artists', href: '/artists' },
+                    { title: 'Albums', href: '/albums', description: 'Albums, each with the artist who made it.' },
+                    { title: 'Artists', href: '/artists', description: 'Artists who have made albums.' },
                 ],
             },
         ]);

@@ -1,4 +1,9 @@
 [
     { "title": "Introduction", "href": "/", "file": "introduction.mdx" },
-    { "title": "Authentication", "href": "/authentication", "file": "authentication.mdx" }
+    {
+        "title": "Authentication",
+        "href": "/authentication",
+        "description": "Learn how to authenticate your API requests.",
+        "file": "authentication.mdx"
+    }
 ]

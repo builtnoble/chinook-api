@@ -52,5 +52,6 @@ export type Spec = {
 export type Guide = {
     title: string;
     href: string;
+    description?: string;
     source: string;
 };

@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util';
 import { endpointsByTag, renderTagPage, slugify } from './render';
 import type { Guide, Spec } from './types';
 
-type GuideIndexEntry = { title: string; href: string; file: string };
+type GuideIndexEntry = { title: string; href: string; description?: string; file: string };
 
 // Maps each output path (relative to the theme root) to its contents. Pure, so tests can call it directly.
 export const generate = (spec: Spec, guides: Guide[] = []): Record<string, string> => {
@@ -19,11 +19,15 @@ export const generate = (spec: Spec, guides: Guide[] = []): Record<string, strin
     for (const [tag, endpoints] of endpointsByTag(spec)) {
         const slug = slugify(tag);
         files[`src/app/${slug}/page.mdx`] = renderTagPage(spec, tag, endpoints, baseUrl);
-        resources.push({ title: tag, href: `/${slug}` });
+        resources.push({
+            title: tag,
+            href: `/${slug}`,
+            description: spec.tags?.find((candidate) => candidate.name === tag)?.description,
+        });
     }
 
     files['src/generated/navigation.json'] = json([
-        { title: 'Guides', links: guides.map(({ title, href }) => ({ title, href })) },
+        { title: 'Guides', links: guides.map(({ title, href, description }) => ({ title, href, description })) },
         { title: 'Resources', links: resources },
     ]);
     files['src/generated/meta.json'] = json({
@@ -41,7 +45,7 @@ export const readGuides = async (dir: string): Promise<Guide[]> => {
     const index = JSON.parse(await readFile(join(dir, 'guides.json'), 'utf8')) as GuideIndexEntry[];
 
     return Promise.all(
-        index.map(async ({ title, href, file }) => ({ title, href, source: await readFile(join(dir, file), 'utf8') })),
+        index.map(async ({ file, ...entry }) => ({ ...entry, source: await readFile(join(dir, file), 'utf8') })),
     );
 };
 
