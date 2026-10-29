@@ -129,7 +129,8 @@ gets `403 INVALID_ORIGIN` on those requests.
 
 > **Upgrading an existing `.env`:** `BETTER_AUTH_URL` used to be `http://localhost:3000`. To call the API from a
 > browser at `http://api.chinook.localhost`, set it to that address (or list the origin in `CORS_ORIGINS`).
-> Insomnia and curl send no `Origin` header, so they work either way.
+> curl sends no `Origin` header, so it works either way. Insomnia needs one once it holds a session cookie; see
+> [docs/INSOMNIA.md](docs/INSOMNIA.md).
 
 ---
 

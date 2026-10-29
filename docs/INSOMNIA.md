@@ -43,6 +43,21 @@ Use `http://localhost:3000` instead if you run the API from source.
 Use it in request URLs as `{{ _.base_url }}`. In any text field, `Control+Space` opens a list of
 variables to pick from, which inserts the exact syntax for your version.
 
+### Send an `Origin` header with the auth requests
+
+The auth routes reject any `POST` that carries a cookie but no `Origin` header, with `403`
+`{"code":"MISSING_OR_NULL_ORIGIN","message":"Missing or null Origin"}`. Insomnia keeps the session cookie from
+sign-up and sends it on every later request, and it sends no `Origin` of its own, so sign-in and sign-out fail
+unless you add one. Create a folder for the auth requests (sign-up, sign-in, sign-out) and, in the folder's
+**Headers**, add:
+
+| Header | Value |
+| --- | --- |
+| `Origin` | `{{ _.base_url }}` |
+
+The API always trusts its own base URL (`BETTER_AUTH_URL` in `.env`), so this value passes as long as `base_url`
+matches it. Requests without a cookie, such as the first sign-up, work either way.
+
 ### Import the data endpoints (optional)
 
 The API publishes its own OpenAPI document at `http://api.chinook.localhost/openapi.json`. Importing it from that
@@ -184,7 +199,7 @@ There are no `404`s: a missing id is a `200` with an empty result.
 ## 7. Sign out
 
 `POST {{ _.base_url }}/api/auth/sign-out` with `{}` as the JSON body and your session attached (cookie or
-Bearer token). Returns `200` `{"success":true}`, and the token stops working: the next data request is a
+Bearer token), and the `Origin` header from step 2. Returns `200` `{"success":true}`, and the token stops working: the next data request is a
 `401`.
 
 ## A suggested test run
@@ -206,10 +221,13 @@ Bearer token). Returns `200` `{"success":true}`, and the token stops working: th
 - **`api.chinook.localhost` does not resolve, or port 80 is in use.** Most systems resolve `*.localhost` to the local
   machine by themselves. If yours does not, or the proxy cannot bind port 80, use `http://localhost:3000` (set
   `base_url` accordingly), or set `PROXY_PORT` in `.env` and put that port in the address.
-- **Browser origins.** `CORS_ORIGINS` and Better Auth's trusted origins only apply to requests that carry an
-  `Origin` header, which means browsers. Insomnia is not a browser, so they do not affect it. A browser request from
-  `http://api.chinook.localhost` gets `403 INVALID_ORIGIN` unless `BETTER_AUTH_URL` in `.env` is that address (older
-  copies of `.env` have `http://localhost:3000`). See the README for configuring a frontend.
+- **`403` `MISSING_OR_NULL_ORIGIN` on sign-in or sign-out.** The request carried the session cookie but no `Origin`
+  header. Add the header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests), or delete
+  the saved cookies for the host in Insomnia's cookie manager and send the request again.
+- **`403` `INVALID_ORIGIN`.** The `Origin` is not one the API trusts. `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL`
+  in `.env`) are the trusted origins. A browser request from `http://api.chinook.localhost` gets this unless
+  `BETTER_AUTH_URL` is that address (older copies of `.env` have `http://localhost:3000`). See the README for
+  configuring a frontend.
 - **Start over.** `docker compose down -v` deletes the database volume, accounts included, and re-seeds on
   the next start (then run the migrations again).
 
