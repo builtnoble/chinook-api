@@ -1,0 +1,9 @@
+# Keeps the build context small, and keeps secrets and local state out of the image's build stages.
+.git
+**/node_modules
+**/.next
+**/out
+.env
+.env.*
+api/openapi.json
+docs-site/.preview
