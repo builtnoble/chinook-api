@@ -1,0 +1,4 @@
+[
+    { "title": "Introduction", "href": "/", "file": "introduction.mdx" },
+    { "title": "Authentication", "href": "/authentication", "file": "authentication.mdx" }
+]

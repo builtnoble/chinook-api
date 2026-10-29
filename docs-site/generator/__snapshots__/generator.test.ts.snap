@@ -1,0 +1,521 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`generate matches the recorded pages 1`] = `
+"export const metadata = {
+  title: "Albums",
+  description: "Albums, each with the artist who made it.",
+}
+
+# Albums
+
+Albums, each with the artist who made it. {{ className: 'lead' }}
+
+## The album model
+
+The album model contains the following properties.
+
+### Properties
+
+<Properties>
+  <Property name="id" type="integer">
+    Unique identifier for the album.
+  </Property>
+  <Property name="title" type="string">
+    Title of the album.
+  </Property>
+  <Property name="artist_id" type="integer">
+    Identifier of the album artist.
+  </Property>
+  <Property name="artist" type="object">
+    The artist who made the album.
+  </Property>
+  <Property name="artist.id" type="integer">
+    Unique identifier for the artist.
+  </Property>
+  <Property name="artist.name" type="string">
+    Name of the artist.
+  </Property>
+</Properties>
+
+---
+
+## List all albums {{ tag: 'GET', label: '/api/albums' }}
+
+<Row>
+  <Col>
+
+    Returns a paginated list of albums. Each album includes its artist.
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="limit" type="number, optional">
+        Number of items per page. Defaults to 10, or the total if fewer.
+      </Property>
+      <Property name="page" type="number, optional">
+        Page number to return, starting at 1. Defaults to 1.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object[]">
+        The albums on this page. See [the album model](#the-album-model).
+      </Property>
+      <Property name="pagination" type="object">
+        Where the returned page sits among all pages.
+      </Property>
+      <Property name="pagination.current_page" type="number">
+        The page returned.
+      </Property>
+      <Property name="pagination.per_page" type="number">
+        Number of items per page.
+      </Property>
+      <Property name="pagination.total_items" type="number">
+        Total number of items across all pages.
+      </Property>
+      <Property name="pagination.total_pages" type="number">
+        Total number of pages.
+      </Property>
+      <Property name="pagination.prev_page_url" type="string | null">
+        Path of the previous page, or null on the first page.
+      </Property>
+      <Property name="pagination.next_page_url" type="string | null">
+        Path of the next page, or null on the last page.
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The query is invalid, or the requested page or limit is out of range.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/albums">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/albums \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/albums', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": [
+        {
+          "id": 1,
+          "title": "For Those About To Rock We Salute You",
+          "artist_id": 1,
+          "artist": {
+            "id": 1,
+            "name": "AC/DC"
+          }
+        }
+      ],
+      "pagination": {
+        "current_page": 1,
+        "per_page": 1,
+        "total_items": 3,
+        "total_pages": 3,
+        "prev_page_url": null,
+        "next_page_url": "/api/albums?page=2"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Page cannot exceed 35."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Retrieve an album {{ tag: 'GET', label: '/api/albums/:id' }}
+
+<Row>
+  <Col>
+
+    Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no \`data\`.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object, optional">
+        The album. See [the album model](#the-album-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/albums/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/albums/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/albums/1', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "title": "For Those About To Rock We Salute You",
+        "artist_id": 1,
+        "artist": {
+          "id": 1,
+          "name": "AC/DC"
+        }
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+"
+`;
+
+exports[`generate matches the recorded pages 2`] = `
+"export const metadata = {
+  title: "Artists",
+  description: "Artists who have made albums.",
+}
+
+# Artists
+
+Artists who have made albums. {{ className: 'lead' }}
+
+## The artist model
+
+The artist model contains the following properties.
+
+### Properties
+
+<Properties>
+  <Property name="id" type="integer">
+    Unique identifier for the artist.
+  </Property>
+  <Property name="name" type="string">
+    Name of the artist.
+  </Property>
+</Properties>
+
+---
+
+## List all artists {{ tag: 'GET', label: '/api/artists' }}
+
+<Row>
+  <Col>
+
+    Returns a paginated list of artists.
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="limit" type="number, optional">
+        Number of items per page. Defaults to 10, or the total if fewer.
+      </Property>
+      <Property name="page" type="number, optional">
+        Page number to return, starting at 1. Defaults to 1.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object[]">
+        The artists on this page. See [the artist model](#the-artist-model).
+      </Property>
+      <Property name="pagination" type="object">
+        Where the returned page sits among all pages.
+      </Property>
+      <Property name="pagination.current_page" type="number">
+        The page returned.
+      </Property>
+      <Property name="pagination.per_page" type="number">
+        Number of items per page.
+      </Property>
+      <Property name="pagination.total_items" type="number">
+        Total number of items across all pages.
+      </Property>
+      <Property name="pagination.total_pages" type="number">
+        Total number of pages.
+      </Property>
+      <Property name="pagination.prev_page_url" type="string | null">
+        Path of the previous page, or null on the first page.
+      </Property>
+      <Property name="pagination.next_page_url" type="string | null">
+        Path of the next page, or null on the last page.
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The query is invalid, or the requested page or limit is out of range.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/artists">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/artists \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/artists', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": [
+        {
+          "id": 1,
+          "name": "AC/DC"
+        }
+      ],
+      "pagination": {
+        "current_page": 1,
+        "per_page": 1,
+        "total_items": 3,
+        "total_pages": 3,
+        "prev_page_url": null,
+        "next_page_url": "/api/artists?page=2"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Page cannot exceed 35."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Retrieve an artist {{ tag: 'GET', label: '/api/artists/:id' }}
+
+<Row>
+  <Col>
+
+    Returns the artist with the given id. An unknown id returns 200 with no \`data\`.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object, optional">
+        The artist. See [the artist model](#the-artist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/artists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/artists/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/artists/1', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "AC/DC"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+"
+`;

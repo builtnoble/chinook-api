@@ -1,0 +1,955 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Chinook",
+        "description": "An API for Chinook sample database.",
+        "version": "1.0.0"
+    },
+    "tags": [
+        {
+            "name": "Albums",
+            "description": "Albums, each with the artist who made it."
+        },
+        {
+            "name": "Artists",
+            "description": "Artists who have made albums."
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "The `token` returned in the body of the sign-up and sign-in responses."
+            }
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Local Server"
+        }
+    ],
+    "paths": {
+        "/api/albums": {
+            "get": {
+                "operationId": "getAlbums",
+                "tags": ["Albums"],
+                "summary": "List all albums",
+                "description": "Returns a paginated list of albums. Each album includes its artist.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A page of results.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "data": [
+                                                {
+                                                    "id": 1,
+                                                    "title": "For Those About To Rock We Salute You",
+                                                    "artist_id": 1,
+                                                    "artist": {
+                                                        "id": 1,
+                                                        "name": "AC/DC"
+                                                    }
+                                                }
+                                            ],
+                                            "pagination": {
+                                                "current_page": 1,
+                                                "per_page": 1,
+                                                "total_items": 3,
+                                                "total_pages": 3,
+                                                "prev_page_url": null,
+                                                "next_page_url": "/api/albums?page=2"
+                                            }
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "examples": [
+                                                    {
+                                                        "id": 1,
+                                                        "title": "For Those About To Rock We Salute You",
+                                                        "artist_id": 1,
+                                                        "artist": {
+                                                            "id": 1,
+                                                            "name": "AC/DC"
+                                                        }
+                                                    }
+                                                ],
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "description": "Unique identifier for the album.",
+                                                        "type": "integer",
+                                                        "minimum": -2147483648,
+                                                        "maximum": 2147483647
+                                                    },
+                                                    "title": {
+                                                        "description": "Title of the album.",
+                                                        "type": "string",
+                                                        "maxLength": 255
+                                                    },
+                                                    "artist_id": {
+                                                        "description": "Identifier of the album artist.",
+                                                        "type": "integer",
+                                                        "minimum": -2147483648,
+                                                        "maximum": 2147483647
+                                                    },
+                                                    "artist": {
+                                                        "examples": [
+                                                            {
+                                                                "id": 1,
+                                                                "name": "AC/DC"
+                                                            }
+                                                        ],
+                                                        "description": "The artist who made the album.",
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "description": "Unique identifier for the artist.",
+                                                                "type": "integer",
+                                                                "minimum": -2147483648,
+                                                                "maximum": 2147483647
+                                                            },
+                                                            "name": {
+                                                                "description": "Name of the artist.",
+                                                                "type": "string",
+                                                                "maxLength": 255
+                                                            }
+                                                        },
+                                                        "required": ["id", "name"],
+                                                        "additionalProperties": false
+                                                    }
+                                                },
+                                                "required": ["id", "title", "artist_id", "artist"],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "pagination": {
+                                            "description": "Where the returned page sits among all pages.",
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "description": "The page returned.",
+                                                    "type": "number"
+                                                },
+                                                "per_page": {
+                                                    "description": "Number of items per page.",
+                                                    "type": "number"
+                                                },
+                                                "total_items": {
+                                                    "description": "Total number of items across all pages.",
+                                                    "type": "number"
+                                                },
+                                                "total_pages": {
+                                                    "description": "Total number of pages.",
+                                                    "type": "number"
+                                                },
+                                                "prev_page_url": {
+                                                    "description": "Path of the previous page, or null on the first page.",
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                },
+                                                "next_page_url": {
+                                                    "description": "Path of the next page, or null on the last page.",
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "per_page",
+                                                "total_items",
+                                                "total_pages",
+                                                "prev_page_url",
+                                                "next_page_url"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": ["data", "pagination"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The query is invalid, or the requested page or limit is out of range.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "examples": [
+                                                {
+                                                    "success": false,
+                                                    "data": {
+                                                        "id": "abc"
+                                                    },
+                                                    "error": [
+                                                        {
+                                                            "code": "invalid_type",
+                                                            "message": "Invalid input: expected number, received NaN",
+                                                            "path": ["id"]
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "const": false
+                                                },
+                                                "data": {
+                                                    "description": "The input that failed validation.",
+                                                    "type": "object",
+                                                    "propertyNames": {
+                                                        "type": "string"
+                                                    },
+                                                    "additionalProperties": {}
+                                                },
+                                                "error": {
+                                                    "description": "The validation issues found.",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "code": {
+                                                                "description": "Machine-readable issue code.",
+                                                                "type": "string"
+                                                            },
+                                                            "message": {
+                                                                "description": "Human-readable explanation.",
+                                                                "type": "string"
+                                                            },
+                                                            "path": {
+                                                                "description": "Path to the invalid parameter.",
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "string"
+                                                                        },
+                                                                        {
+                                                                            "type": "number"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": ["code", "message", "path"],
+                                                        "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            "required": ["success", "data", "error"],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "examples": [
+                                                {
+                                                    "error": "Page cannot exceed 35."
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": ["error"],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid credentials.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unauthorized"
+                                        }
+                                    },
+                                    "required": ["message"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Number of items per page. Defaults to 10, or the total if fewer."
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Page number to return, starting at 1. Defaults to 1."
+                    }
+                ]
+            }
+        },
+        "/api/albums/{id}": {
+            "get": {
+                "operationId": "getAlbumByID",
+                "tags": ["Albums"],
+                "summary": "Retrieve an album",
+                "description": "Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no `data`.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The requested item.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "data": {
+                                                "id": 1,
+                                                "title": "For Those About To Rock We Salute You",
+                                                "artist_id": 1,
+                                                "artist": {
+                                                    "id": 1,
+                                                    "name": "AC/DC"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "examples": [
+                                                {
+                                                    "id": 1,
+                                                    "title": "For Those About To Rock We Salute You",
+                                                    "artist_id": 1,
+                                                    "artist": {
+                                                        "id": 1,
+                                                        "name": "AC/DC"
+                                                    }
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "description": "Unique identifier for the album.",
+                                                    "type": "integer",
+                                                    "minimum": -2147483648,
+                                                    "maximum": 2147483647
+                                                },
+                                                "title": {
+                                                    "description": "Title of the album.",
+                                                    "type": "string",
+                                                    "maxLength": 255
+                                                },
+                                                "artist_id": {
+                                                    "description": "Identifier of the album artist.",
+                                                    "type": "integer",
+                                                    "minimum": -2147483648,
+                                                    "maximum": 2147483647
+                                                },
+                                                "artist": {
+                                                    "examples": [
+                                                        {
+                                                            "id": 1,
+                                                            "name": "AC/DC"
+                                                        }
+                                                    ],
+                                                    "description": "The artist who made the album.",
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "description": "Unique identifier for the artist.",
+                                                            "type": "integer",
+                                                            "minimum": -2147483648,
+                                                            "maximum": 2147483647
+                                                        },
+                                                        "name": {
+                                                            "description": "Name of the artist.",
+                                                            "type": "string",
+                                                            "maxLength": 255
+                                                        }
+                                                    },
+                                                    "required": ["id", "name"],
+                                                    "additionalProperties": false
+                                                }
+                                            },
+                                            "required": ["id", "title", "artist_id", "artist"],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The id is not a number.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "success": false,
+                                            "data": {
+                                                "id": "abc"
+                                            },
+                                            "error": [
+                                                {
+                                                    "code": "invalid_type",
+                                                    "message": "Invalid input: expected number, received NaN",
+                                                    "path": ["id"]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "const": false
+                                        },
+                                        "data": {
+                                            "description": "The input that failed validation.",
+                                            "type": "object",
+                                            "propertyNames": {
+                                                "type": "string"
+                                            },
+                                            "additionalProperties": {}
+                                        },
+                                        "error": {
+                                            "description": "The validation issues found.",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "description": "Machine-readable issue code.",
+                                                        "type": "string"
+                                                    },
+                                                    "message": {
+                                                        "description": "Human-readable explanation.",
+                                                        "type": "string"
+                                                    },
+                                                    "path": {
+                                                        "description": "Path to the invalid parameter.",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "number"
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": ["code", "message", "path"],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": ["success", "data", "error"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid credentials.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unauthorized"
+                                        }
+                                    },
+                                    "required": ["message"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "required": true,
+                        "description": "Unique identifier of the item."
+                    }
+                ]
+            }
+        },
+        "/api/artists": {
+            "get": {
+                "operationId": "getArtists",
+                "tags": ["Artists"],
+                "summary": "List all artists",
+                "description": "Returns a paginated list of artists.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A page of results.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "data": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "AC/DC"
+                                                }
+                                            ],
+                                            "pagination": {
+                                                "current_page": 1,
+                                                "per_page": 1,
+                                                "total_items": 3,
+                                                "total_pages": 3,
+                                                "prev_page_url": null,
+                                                "next_page_url": "/api/artists?page=2"
+                                            }
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "examples": [
+                                                    {
+                                                        "id": 1,
+                                                        "name": "AC/DC"
+                                                    }
+                                                ],
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "description": "Unique identifier for the artist.",
+                                                        "type": "integer",
+                                                        "minimum": -2147483648,
+                                                        "maximum": 2147483647
+                                                    },
+                                                    "name": {
+                                                        "description": "Name of the artist.",
+                                                        "type": "string",
+                                                        "maxLength": 255
+                                                    }
+                                                },
+                                                "required": ["id", "name"],
+                                                "additionalProperties": false
+                                            }
+                                        },
+                                        "pagination": {
+                                            "description": "Where the returned page sits among all pages.",
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "description": "The page returned.",
+                                                    "type": "number"
+                                                },
+                                                "per_page": {
+                                                    "description": "Number of items per page.",
+                                                    "type": "number"
+                                                },
+                                                "total_items": {
+                                                    "description": "Total number of items across all pages.",
+                                                    "type": "number"
+                                                },
+                                                "total_pages": {
+                                                    "description": "Total number of pages.",
+                                                    "type": "number"
+                                                },
+                                                "prev_page_url": {
+                                                    "description": "Path of the previous page, or null on the first page.",
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                },
+                                                "next_page_url": {
+                                                    "description": "Path of the next page, or null on the last page.",
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "per_page",
+                                                "total_items",
+                                                "total_pages",
+                                                "prev_page_url",
+                                                "next_page_url"
+                                            ],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "required": ["data", "pagination"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The query is invalid, or the requested page or limit is out of range.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "examples": [
+                                                {
+                                                    "success": false,
+                                                    "data": {
+                                                        "id": "abc"
+                                                    },
+                                                    "error": [
+                                                        {
+                                                            "code": "invalid_type",
+                                                            "message": "Invalid input: expected number, received NaN",
+                                                            "path": ["id"]
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "success": {
+                                                    "type": "boolean",
+                                                    "const": false
+                                                },
+                                                "data": {
+                                                    "description": "The input that failed validation.",
+                                                    "type": "object",
+                                                    "propertyNames": {
+                                                        "type": "string"
+                                                    },
+                                                    "additionalProperties": {}
+                                                },
+                                                "error": {
+                                                    "description": "The validation issues found.",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "code": {
+                                                                "description": "Machine-readable issue code.",
+                                                                "type": "string"
+                                                            },
+                                                            "message": {
+                                                                "description": "Human-readable explanation.",
+                                                                "type": "string"
+                                                            },
+                                                            "path": {
+                                                                "description": "Path to the invalid parameter.",
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "anyOf": [
+                                                                        {
+                                                                            "type": "string"
+                                                                        },
+                                                                        {
+                                                                            "type": "number"
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": ["code", "message", "path"],
+                                                        "additionalProperties": false
+                                                    }
+                                                }
+                                            },
+                                            "required": ["success", "data", "error"],
+                                            "additionalProperties": false
+                                        },
+                                        {
+                                            "examples": [
+                                                {
+                                                    "error": "Page cannot exceed 35."
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "error": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": ["error"],
+                                            "additionalProperties": false
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid credentials.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unauthorized"
+                                        }
+                                    },
+                                    "required": ["message"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Number of items per page. Defaults to 10, or the total if fewer."
+                    },
+                    {
+                        "in": "query",
+                        "name": "page",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "description": "Page number to return, starting at 1. Defaults to 1."
+                    }
+                ]
+            }
+        },
+        "/api/artists/{id}": {
+            "get": {
+                "operationId": "getArtistByID",
+                "tags": ["Artists"],
+                "summary": "Retrieve an artist",
+                "description": "Returns the artist with the given id. An unknown id returns 200 with no `data`.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The requested item.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "data": {
+                                                "id": 1,
+                                                "name": "AC/DC"
+                                            }
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "examples": [
+                                                {
+                                                    "id": 1,
+                                                    "name": "AC/DC"
+                                                }
+                                            ],
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "description": "Unique identifier for the artist.",
+                                                    "type": "integer",
+                                                    "minimum": -2147483648,
+                                                    "maximum": 2147483647
+                                                },
+                                                "name": {
+                                                    "description": "Name of the artist.",
+                                                    "type": "string",
+                                                    "maxLength": 255
+                                                }
+                                            },
+                                            "required": ["id", "name"],
+                                            "additionalProperties": false
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "The id is not a number.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "examples": [
+                                        {
+                                            "success": false,
+                                            "data": {
+                                                "id": "abc"
+                                            },
+                                            "error": [
+                                                {
+                                                    "code": "invalid_type",
+                                                    "message": "Invalid input: expected number, received NaN",
+                                                    "path": ["id"]
+                                                }
+                                            ]
+                                        }
+                                    ],
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "const": false
+                                        },
+                                        "data": {
+                                            "description": "The input that failed validation.",
+                                            "type": "object",
+                                            "propertyNames": {
+                                                "type": "string"
+                                            },
+                                            "additionalProperties": {}
+                                        },
+                                        "error": {
+                                            "description": "The validation issues found.",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "code": {
+                                                        "description": "Machine-readable issue code.",
+                                                        "type": "string"
+                                                    },
+                                                    "message": {
+                                                        "description": "Human-readable explanation.",
+                                                        "type": "string"
+                                                    },
+                                                    "path": {
+                                                        "description": "Path to the invalid parameter.",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "number"
+                                                                }
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "required": ["code", "message", "path"],
+                                                "additionalProperties": false
+                                            }
+                                        }
+                                    },
+                                    "required": ["success", "data", "error"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Missing or invalid credentials.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Unauthorized"
+                                        }
+                                    },
+                                    "required": ["message"],
+                                    "additionalProperties": false
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "number"
+                        },
+                        "required": true,
+                        "description": "Unique identifier of the item."
+                    }
+                ]
+            }
+        }
+    }
+}
