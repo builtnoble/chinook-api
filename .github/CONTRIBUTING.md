@@ -162,6 +162,30 @@ for how it is built.
 -   **The site's design** is a licensed template kept in a private repository, so it cannot be changed in a pull
     request. You do not need it: the docs tests, and `docker compose up`, work without it.
 
+### Previewing docs changes
+
+The `docs` service in `docker compose up` is the published image, a static build, so edits to `docs/` or the API do not
+reach it. To see them as you type, run the docs dev server on your machine. It needs [Bun](https://bun.sh) and the
+site's design, which is the private template: check it out next to this repository as `../chinook-docs-theme`, or set
+`THEME_DIR`. Without it you can still edit the Markdown and run `bun test` in `docs-site/`, which compiles the real
+files; the published site picks the change up after it is merged.
+
+```bash
+cd docs-site
+bun run preview        # http://127.0.0.1:3001
+```
+
+It copies the theme into `docs-site/.preview/` (ignored by git), generates the pages and starts the theme's dev server.
+It then watches `docs/`, `docs-site/content`, `docs-site/generator` and `api/src` and regenerates the pages when any
+of them change, so a saved edit shows up in the open browser tab without restarting. Leave it running.
+
+-   **The first run** installs the theme's dependencies and takes a few minutes.
+-   **Port 3001** is also where the compose `docs` service listens. Stop it (`docker compose stop docs`) or pick another
+    port with `PORT=3002 bun run preview`.
+-   **A change to the theme** is only picked up on a restart of the preview.
+
+[docs-site/README.md](../docs-site/README.md) covers how the pages are generated and how the published image is built.
+
 ---
 
 ## Submitting a Pull Request

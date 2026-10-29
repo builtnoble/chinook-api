@@ -213,57 +213,42 @@ Example response:
 
 ---
 
-## Documentation
+## API Docs Site
 
-The docs site at [http://docs.chinook.localhost](http://docs.chinook.localhost) is generated, so there is one place
-to edit each page:
+The docs site holds the guides and a reference page for every resource, built from the API's own `/openapi.json`. It is
+published as a Docker image, [`builtnoble/chinook-docs`](https://hub.docker.com/r/builtnoble/chinook-docs), and
+`docker compose up` already pulls and starts it as the `docs` service. Once the stack is up, it is at
+[http://docs.chinook.localhost](http://docs.chinook.localhost) (or [http://localhost:3001](http://localhost:3001)).
 
--   **The Introduction and the Insomnia guide** are [docs/INTRODUCTION.md](docs/INTRODUCTION.md) and
-    [docs/guides/INSOMNIA.md](docs/guides/INSOMNIA.md). They read fine on GitHub and become pages on the site.
--   **The reference for each resource** comes from `/openapi.json`, which comes from the route definitions. A new route
-    needs a tag, a summary and a description, which a test checks.
+Settings in `.env`:
 
-How the site is built, previewed and published is in [docs-site/README.md](docs-site/README.md). The site's look comes
-from a licensed template that lives in a private repository, so the published image is what `docker compose` pulls.
+| Variable    | Default | What it does                                                                         |
+| ----------- | ------- | ------------------------------------------------------------------------------------ |
+| `DOCS_TAG`  | `edge`  | Which image to pull: `edge` follows `main`, or pin a release such as `1`, `1.0`, `1.0.0` |
+| `DOCS_PORT` | `3001`  | The host port for the direct address                                                 |
+
+To update to the latest published docs:
+
+```sh
+docker compose pull docs
+docker compose up -d docs
+```
+
+The image is a static site served by nginx and does not need the API or the database, so you can also run it on its own:
+
+```sh
+docker run --rm -p 3001:8080 builtnoble/chinook-docs:edge
+```
+
+Images are published for `amd64` and `arm64`. The site only shows what was published: to change a page, or to preview
+a change before it is published, see [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md#documentation).
 
 ---
 
-## Development Notes
+## Contributing
 
-The repository holds two projects: [`api/`](api) (the Hono app) and [`docs-site/`](docs-site) (the docs generator and
-image). `.env` and `docker-compose.yml` stay at the root.
-
-### Local Development
-
-```sh
-cd api
-bun install
-
-# Run only the database container (from the repository root)
-docker compose up -d db
-
-# Migrate the database
-bunx drizzle-kit migrate
-
-bun run dev
-```
-
-The scripts read the root `.env` (`bun --env-file=../.env`), and Bun compiles TypeScript natively. The server is at
-`http://localhost:3000`. If the compose `app` container is running, stop it first (`docker compose stop app`), as it
-uses the same port.
-
-### Linting, Formatting & Tests
-
-Biome is installed in `api/` (and in `docs-site/`), so run it from there. It checks the whole repository:
-
-```sh
-cd api
-bun run lint             # check
-bun run lint --write     # fix what it can
-bun run test             # the API's tests
-```
-
-The docs generator has its own tests: `cd docs-site && bun test`.
+Setting up the API for local development, linting, tests, commit conventions and working on the docs are in
+[.github/CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ---
 
