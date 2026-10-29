@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.x
+      - run: bun install --frozen-lockfile
+      # Biome checks the whole repository, so this also covers docs-site.
+      - run: bun run lint
+      - run: bun run test
+
+  docs:
+    name: Docs generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.2.x
+      - run: bun install --frozen-lockfile
+        working-directory: api
+      - run: bun install --frozen-lockfile
+        working-directory: docs-site
+      - run: bun test
+        working-directory: docs-site
+      # The real spec and the real documents must render and compile. This needs no secrets and no private theme, so
+      # it runs for pull requests from forks too.
+      - run: bun run openapi:export "$RUNNER_TEMP/openapi.json"
+        working-directory: api
+      - run: bun run check "$RUNNER_TEMP/openapi.json"
+        working-directory: docs-site

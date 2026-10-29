@@ -9,3 +9,4 @@
 api/openapi.json
 docs-site/.preview
 **/.DS_Store
+.theme
