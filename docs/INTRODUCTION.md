@@ -1,4 +1,4 @@
-# Chinook API — Architecture
+# Introduction
 
 ## Context and goals
 
@@ -32,18 +32,18 @@ a thin auth layer bolted on top.
 Client
   │
   ▼
-Hono app (src/index.ts)
+Hono app (api/src/index.ts)
   ├─ CORS middleware (per-request; allowed origins from CORS_ORIGINS)
   ├─ /health                         → liveness check
   ├─ /openapi.json                   → generated from route schemas
   ├─ /api/auth/*                     → delegated to Better Auth
-  └─ /api/*  (src/api.ts)
+  └─ /api/*  (api/src/api.ts)
         ├─ snakeCaseKeysMiddleware   → rewrites outgoing JSON keys to snake_case
         ├─ authMiddleware            → verifies session, 401s if absent
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
-              ├─ validator(query/param)   → Zod schemas (src/utils/schema/index.ts)
+              ├─ validator(query/param)   → Zod schemas (api/src/utils/schema/index.ts)
               ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
-              └─ Drizzle query            → src/db (schema.ts + relations.ts)
+              └─ Drizzle query            → api/src/db (schema.ts + relations.ts)
                                                 │
                                                 ▼
                                          PostgreSQL (Chinook dataset)
@@ -72,30 +72,30 @@ Runtime and framework choices:
 3. `authMiddleware` calls `auth.api.getSession()` (Better Auth) against the request headers. No
    session → `401` before any route code runs. On success, `user`/`session` are set as Hono
    context variables for downstream handlers.
-4. The matched route (e.g. `src/routes/tracks.ts`) validates `query`/`param` input with a shared
-   Zod schema (`src/utils/schema/index.ts`), then, for list endpoints, runs `paginationMiddleware`.
+4. The matched route (e.g. `api/src/routes/tracks.ts`) validates `query`/`param` input with a shared
+   Zod schema (`api/src/utils/schema/index.ts`), then, for list endpoints, runs `paginationMiddleware`.
 5. `paginationMiddleware` does a `db.$count()` against the target table, derives
    `currentPage` / `perPage` / `offset`, and rejects out-of-range pages with `400` before the
    main query runs.
 6. The route handler queries Drizzle's relational query builder (`db.query.tracks.findMany`),
    eager-loading related rows (`album.artist`, `genre`, `media_type`) in one round trip via the
-   relations defined in `src/db/relations.ts`.
+   relations defined in `api/src/db/relations.ts`.
 7. Response flows back through `snakeCaseKeysMiddleware`, which re-serializes the JSON body with
    snake_case keys before it reaches the client.
 
 **Auth integration:** Better Auth owns its own tables (`users`, `sessions`, `accounts`,
-`verifications` in `src/db/schema.ts`) alongside the Chinook domain tables, sharing the same
-Postgres pool (`src/db/index.ts`). `/api/auth/*` is routed directly to Better Auth's handler,
+`verifications` in `api/src/db/schema.ts`) alongside the Chinook domain tables, sharing the same
+Postgres pool (`api/src/db/index.ts`). `/api/auth/*` is routed directly to Better Auth's handler,
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
 while everything under `/api/*` requires a valid bearer session. Because that route skips the `/api`
 middleware, its responses keep Better Auth's camelCase keys, and its error responses pass through
-`stripErrorDetails()` (`src/utils/helpers.ts`): Better Auth attaches the raw error, such as a failing SQL
+`stripErrorDetails()` (`api/src/utils/helpers.ts`): Better Auth attaches the raw error, such as a failing SQL
 statement with its values, as `details` to some failures, and that must not reach the client.
 
 **Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
-`CORS_ORIGINS`. `getAllowedOrigins()` (`src/utils/helpers.ts`) parses that variable from the process
-environment on every call, and two things consume it: the CORS middleware in `src/index.ts`, and Better
-Auth's `trustedOrigins` in `src/utils/auth.ts`. Better Auth also always trusts its own base URL
+`CORS_ORIGINS`. `getAllowedOrigins()` (`api/src/utils/helpers.ts`) parses that variable from the process
+environment on every call, and two things consume it: the CORS middleware in `api/src/index.ts`, and Better
+Auth's `trustedOrigins` in `api/src/utils/auth.ts`. Better Auth also always trusts its own base URL
 (`BETTER_AUTH_URL`). An origin missing from both lists gets no CORS headers, and cookie-carrying requests
 to `/api/auth/*` from it get `403 INVALID_ORIGIN`. The environment is read through `process.env` and not
 Hono's `c.env`: under Bun, `c.env` is the server object, whereas on Cloudflare Workers it holds the
@@ -107,7 +107,7 @@ drift from the actual validators.
 
 **External dependency:** the Postgres image (`builtnoble/chinook-postgres`, pinned to the `1`
 release line in `docker-compose.yml`) is the one piece of infrastructure not defined in this repo.
-It creates and seeds the Chinook tables; Drizzle Kit (`drizzle/`, config in `drizzle.config.ts`)
+It creates and seeds the Chinook tables; Drizzle Kit (`api/drizzle/`, config in `api/drizzle.config.ts`)
 only manages what the API adds on top:
 
 - `0000` is a commented-out introspection baseline of the Chinook tables, kept so Drizzle's
@@ -140,20 +140,20 @@ newer image does not change existing data until `docker compose down -v`.
   spec by hand, but means validation logic and documentation are as accurate as the schemas
   authors write — there's no drift-detection beyond code review.
 - **Foreign key rules are declared twice.** The image's `init.sql` is the source of truth for the
-  Chinook tables, and `src/db/schema.ts` mirrors it so Drizzle's snapshots match the real database.
+  Chinook tables, and `api/src/db/schema.ts` mirrors it so Drizzle's snapshots match the real database.
   If the two drift, the next `drizzle-kit generate` proposes the difference as a migration, so check
   that diff against the image before applying it.
 - **One origin list drives both CORS and Better Auth.** Keeping them in step means a frontend only
   has to be listed once, but an origin that may call the API is also trusted for cookie-carrying auth
   requests; the two cannot be granted separately. Better Auth skips its origin check when
-  `NODE_ENV=test`, so the tests in `src/index.test.ts` import the app under another value to exercise it.
+  `NODE_ENV=test`, so the tests in `api/src/index.test.ts` import the app under another value to exercise it.
 
 ## Where to look next
 
-- `src/db/schema.ts` / `src/db/relations.ts` — full table and relationship definitions
-- `src/routes/*.ts` — per-resource route handlers (albums, artists, genres, media-types,
+- [`api/src/db/schema.ts`](../api/src/db/schema.ts) / [`api/src/db/relations.ts`](../api/src/db/relations.ts) — full table and relationship definitions
+- [`api/src/routes/`](../api/src/routes) — per-resource route handlers (albums, artists, genres, media-types,
   playlists, tracks all follow the same list/detail pattern shown above)
-- `src/utils/schema/index.ts` — shared Zod schemas for query params, path params, and pagination
-- `src/index.test.ts` — CORS and Better Auth origin tests, served through `Bun.serve` as in production (`bun test`)
-- `docker-compose.yml` — the app and db services, the healthcheck dependency and the data volume
-- `README.md` — local setup, Docker Compose usage, and the full auth endpoint reference
+- [`api/src/utils/schema/index.ts`](../api/src/utils/schema/index.ts) — shared Zod schemas for query params, path params, and pagination
+- [`api/src/index.test.ts`](../api/src/index.test.ts) — CORS and Better Auth origin tests, served through `Bun.serve` as in production (`bun test`)
+- [`docker-compose.yml`](../docker-compose.yml) — the app and db services, the healthcheck dependency and the data volume
+- [`README.md`](../README.md) — local setup, Docker Compose usage, and the full auth endpoint reference
