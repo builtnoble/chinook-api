@@ -128,6 +128,8 @@ export const tracks = pgTable(
         milliseconds: integer().notNull(),
         bytes: integer(),
         unit_price: numeric({ precision: 10, scale: 2 }).notNull(),
+        // Set when the track is deleted through the API. The row stays, so invoice lines keep pointing at a real track.
+        deleted_at: timestamp(),
     },
     (table) => [
         foreignKey({

@@ -1,3 +1,4 @@
+import type { SQL } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context as GenericContext } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -32,10 +33,11 @@ type Context = GenericContext<
     QuerySchema<typeof querySchema>
 >;
 
-const paginationMiddleware = (table: PgTable) => {
+// `where` narrows the count to the rows the route lists, for example the ones that are not soft-deleted.
+const paginationMiddleware = (table: PgTable, where?: SQL) => {
     return createMiddleware<{ Bindings: Bindings; Variables: { pagination: PaginationVariables } }>(
         async (c: Context, next) => {
-            const totalItems = await db.$count(table);
+            const totalItems = await db.$count(table, where);
 
             const validated = c.req.valid('query');
             const currentPage = validated.page || 1;

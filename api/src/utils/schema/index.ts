@@ -108,6 +108,7 @@ export const trackSchema = createSelectSchema(tracks, {
     bytes: (schema) => schema.describe('Size of the track file in bytes.'),
     unit_price: (schema) => schema.describe('Price of the track as a decimal string, for example "0.99".'),
 })
+    .omit({ deleted_at: true })
     .extend({
         album: albumSchema.nullable().describe('The album the track appears on, if any.'),
         genre: genreSchema.nullable().describe('The genre of the track, if any.'),

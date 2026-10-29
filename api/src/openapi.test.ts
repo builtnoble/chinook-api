@@ -49,6 +49,11 @@ describe('openapi.json', () => {
         }
     });
 
+    it('does not expose the soft-delete column', () => {
+        // deleted_at is how the API remembers a deleted row. Reads leave those rows out, so clients never need it.
+        expect(JSON.stringify(spec)).not.toContain('deleted_at');
+    });
+
     it('lists the compose proxy first and the direct port second', () => {
         expect(spec.servers.map((server) => server.url)).toEqual([
             'http://api.chinook.localhost',

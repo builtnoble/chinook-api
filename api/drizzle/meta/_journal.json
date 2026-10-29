@@ -22,6 +22,13 @@
       "when": 1793121814140,
       "tag": "0002_cascade_child_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793302491167,
+      "tag": "0003_soft_delete_tracks",
+      "breakpoints": true
     }
   ]
 }
