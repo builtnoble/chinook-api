@@ -114,9 +114,22 @@ const requestBody = (body: ZodType) => ({
     content: { 'application/json': { schema: resolver(body) } },
 });
 
+// The shared validation error shows a bad path parameter, so a body error gets its own example.
+const invalidBodySchema = validationErrorSchema.meta({
+    examples: [
+        {
+            success: false,
+            data: { name: 42 },
+            error: [
+                { code: 'invalid_type', message: 'Invalid input: expected string, received number', path: ['name'] },
+            ],
+        },
+    ],
+});
+
 const invalidBody = jsonResponse(
     'The body is not valid JSON, or a field is missing, unknown or of the wrong type.',
-    z.union([validationErrorSchema, malformedJsonSchema]),
+    z.union([invalidBodySchema, malformedJsonSchema]),
 );
 
 const unprocessable = jsonResponse(
