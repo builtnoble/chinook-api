@@ -23,7 +23,7 @@ let spec: Spec;
 let operations: [string, Operation][];
 
 beforeAll(async () => {
-    const { default: app } = await import('./index');
+    const { default: app } = await import('@/index');
     const response = await app.fetch(new Request('http://localhost/openapi.json'));
 
     spec = (await response.json()) as Spec;

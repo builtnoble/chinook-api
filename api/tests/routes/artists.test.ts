@@ -2,8 +2,8 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { albums, artists, tracks } from '@/db/schema';
 import artistRoutes from '@/routes/artists';
-import { appFor, send } from '@/testing/app';
-import { stubDb } from '@/testing/stubDb';
+import { appFor, send } from '../support/app';
+import { stubDb } from '../support/stubDb';
 
 const app = appFor(artistRoutes);
 const row = { id: 7, name: 'AC/DC' };

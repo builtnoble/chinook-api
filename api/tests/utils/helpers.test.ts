@@ -1,6 +1,6 @@
 /// <reference types="bun" />
 import { afterEach, describe, expect, it } from 'bun:test';
-import { findPgError, getAdminEmails, isAdminEmail, stripErrorDetails } from './helpers';
+import { findPgError, getAdminEmails, isAdminEmail, stripErrorDetails } from '@/utils/helpers';
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
     new Response(JSON.stringify(body), {

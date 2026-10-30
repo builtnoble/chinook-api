@@ -11,7 +11,7 @@ beforeAll(async () => {
     // `bun test` sets NODE_ENV=test, and Better Auth skips its origin check in that mode. Import the app
     // under another value so the tests exercise the check that runs in development and production.
     process.env.NODE_ENV = 'development';
-    const { default: app } = await import('./index');
+    const { default: app } = await import('@/index');
 
     server = Bun.serve({ port: 0, fetch: app.fetch });
 });

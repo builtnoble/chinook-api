@@ -116,7 +116,7 @@ environment bindings.
 from the same `describeRoute` + Zod schema definitions attached to each route, so the docs cannot
 drift from the actual validators. The docs site is built from it: `bun run openapi:export` (in `api/`) writes the
 document without a database or a running server, and the generator in `docs-site/` turns it into one reference page per
-tag. Every route therefore needs a tag, a summary and a description, which `api/src/openapi.test.ts` checks.
+tag. Every route therefore needs a tag, a summary and a description, which `api/tests/openapi.test.ts` checks.
 
 **External dependency:** the Postgres image (`builtnoble/chinook-postgres`, pinned to the `1`
 release line in `docker-compose.yml`) is the one piece of infrastructure not defined in this repo.
@@ -176,4 +176,4 @@ newer image does not change existing data until `docker compose down -v`.
 - **One origin list drives both CORS and Better Auth.** Keeping them in step means a frontend only
   has to be listed once, but an origin that may call the API is also trusted for cookie-carrying auth
   requests; the two cannot be granted separately. Better Auth skips its origin check when
-  `NODE_ENV=test`, so the tests in `api/src/index.test.ts` import the app under another value to exercise it.
+  `NODE_ENV=test`, so the tests in `api/tests/index.test.ts` import the app under another value to exercise it.
