@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import requireAdmin from '@/middleware/requireAdmin';

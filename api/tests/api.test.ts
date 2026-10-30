@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
 import api from '@/api';
 import { auth } from '@/utils/auth';

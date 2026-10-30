@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, describe, expect, it } from 'bun:test';
 import db from '@/db';
 import { artists } from '@/db/schema';

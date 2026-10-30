@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import originGuard from '@/middleware/originGuard';

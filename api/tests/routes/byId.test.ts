@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
 import type { Hono } from 'hono';
 import db from '@/db';

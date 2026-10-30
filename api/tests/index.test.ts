@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 
 // Serve the app the way production does (`fetch: app.fetch` under Bun), where Hono's `c.env`

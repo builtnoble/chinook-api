@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { beforeAll, describe, expect, it } from 'bun:test';
 
 // The docs site is generated from this document, so every operation needs enough in it to render a page.

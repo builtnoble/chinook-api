@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, describe, expect, it } from 'bun:test';
 import { albums, tracks } from '@/db/schema';
 import albumRoutes from '@/routes/albums';

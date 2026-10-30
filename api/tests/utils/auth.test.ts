@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test';
 import db from '@/db';
 import { auth } from '@/utils/auth';

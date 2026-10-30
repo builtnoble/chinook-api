@@ -1,4 +1,3 @@
-/// <reference types="bun" />
 import { describe, expect, it } from 'bun:test';
 import z from 'zod';
 import { describeCreate, describeDelete, describeUpdate } from '@/utils/openapi';
