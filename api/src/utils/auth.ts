@@ -4,10 +4,10 @@ import { admin, bearer } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 import db from '@/db';
 import { users } from '@/db/schema';
-import { getAdminEmails, getAllowedOrigins, isAdminEmail } from '@/utils/helpers';
+import { getAdminEmails, getAllowedOrigins, getBaseUrl, isAdminEmail } from '@/utils/helpers';
 
 export const auth = betterAuth({
-    baseURL: process.env.BETTER_AUTH_URL || 'http://localhost:3000',
+    baseURL: getBaseUrl(),
     secret: process.env.BETTER_AUTH_SECRET || undefined,
     // The same origins the CORS middleware allows; the base URL is always trusted.
     trustedOrigins: () => getAllowedOrigins(),

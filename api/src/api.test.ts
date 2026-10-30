@@ -39,3 +39,17 @@ describe('write authorization', () => {
         expect((await post()).status).toBe(404);
     });
 });
+
+describe('cross-site writes', () => {
+    it('rejects a cookie write from an unlisted origin even for an admin', async () => {
+        signedInAs('admin');
+
+        const res = await api.request('/api/unrouted', {
+            method: 'POST',
+            headers: { Cookie: 'better-auth.session_token=abc', Origin: 'http://evil.test' },
+        });
+
+        expect(res.status).toBe(403);
+        expect(await res.json()).toEqual({ error: 'The request comes from an origin that is not allowed.' });
+    });
+});

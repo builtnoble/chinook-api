@@ -28,6 +28,9 @@ export const getAllowedOrigins = (): string[] =>
         .map((origin) => origin.trim())
         .filter(Boolean);
 
+// The address clients use for the API, which Better Auth and the Origin guard both trust.
+export const getBaseUrl = (): string => process.env.BETTER_AUTH_URL || 'http://localhost:3000';
+
 // Emails that get the admin role: a comma-separated list in ADMIN_EMAILS, compared without regard to case.
 export const getAdminEmails = (): string[] =>
     (process.env.ADMIN_EMAILS ?? '')
