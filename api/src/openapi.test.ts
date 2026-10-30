@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'bun:test';
 // The docs site is generated from this document, so every operation needs enough in it to render a page.
 type Operation = {
     operationId?: string;
+    requestBody?: { required?: boolean; content?: Record<string, unknown> };
     tags?: string[];
     summary?: string;
     description?: string;
@@ -35,8 +36,8 @@ beforeAll(async () => {
 });
 
 describe('openapi.json', () => {
-    it('describes all twelve data operations', () => {
-        expect(operations).toHaveLength(12);
+    it('describes all eighteen data operations', () => {
+        expect(operations).toHaveLength(18);
     });
 
     it('gives every operation an id, a tag, a summary and a description', () => {
@@ -81,15 +82,51 @@ describe('openapi.json', () => {
         }
     });
 
-    it('documents the 400 and 401 responses and requires the bearer scheme', () => {
+    it('requires the bearer scheme on every operation', () => {
         expect(spec.components.securitySchemes).toHaveProperty('bearerAuth');
 
-        for (const [name, operation] of operations) {
-            // A by-id read also documents the 404 for an unknown or deleted id.
-            const statuses = name.endsWith('/{id}') ? ['200', '400', '401', '404'] : ['200', '400', '401'];
-
-            expect([name, Object.keys(operation.responses ?? {})]).toEqual([name, statuses]);
+        for (const [, operation] of operations) {
             expect(operation.security).toEqual([{ bearerAuth: [] }]);
+        }
+    });
+
+    // Statuses every operation of a kind documents. An operation may document more, such as a 409 on a delete.
+    const required: Record<string, string[]> = {
+        GET: ['200', '400', '401'],
+        POST: ['201', '400', '401', '403'],
+        PATCH: ['200', '400', '401', '403', '404'],
+        DELETE: ['200', '400', '401', '403', '404'],
+    };
+
+    it.each(Object.keys(required))('documents the responses of every %s', (method) => {
+        for (const [name, operation] of operations.filter(([name]) => name.startsWith(`${method} `))) {
+            // A read by id also answers 404 for an unknown or deleted id.
+            const expected = name.endsWith('/{id}') && method === 'GET' ? [...required.GET, '404'] : required[method];
+
+            for (const status of expected) {
+                expect([name, status in (operation.responses ?? {})]).toEqual([name, true]);
+            }
+        }
+    });
+
+    it('takes a JSON request body on every create and update, and none elsewhere', () => {
+        for (const [name, operation] of operations) {
+            const writes = name.startsWith('POST ') || name.startsWith('PATCH ');
+
+            if (writes) {
+                expect([name, operation.requestBody?.required]).toEqual([name, true]);
+                expect([name, Object.keys(operation.requestBody?.content ?? {})]).toEqual([name, ['application/json']]);
+            } else {
+                expect([name, operation.requestBody]).toEqual([name, undefined]);
+            }
+        }
+    });
+
+    it('documents one success status per operation: 201 for a create, 200 for the rest', () => {
+        for (const [name, operation] of operations) {
+            const success = Object.keys(operation.responses ?? {}).filter((status) => status.startsWith('2'));
+
+            expect([name, success]).toEqual([name, [name.startsWith('POST ') ? '201' : '200']]);
         }
     });
 });

@@ -6,6 +6,9 @@ import type { albums, artists, genres, media_types, tracks } from '@/db/schema';
 // What `db.transaction` hands its callback.
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+// "1 track", "3 tracks".
+export const countOf = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
 // An error the error handler returns as `{ error }` with this status.
 export const httpError = (status: 400 | 404 | 409 | 422, message: string) => new HTTPException(status, { message });
 

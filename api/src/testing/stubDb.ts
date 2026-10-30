@@ -36,11 +36,19 @@ export const stubDb = (...script: unknown[]) => {
         },
     });
 
+    // A call straight on `db` is recorded like one on a transaction, so a route can use either.
+    const direct = (method: 'select' | 'insert' | 'update' | 'delete') =>
+        spyOn(db, method).mockImplementation(((...args: unknown[]) => {
+            calls.push([method, args]);
+
+            return chain;
+        }) as never);
+
     const stubs = [
-        spyOn(db, 'select').mockReturnValue(chain as never),
-        spyOn(db, 'insert').mockReturnValue(chain as never),
-        spyOn(db, 'update').mockReturnValue(chain as never),
-        spyOn(db, 'delete').mockReturnValue(chain as never),
+        direct('select'),
+        direct('insert'),
+        direct('update'),
+        direct('delete'),
         // The transaction callback gets the same chain, so its queries draw from the same script.
         spyOn(db, 'transaction').mockImplementation(((callback: (tx: unknown) => unknown) => callback(chain)) as never),
         ...Object.values(db.query).flatMap((table) => [
