@@ -1,6 +1,6 @@
-import { createSelectSchema } from 'drizzle-zod';
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import z from 'zod';
-import { albums, artists, genres, media_types, playlists, tracks } from '@/db/schema';
+import { albums, artists, genres, media_types, playlist_tracks, playlists, tracks } from '@/db/schema';
 import { snakeCaseSchema } from '@/utils/helpers';
 
 export const querySchema = z.object({
@@ -180,3 +180,88 @@ export const trackSchema = createSelectSchema(tracks, {
             },
         ],
     });
+
+// The body of an update: any of the fields of a create, but at least one, and none the table does not have.
+const updateSchema = <T extends z.ZodObject>(create: T) =>
+    create
+        .partial()
+        .strict()
+        .refine((body) => Object.keys(body).length > 0, 'At least one field is required.');
+
+export const cascadeQuerySchema = z.object({
+    cascade: z
+        .enum(['true', 'false'])
+        .optional()
+        .describe('Set to `true` to delete what depends on the item too. Defaults to `false`.'),
+});
+
+// A write sets the same columns a read returns, so a create leaves out the id and the soft-delete column.
+export const artistCreateSchema = createInsertSchema(artists, {
+    name: (schema) => schema.min(1).describe('Name of the artist.'),
+})
+    .omit({ id: true, deleted_at: true })
+    .strict();
+export const artistUpdateSchema = updateSchema(artistCreateSchema);
+
+export const albumCreateSchema = createInsertSchema(albums, {
+    title: (schema) => schema.min(1).describe('Title of the album.'),
+    artist_id: (schema) => schema.describe('Identifier of the album artist, who must exist.'),
+})
+    .omit({ id: true, deleted_at: true })
+    .strict();
+export const albumUpdateSchema = updateSchema(albumCreateSchema);
+
+export const genreCreateSchema = createInsertSchema(genres, {
+    name: (schema) => schema.min(1).describe('Name of the genre.'),
+})
+    .omit({ id: true, deleted_at: true })
+    .strict();
+export const genreUpdateSchema = updateSchema(genreCreateSchema);
+
+export const mediaTypeCreateSchema = createInsertSchema(media_types, {
+    name: (schema) => schema.min(1).describe('Name of the media type.'),
+})
+    .omit({ id: true, deleted_at: true })
+    .strict();
+export const mediaTypeUpdateSchema = updateSchema(mediaTypeCreateSchema);
+
+export const playlistCreateSchema = createInsertSchema(playlists, {
+    name: (schema) => schema.min(1).describe('Name of the playlist.'),
+})
+    .omit({ id: true })
+    .strict();
+export const playlistUpdateSchema = updateSchema(playlistCreateSchema);
+
+export const trackCreateSchema = createInsertSchema(tracks, {
+    name: (schema) => schema.min(1).describe('Name of the track.'),
+    album_id: (schema) => schema.describe('Identifier of the album the track appears on, which must exist.'),
+    media_type_id: (schema) =>
+        schema.describe('Identifier of the media type the track is encoded as, which must exist.'),
+    genre_id: (schema) => schema.describe('Identifier of the genre of the track, which must exist.'),
+    composer: (schema) => schema.describe('Composers of the track.'),
+    milliseconds: (schema) => schema.positive().describe('Length of the track in milliseconds.'),
+    bytes: (schema) => schema.nonnegative().describe('Size of the track file in bytes.'),
+    unit_price: (schema) =>
+        schema
+            .regex(/^\d{1,8}(\.\d{1,2})?$/, 'Must be a decimal with at most two places, for example "0.99".')
+            .describe('Price of the track as a decimal string, for example "0.99".'),
+})
+    .omit({ id: true, deleted_at: true })
+    .strict();
+export const trackUpdateSchema = updateSchema(trackCreateSchema);
+
+export const playlistTrackParamSchema = z.object({
+    id: z.coerce.number().describe('Unique identifier of the playlist.'),
+    track_id: z.coerce.number().describe('Unique identifier of the track.'),
+});
+
+export const playlistTrackSchema = createSelectSchema(playlist_tracks, {
+    playlist_id: (schema) => schema.describe('Identifier of the playlist.'),
+    track_id: (schema) => schema.describe('Identifier of the track.'),
+}).meta({ examples: [{ playlist_id: 1, track_id: 1 }] });
+
+export const playlistTrackCreateSchema = createInsertSchema(playlist_tracks, {
+    track_id: (schema) => schema.describe('Identifier of the track to add, which must exist.'),
+})
+    .omit({ playlist_id: true })
+    .strict();
