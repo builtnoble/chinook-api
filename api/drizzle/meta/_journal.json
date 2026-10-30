@@ -36,6 +36,13 @@
       "when": 1793338379827,
       "tag": "0004_add_remaining_soft_deletes",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793338979061,
+      "tag": "0005_add_better_auth_admin_tables",
+      "breakpoints": true
     }
   ]
 }

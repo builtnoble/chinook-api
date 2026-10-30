@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm/relations';
 import {
+    accounts,
     albums,
     artists,
     customers,
@@ -10,7 +11,9 @@ import {
     media_types,
     playlist_tracks,
     playlists,
+    sessions,
     tracks,
+    users,
 } from './schema';
 
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
@@ -102,4 +105,23 @@ export const playlist_tracksRelations = relations(playlist_tracks, ({ one }) => 
 
 export const playlistsRelations = relations(playlists, ({ many }) => ({
     playlist_tracks: many(playlist_tracks),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+    sessions: many(sessions),
+    accounts: many(accounts),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+    user: one(users, {
+        fields: [sessions.userId],
+        references: [users.id],
+    }),
+}));
+
+export const accountsRelations = relations(accounts, ({ one }) => ({
+    user: one(users, {
+        fields: [accounts.userId],
+        references: [users.id],
+    }),
 }));

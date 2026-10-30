@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { bearer } from 'better-auth/plugins';
+import { admin, bearer } from 'better-auth/plugins';
 import db from '@/db';
 import { getAllowedOrigins } from '@/utils/helpers';
 
@@ -9,7 +9,7 @@ export const auth = betterAuth({
     secret: process.env.BETTER_AUTH_SECRET || undefined,
     // The same origins the CORS middleware allows; the base URL is always trusted.
     trustedOrigins: () => getAllowedOrigins(),
-    plugins: [bearer()],
+    plugins: [bearer(), admin()],
     emailAndPassword: {
         enabled: true,
     },
