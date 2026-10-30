@@ -6,14 +6,14 @@
       "idx": 0,
       "version": "7",
       "when": 1762824852665,
-      "tag": "0000_watery_jamie_braddock",
+      "tag": "0000_introspect_chinook_schema",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
       "when": 1762884589649,
-      "tag": "0001_happy_matthew_murdock",
+      "tag": "0001_add_better_auth_tables",
       "breakpoints": true
     },
     {
