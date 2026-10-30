@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import authMiddleware from '@/middleware/authMiddleware';
+import requireAdmin from '@/middleware/requireAdmin';
 import snakeCaseKeysMiddleware from '@/middleware/snakeCaseKeysMiddleware';
 import albumRoutes from '@/routes/albums';
 import artistRoutes from '@/routes/artists';
@@ -12,6 +13,7 @@ const api = new Hono().basePath('/api');
 
 api.use(snakeCaseKeysMiddleware);
 api.use(authMiddleware);
+api.use(requireAdmin);
 
 api.route('/albums', albumRoutes);
 api.route('/artists', artistRoutes);
