@@ -2,6 +2,8 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { validator } from 'hono-openapi';
+import z from 'zod';
 import errorHandler from '@/middleware/errorHandler';
 
 let logged: ReturnType<typeof spyOn>;
@@ -71,6 +73,21 @@ describe('errorHandler', () => {
         const res = await appThrowing(new HTTPException(400, { message: 'Malformed JSON in request body' })).request(
             '/',
         );
+
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual({ error: 'Malformed JSON in request body' });
+    });
+
+    it('answers malformed JSON, as the validator rejects it, with 400', async () => {
+        const app = new Hono()
+            .onError(errorHandler)
+            .post('/', validator('json', z.object({ name: z.string() })), (c) => c.json({ ok: true }));
+
+        const res = await app.request('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{"name": ',
+        });
 
         expect(res.status).toBe(400);
         expect(await res.json()).toEqual({ error: 'Malformed JSON in request body' });
