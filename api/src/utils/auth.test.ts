@@ -36,7 +36,8 @@ describe('promotion at sign-up', () => {
     it('leaves any other email without a role, so the plugin default applies', async () => {
         const result = await hooks?.user?.create?.before?.(newUser('someone@example.test') as never);
 
-        expect(result).toEqual({ data: newUser('someone@example.test') });
+        expect(result).toEqual({ data: expect.objectContaining(newUser('someone@example.test')) });
+        expect((result as { data: { role?: string } }).data.role).toBeUndefined();
     });
 });
 

@@ -109,10 +109,12 @@ type WriteDescription = RouteDescription & {
     body: ZodType;
 };
 
-const requestBody = (body: ZodType) => ({
-    required: true,
-    content: { 'application/json': { schema: resolver(body) } },
-});
+// `resolver` returns the lazy schema hono-openapi expands when it builds the document, which its types do not allow here.
+const requestBody = (body: ZodType) =>
+    ({
+        required: true,
+        content: { 'application/json': { schema: resolver(body) } },
+    }) as DescribeRouteOptions['requestBody'];
 
 // The shared validation error shows a bad path parameter, so a body error gets its own example.
 const invalidBodySchema = validationErrorSchema.meta({

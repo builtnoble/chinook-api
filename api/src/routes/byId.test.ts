@@ -10,14 +10,14 @@ import playlistRoutes from '@/routes/playlists';
 import trackRoutes from '@/routes/tracks';
 
 // The routes are mounted without the auth middleware and `db.query` is stubbed, so no session or database is needed.
-const resources = [
+const resources: { name: string; table: keyof typeof db.query; routes: Hono; notFound: string }[] = [
     { name: 'artists', table: 'artists', routes: artistRoutes, notFound: 'Artist not found.' },
     { name: 'albums', table: 'albums', routes: albumRoutes, notFound: 'Album not found.' },
     { name: 'genres', table: 'genres', routes: genreRoutes, notFound: 'Genre not found.' },
     { name: 'media types', table: 'media_types', routes: mediaTypeRoutes, notFound: 'Media type not found.' },
     { name: 'playlists', table: 'playlists', routes: playlistRoutes, notFound: 'Playlist not found.' },
     { name: 'tracks', table: 'tracks', routes: trackRoutes, notFound: 'Track not found.' },
-] as const satisfies readonly { name: string; table: keyof typeof db.query; routes: Hono; notFound: string }[];
+];
 
 const spies: { mockRestore: () => void }[] = [];
 
@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 const stubFindFirst = (table: keyof typeof db.query, row: unknown) => {
-    const spy = spyOn(db.query[table], 'findFirst').mockResolvedValue(row as never);
+    const spy = spyOn(db.query[table] as typeof db.query.artists, 'findFirst').mockResolvedValue(row as never);
 
     spies.push(spy);
 };
