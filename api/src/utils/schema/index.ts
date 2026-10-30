@@ -37,7 +37,11 @@ export const validationErrorSchema = z
                 success: false,
                 data: { id: 'abc' },
                 error: [
-                    { code: 'invalid_type', message: 'Invalid input: expected number, received NaN', path: ['id'] },
+                    {
+                        code: 'invalid_type',
+                        message: 'Invalid input: expected number, received NaN',
+                        path: ['id'],
+                    },
                 ],
             },
         ],
@@ -48,7 +52,9 @@ export const paginationErrorSchema = z
     .object({
         error: z.string(),
     })
-    .meta({ examples: [{ error: 'Page cannot exceed 35.' }] });
+    .meta({
+        examples: [{ error: 'Page cannot exceed 35.' }],
+    });
 
 export const paginationSchema = snakeCaseSchema(
     z.object({
