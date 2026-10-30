@@ -119,4 +119,17 @@ describe('CORS_ORIGINS', () => {
         expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:5173');
         expect(res.headers.get('access-control-allow-methods')).toContain('GET');
     });
+
+    it.each(['POST', 'PATCH', 'DELETE'])('allows a %s from a listed origin in a preflight', async (method) => {
+        process.env.CORS_ORIGINS = 'http://localhost:5173';
+
+        const res = await request('http://localhost:5173', {
+            method: 'OPTIONS',
+            headers: { 'Access-Control-Request-Method': method, 'Access-Control-Request-Headers': 'Content-Type' },
+        });
+
+        expect(res.status).toBe(204);
+        expect(res.headers.get('access-control-allow-methods')?.split(',')).toContain(method);
+        expect(res.headers.get('access-control-allow-headers')).toContain('Content-Type');
+    });
 });

@@ -17,7 +17,7 @@ app.use('*', async (c: Context, next) => {
         // Under Bun `c.env` is the server object, not the process environment.
         origin: getAllowedOrigins(),
         allowHeaders: ['Content-Type', 'Authorization'],
-        allowMethods: ['POST', 'GET', 'OPTIONS'],
+        allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
         exposeHeaders: ['Content-Length'],
         maxAge: 600,
         credentials: true,
