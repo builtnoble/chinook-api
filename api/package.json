@@ -1,6 +1,7 @@
 {
     "name": "bun-chinook-api",
     "license": "MIT",
+    "type": "module",
     "scripts": {
         "dev": "bun --env-file=../.env run --hot src/index.ts",
         "test": "bun --env-file=../.env test",
