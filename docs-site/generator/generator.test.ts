@@ -192,3 +192,236 @@ describe('operations', () => {
         expect(() => generate(specWith({ summary: undefined }))).toThrow('a summary and a description are required');
     });
 });
+
+// A resource with the reads and the writes the API offers, so each test can say what it changes.
+const model: Schema = {
+    type: 'object',
+    properties: { id: { type: 'integer' }, name: { type: 'string' } },
+    required: ['id', 'name'],
+    examples: [{ id: 1, name: 'AC/DC' }],
+};
+const dataOf = (schema: Schema): Schema => ({ type: 'object', properties: { data: schema }, required: ['data'] });
+const json = (schema: Schema) => ({ 'application/json': { schema } });
+const secured = { security: [{ bearerAuth: [] }] };
+const idParameter = { in: 'path' as const, name: 'id', required: true, schema: { type: 'number' } };
+const errors = { 400: { description: 'Invalid.' }, 403: { description: 'Not an admin.' } };
+
+const writeSpec = (overrides: Record<string, Record<string, Partial<Operation>>> = {}): Spec => {
+    const operation = (summary: string, extra: Partial<Operation>): Operation => ({
+        tags: ['Things'],
+        summary,
+        description: `${summary}.`,
+        ...secured,
+        ...extra,
+    });
+
+    const body = (schema: Schema) => ({ required: true, content: json(schema) });
+    const createBody: Schema = {
+        type: 'object',
+        properties: { name: { type: 'string', description: 'Name of the thing.' }, note: { type: 'string' } },
+        required: ['name'],
+        additionalProperties: false,
+    };
+
+    const paths: Spec['paths'] = {
+        '/things': {
+            get: operation('List things', {
+                responses: { 200: { content: json(dataOf({ type: 'array', items: model })) } },
+            }),
+            post: operation('Create a thing', {
+                requestBody: body(createBody),
+                responses: { 201: { description: 'Created.', content: json(dataOf(model)) }, ...errors },
+            }),
+        },
+        '/things/{id}': {
+            get: operation('Retrieve a thing', {
+                parameters: [idParameter],
+                responses: { 200: { content: json(dataOf(model)) } },
+            }),
+            patch: operation('Update a thing', {
+                parameters: [idParameter],
+                requestBody: body({ ...createBody, required: [] }),
+                responses: { 200: { content: json(dataOf(model)) }, ...errors },
+            }),
+            delete: operation('Delete a thing', {
+                parameters: [idParameter],
+                responses: { 200: { content: json(dataOf(model)) }, ...errors },
+            }),
+        },
+    };
+
+    for (const [path, methods] of Object.entries(overrides)) {
+        paths[path] = { ...paths[path], ...(methods as Record<string, Operation>) };
+    }
+
+    return {
+        info: { title: 'Test', version: '1.0.0' },
+        servers: [{ url: 'http://api.test' }],
+        tags: [{ name: 'Things', description: 'Some things.' }],
+        paths,
+    };
+};
+
+const thingsPage = (spec = writeSpec()) => generate(spec)['src/app/things/page.mdx'];
+
+// The text of one operation's section, from its heading to the next.
+const sectionOf = (page: string, heading: string) => {
+    const start = page.indexOf(`## ${heading} {{`);
+    const end = page.indexOf('\n---\n', start);
+
+    return page.slice(start, end === -1 ? undefined : end);
+};
+
+describe('write operations', () => {
+    it('lists a collection first, then each item operation in method order', () => {
+        const headings = [...thingsPage().matchAll(/^## (.+) \{\{ tag: '(\w+)'/gm)].map((match) => match[2]);
+
+        expect(headings).toEqual(['GET', 'POST', 'GET', 'PATCH', 'DELETE']);
+    });
+
+    it('sends the body of a create in the cURL example, with the JSON content type', () => {
+        const create = sectionOf(thingsPage(), 'Create a thing');
+
+        expect(create).toContain('curl -X POST http://api.test/things \\');
+        expect(create).toContain('-H "Authorization: Bearer {token}" \\');
+        expect(create).toContain('-H "Content-Type: application/json" \\');
+        expect(create).toContain(`-d '{"name":"AC/DC","note":"string"}'`);
+    });
+
+    it('sets the method, headers and body in the JavaScript example', () => {
+        const create = sectionOf(thingsPage(), 'Create a thing');
+
+        expect(create).toContain("method: 'POST',");
+        expect(create).toContain("'Content-Type': 'application/json',");
+        expect(create).toContain("body: JSON.stringify({ name: 'AC/DC', note: 'string' }),");
+    });
+
+    it('takes body values from the model, and synthesizes a field the model lacks', () => {
+        const spec = writeSpec({
+            '/things': {
+                post: {
+                    ...writeSpec().paths['/things'].post,
+                    requestBody: {
+                        content: json({
+                            type: 'object',
+                            properties: { name: { type: 'string' }, track_id: { type: 'integer' } },
+                        }),
+                    },
+                },
+            },
+        });
+
+        expect(sectionOf(thingsPage(spec), 'Create a thing')).toContain(`-d '{"name":"AC/DC","track_id":1}'`);
+    });
+
+    it('lays a long body out one property per line', () => {
+        const long = {
+            type: 'object',
+            properties: Object.fromEntries(
+                ['composer', 'milliseconds', 'unit_price'].map((name) => [
+                    name,
+                    { type: 'string', examples: ['x'.repeat(16)] },
+                ]),
+            ),
+        } satisfies Schema;
+        const spec = writeSpec({
+            '/things': { post: { ...writeSpec().paths['/things'].post, requestBody: { content: json(long) } } },
+        });
+        const create = sectionOf(thingsPage(spec), 'Create a thing');
+
+        expect(create).toContain('body: JSON.stringify({\n        composer: ');
+        // The page indents its code blocks by four spaces, and the JSON adds two more.
+        expect(create).toContain(`-d '{\n      "composer": `);
+    });
+
+    it('escapes a quote in the body for the shell and for JavaScript', () => {
+        const quoted = {
+            type: 'object',
+            properties: { title: { type: 'string', examples: ["Rock 'n' Roll"] } },
+        } satisfies Schema;
+        const spec = writeSpec({
+            '/things': { post: { ...writeSpec().paths['/things'].post, requestBody: { content: json(quoted) } } },
+        });
+        const create = sectionOf(thingsPage(spec), 'Create a thing');
+
+        expect(create).toContain(String.raw`-d '{"title":"Rock '\''n'\'' Roll"}'`);
+        expect(create).toContain(String.raw`body: JSON.stringify({ title: 'Rock \'n\' Roll' }),`);
+    });
+
+    it('documents the body fields, required ones apart from optional ones', () => {
+        const create = sectionOf(thingsPage(), 'Create a thing');
+        const update = sectionOf(thingsPage(), 'Update a thing');
+
+        expect(create).toContain('### Required attributes');
+        expect(create).toContain('<Property name="name" type="string">\n        Name of the thing.');
+        expect(create).toContain('### Optional attributes');
+        expect(create).toContain('<Property name="note" type="string, optional">');
+        // Every field of an update is optional, so there is nothing required to list.
+        expect(update).not.toContain('### Required attributes');
+        expect(update).toContain('### Optional attributes');
+    });
+
+    it('leaves a read and a delete without a body', () => {
+        const page = thingsPage();
+
+        for (const heading of ['List things', 'Retrieve a thing', 'Delete a thing']) {
+            const section = sectionOf(page, heading);
+
+            expect(section).not.toContain('Content-Type');
+            expect(section).not.toContain('-d ');
+            expect(section).not.toContain('Required attributes');
+            expect(section).not.toContain('Optional attributes');
+        }
+        expect(sectionOf(page, 'Delete a thing')).toContain("method: 'DELETE',");
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
+        expect(sectionOf(page, 'Delete a thing')).toContain('headers: { Authorization: `Bearer ${token}` },');
+    });
+
+    it('documents a 201 response, its attributes and its example, and keeps it out of the errors', () => {
+        const create = sectionOf(thingsPage(), 'Create a thing');
+
+        expect(create).toContain('### Response attributes');
+        expect(create).toContain('The thing. See [the thing model](#the-thing-model).');
+        expect(create).toContain("```json {{ title: 'Response' }}");
+        expect(create).toContain('<Property name="403" type="error">');
+        expect(create).not.toContain('<Property name="201"');
+    });
+
+    it('takes the model from a read, not from a write that answers with another shape', () => {
+        const membership = {
+            post: {
+                tags: ['Things'],
+                summary: 'Add a part',
+                description: 'Adds a part.',
+                parameters: [idParameter],
+                requestBody: { content: json({ type: 'object', properties: { part_id: { type: 'integer' } } }) },
+                responses: {
+                    201: { content: json(dataOf({ type: 'object', properties: { part_id: { type: 'integer' } } })) },
+                },
+            },
+        };
+        const page = thingsPage(writeSpec({ '/things/{id}/parts': membership }));
+
+        expect(page).toContain('## The thing model');
+        expect(page.split('## The thing model')[1].split('---')[0]).toContain('name="name"');
+        expect(page.split('## The thing model')[1].split('---')[0]).not.toContain('part_id');
+        expect(page.indexOf('## Add a part')).toBeGreaterThan(page.indexOf('## Delete a thing'));
+    });
+
+    it('compiles every write page as MDX', async () => {
+        await expect(compile(thingsPage())).resolves.toBeDefined();
+    });
+
+    it('rejects a request body that is not JSON, naming the operation', () => {
+        const spec = writeSpec({
+            '/things': {
+                post: {
+                    ...writeSpec().paths['/things'].post,
+                    requestBody: { content: { 'multipart/form-data': { schema: { type: 'object' } } } },
+                },
+            },
+        });
+
+        expect(() => generate(spec)).toThrow('POST /things: only a JSON request body is supported');
+    });
+});

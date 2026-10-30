@@ -66,14 +66,35 @@ const responseNode = (spec: Spec, operation: Operation, status: string, where: s
     return schema ? normalize(spec, schema, `${where}.responses.${status}`) : undefined;
 };
 
+// A read answers 200 and a create 201, so the page documents whichever 2xx the operation declares.
+const successStatus = (operation: Operation): string | undefined =>
+    Object.keys(operation.responses ?? {})
+        .sort()
+        .find((status) => status.startsWith('2'));
+
+const requestNode = (spec: Spec, operation: Operation, where: string): Node | undefined => {
+    if (!operation.requestBody) return undefined;
+
+    const schema = operation.requestBody.content?.['application/json']?.schema;
+    if (!schema) {
+        throw new UnsupportedError(`${where}: only a JSON request body is supported`);
+    }
+
+    return normalize(spec, schema, `${where}.requestBody`);
+};
+
+// The model comes from a read, since a write may answer with a different shape.
 const modelOf = (spec: Spec, endpoints: Endpoint[]): Node | undefined => {
-    const byID = endpoints.find((endpoint) => endpoint.path.includes('{'));
-    const list = endpoints.find((endpoint) => !endpoint.path.includes('{'));
+    const reads = endpoints.filter((endpoint) => endpoint.method === 'get');
+    const byID = reads.find((endpoint) => endpoint.path.includes('{'));
+    const list = reads.find((endpoint) => !endpoint.path.includes('{'));
 
     for (const endpoint of [byID, list]) {
+        const status = endpoint && successStatus(endpoint.operation);
         const node =
             endpoint &&
-            responseNode(spec, endpoint.operation, '200', `${endpoint.method.toUpperCase()} ${endpoint.path}`);
+            status &&
+            responseNode(spec, endpoint.operation, status, `${endpoint.method.toUpperCase()} ${endpoint.path}`);
         if (!node) continue;
 
         const data = unwrapData(node);
@@ -86,7 +107,48 @@ const modelOf = (spec: Spec, endpoints: Endpoint[]): Node | undefined => {
 
 const exampleValue = (node: Node) => JSON.stringify(sample(node), null, 2);
 
-const requestExamples = (spec: Spec, { method, path, operation }: Endpoint, baseUrl: string): string => {
+// A body example in the model's own words ("AC/DC", not "string"), falling back to a synthesized value for a field
+// the model does not have, such as the id of a playlist track.
+const bodyExample = (body: Node, model: Node | undefined): unknown => {
+    const known = model ? sample(model) : undefined;
+    const values = known && typeof known === 'object' ? (known as Record<string, unknown>) : {};
+
+    if (body.kind !== 'object') return sample(body);
+
+    return Object.fromEntries(
+        (body.properties ?? []).map(({ name, node }) => [name, name in values ? values[name] : sample(node)]),
+    );
+};
+
+const jsString = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
+
+const jsKey = (key: string) => (/^[A-Za-z_$][\w$]*$/.test(key) ? key : jsString(key));
+
+// A JSON value as a JavaScript literal: one line when short, one property per line otherwise.
+const jsLiteral = (value: unknown, depth = 0): string => {
+    if (typeof value === 'string') return jsString(value);
+    if (Array.isArray(value)) return `[${value.map((item) => jsLiteral(item, depth + 1)).join(', ')}]`;
+    if (value === null || typeof value !== 'object') return JSON.stringify(value);
+
+    const entries = Object.entries(value).map(([key, item]) => `${jsKey(key)}: ${jsLiteral(item, depth + 1)}`);
+    if (!entries.length) return '{}';
+
+    const inline = `{ ${entries.join(', ')} }`;
+    if (!inline.includes('\n') && inline.length + depth * 2 <= 60) return inline;
+
+    const pad = '  '.repeat(depth + 1);
+    return `{\n${entries.map((entry) => `${pad}${entry}`).join(',\n')},\n${'  '.repeat(depth)}}`;
+};
+
+// A shell single-quoted string: a quote inside it closes the string, adds an escaped quote and reopens it.
+const shellQuote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
+
+const requestExamples = (
+    spec: Spec,
+    { method, path, operation }: Endpoint,
+    model: Node | undefined,
+    baseUrl: string,
+): string => {
     const where = `${method.toUpperCase()} ${path}`;
     const parameters = operation.parameters ?? [];
     const concrete = path.replace(/\{(\w+)\}/g, (_, name: string) => {
@@ -99,16 +161,38 @@ const requestExamples = (spec: Spec, { method, path, operation }: Endpoint, base
         : '';
     const url = `${baseUrl}${concrete}${query}`;
     const secured = (operation.security?.length ?? 0) > 0;
+    const requestBody = requestNode(spec, operation, where);
+    const body = requestBody && bodyExample(requestBody, model);
+
+    const compact = JSON.stringify(body);
+    const prettyBody = JSON.stringify(body, null, 2);
 
     const curl = [
-        `curl ${method === 'get' ? '' : `-X ${method.toUpperCase()} `}${url}${secured ? ' \\' : ''}`,
-        ...(secured ? ['  -H "Authorization: Bearer {token}"'] : []),
-    ].join('\n');
+        `curl ${method === 'get' ? '' : `-X ${method.toUpperCase()} `}${url}`,
+        ...(secured ? ['-H "Authorization: Bearer {token}"'] : []),
+        ...(requestBody ? ['-H "Content-Type: application/json"'] : []),
+        ...(requestBody ? [`-d ${shellQuote(compact.length <= 60 ? compact : prettyBody)}`] : []),
+    ].join(' \\\n  ');
+
+    const options = [
+        ...(method === 'get' ? [] : [`  method: '${method.toUpperCase()}',`]),
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
+        ...(secured && !requestBody ? ['  headers: { Authorization: `Bearer ${token}` },'] : []),
+        ...(requestBody
+            ? [
+                  '  headers: {',
+                  // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
+                  ...(secured ? ['    Authorization: `Bearer ${token}`,'] : []),
+                  "    'Content-Type': 'application/json',",
+                  '  },',
+                  `  body: JSON.stringify(${jsLiteral(body, 1)}),`,
+              ]
+            : []),
+    ];
 
     const js = [
-        `const response = await fetch('${url}'${secured ? ', {' : ')'}`,
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
-        ...(secured ? ['  headers: { Authorization: `Bearer ${token}` },', '})'] : []),
+        `const response = await fetch('${url}'${options.length ? ', {' : ')'}`,
+        ...(options.length ? [...options, '})'] : []),
         'const body = await response.json()',
     ].join('\n');
 
@@ -153,7 +237,18 @@ const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | unde
     if (required.length) left.push('### Required parameters', propertyRows(required));
     if (optional.length) left.push('### Optional parameters', propertyRows(optional));
 
-    const ok = responseNode(spec, operation, '200', where);
+    const requestBody = requestNode(spec, operation, where);
+    if (requestBody) {
+        const attributes = rows(requestBody);
+        const requiredAttributes = attributes.filter((row) => row.required);
+        const optionalAttributes = attributes.filter((row) => !row.required);
+
+        if (requiredAttributes.length) left.push('### Required attributes', propertyRows(requiredAttributes));
+        if (optionalAttributes.length) left.push('### Optional attributes', propertyRows(optionalAttributes));
+    }
+
+    const status = successStatus(operation);
+    const ok = status && responseNode(spec, operation, status, where);
     if (ok?.kind === 'object' && ok.properties?.some((property) => property.name === 'data')) {
         const isList = ok.properties.find((property) => property.name === 'data')?.node.kind === 'array';
         const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`;
@@ -176,7 +271,7 @@ const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | unde
         );
     if (errors.length) left.push('### Errors', propertyRows(errors));
 
-    const right = [requestExamples(spec, endpoint, baseUrl), ...responseExamples(spec, endpoint)];
+    const right = [requestExamples(spec, endpoint, model, baseUrl), ...responseExamples(spec, endpoint)];
 
     return [
         `## ${escapeMdx(operation.summary ?? '')} {{ tag: '${method.toUpperCase()}', label: '${label(path)}' }}`,
@@ -220,9 +315,15 @@ export const endpointsByTag = (spec: Spec): Map<string, Endpoint[]> => {
         }
     }
 
-    // A collection comes before the operations on one item.
+    // A collection comes before the operations on one item, and the operations on one path run in METHODS order.
+    const params = (path: string) => (path.match(/\{/g) ?? []).length;
     for (const endpoints of byTag.values()) {
-        endpoints.sort((a, b) => Number(a.path.includes('{')) - Number(b.path.includes('{')));
+        endpoints.sort(
+            (a, b) =>
+                params(a.path) - params(b.path) ||
+                a.path.localeCompare(b.path) ||
+                METHODS.indexOf(a.method) - METHODS.indexOf(b.method),
+        );
     }
 
     return byTag;

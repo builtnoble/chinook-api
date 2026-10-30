@@ -31,12 +31,18 @@ export type Response = {
     content?: Record<string, { schema?: Schema }>;
 };
 
+export type RequestBody = {
+    required?: boolean;
+    content?: Record<string, { schema?: Schema }>;
+};
+
 export type Operation = {
     operationId?: string;
     tags?: string[];
     summary?: string;
     description?: string;
     parameters?: Parameter[];
+    requestBody?: RequestBody;
     security?: unknown[];
     responses?: Record<string, Response>;
 };
