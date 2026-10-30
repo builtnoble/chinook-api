@@ -2,12 +2,15 @@ import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import api from '@/api';
+import errorHandler from '@/middleware/errorHandler';
 import { auth } from '@/utils/auth';
 import { getAllowedOrigins, stripErrorDetails } from '@/utils/helpers';
 
 const port = process.env.APP_PORT || 3000;
 
 const app = new Hono();
+
+app.onError(errorHandler);
 
 app.use('*', async (c: Context, next) => {
     const corsMiddlewareHandler = cors({
