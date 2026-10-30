@@ -180,7 +180,7 @@ The album model contains the following properties.
 <Row>
   <Col>
 
-    Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no \`data\`.
+    Returns the album with the given id. The album includes its artist. An unknown or deleted id returns 404.
 
     ### Required parameters
 
@@ -193,7 +193,7 @@ The album model contains the following properties.
     ### Response attributes
 
     <Properties>
-      <Property name="data" type="object, optional">
+      <Property name="data" type="object">
         The album. See [the album model](#the-album-model).
       </Property>
     </Properties>
@@ -206,6 +206,9 @@ The album model contains the following properties.
       </Property>
       <Property name="401" type="error">
         Missing or invalid credentials.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
       </Property>
     </Properties>
 
@@ -263,6 +266,12 @@ The album model contains the following properties.
     \`\`\`json {{ title: 'Error response (401)' }}
     {
       "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Artist not found."
     }
     \`\`\`
 
@@ -429,12 +438,143 @@ The artist model contains the following properties.
 
 ---
 
+## Create an artist {{ tag: 'POST', label: '/api/artists' }}
+
+<Row>
+  <Col>
+
+    Creates an artist and returns it. Requires the admin role.
+
+    ### Required attributes
+
+    <Properties>
+      <Property name="name" type="string">
+        Name of the artist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The artist. See [the artist model](#the-artist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="POST" label="/api/artists">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X POST http://localhost:3000/api/artists \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"name":"AC/DC"}'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/artists', {
+      method: 'POST',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'AC/DC' }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "AC/DC"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
 ## Retrieve an artist {{ tag: 'GET', label: '/api/artists/:id' }}
 
 <Row>
   <Col>
 
-    Returns the artist with the given id. An unknown id returns 200 with no \`data\`.
+    Returns the artist with the given id. An unknown or deleted id returns 404.
 
     ### Required parameters
 
@@ -447,7 +587,7 @@ The artist model contains the following properties.
     ### Response attributes
 
     <Properties>
-      <Property name="data" type="object, optional">
+      <Property name="data" type="object">
         The artist. See [the artist model](#the-artist-model).
       </Property>
     </Properties>
@@ -460,6 +600,9 @@ The artist model contains the following properties.
       </Property>
       <Property name="401" type="error">
         Missing or invalid credentials.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
       </Property>
     </Properties>
 
@@ -512,6 +655,287 @@ The artist model contains the following properties.
     \`\`\`json {{ title: 'Error response (401)' }}
     {
       "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Artist not found."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Update an artist {{ tag: 'PATCH', label: '/api/artists/:id' }}
+
+<Row>
+  <Col>
+
+    Changes the given fields of an artist and returns it. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Optional attributes
+
+    <Properties>
+      <Property name="name" type="string, optional">
+        Name of the artist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The artist. See [the artist model](#the-artist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="PATCH" label="/api/artists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X PATCH http://localhost:3000/api/artists/1 \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"name":"AC/DC"}'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/artists/1', {
+      method: 'PATCH',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'AC/DC' }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "AC/DC"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Artist not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Delete an artist {{ tag: 'DELETE', label: '/api/artists/:id' }}
+
+<Row>
+  <Col>
+
+    Soft-deletes an artist and returns it. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="cascade" type={"\\"true\\" | \\"false\\", optional"}>
+        Set to \`true\` to delete the albums and tracks too.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The artist. See [the artist model](#the-artist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number, or a query parameter is invalid.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        The artist still has albums. Pass \`cascade=true\` to delete them too.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="DELETE" label="/api/artists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X DELETE http://localhost:3000/api/artists/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/artists/1', {
+      method: 'DELETE',
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "AC/DC"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Artist not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
     }
     \`\`\`
 

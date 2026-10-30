@@ -104,6 +104,38 @@ describe('generate', () => {
     });
 });
 
+describe('the artist writes in the fixture', () => {
+    const page = () => generate(fixture)['src/app/artists/page.mdx'];
+
+    it('has a section for each write, after the reads of the same path', () => {
+        const headings = [...page().matchAll(/^## (.+) \{\{ tag: '(\w+)', label: '(.+)' \}\}$/gm)].map((match) =>
+            match.slice(1).join(' | '),
+        );
+
+        expect(headings).toEqual([
+            'List all artists | GET | /api/artists',
+            'Create an artist | POST | /api/artists',
+            'Retrieve an artist | GET | /api/artists/:id',
+            'Update an artist | PATCH | /api/artists/:id',
+            'Delete an artist | DELETE | /api/artists/:id',
+        ]);
+    });
+
+    it('sends the body of a create with the model value and the content type', () => {
+        expect(page()).toContain(`-d '{"name":"AC/DC"}'`);
+        expect(page()).toContain("body: JSON.stringify({ name: 'AC/DC' }),");
+    });
+
+    it('shows the 404 on a read, and a body error on a write that is not about the id', () => {
+        expect(page()).toContain('<Property name="404" type="error">');
+        expect(page()).toContain('"message": "Invalid input: expected string, received number"');
+    });
+
+    it('documents the optional cascade parameter of a delete', () => {
+        expect(page()).toContain('<Property name="cascade"');
+    });
+});
+
 describe('MDX safety', () => {
     it('escapes braces and angle brackets outside code spans', () => {
         expect(escapeMdx('Use {id} or <b>bold</b>, but `{code}` stays.')).toBe(
