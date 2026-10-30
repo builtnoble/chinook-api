@@ -96,7 +96,11 @@ A successful sign-up returns `200` and signs you in:
     "image": null,
     "emailVerified": false,
     "createdAt": "2026-10-27T18:15:02.082Z",
-    "updatedAt": "2026-10-27T18:15:02.082Z"
+    "updatedAt": "2026-10-27T18:15:02.082Z",
+    "role": "user",
+    "banned": false,
+    "banReason": null,
+    "banExpires": null
   }
 }
 ```
@@ -109,7 +113,7 @@ The response headers include `set-auth-token` (the session token) and
 | --- | --- | --- |
 | Password shorter than 8 | `400` | `{"code":"PASSWORD_TOO_SHORT","message":"Password too short"}` |
 | Email already registered | `422` | `{"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}` |
-| `name` missing | `422` | `{"code":"FAILED_TO_CREATE_USER","message":"Failed to create user"}` |
+| `name` missing | `400` | `{"message":"[body.name] Invalid input: expected string, received undefined","code":"VALIDATION_ERROR"}` |
 
 ### Create an admin account
 
