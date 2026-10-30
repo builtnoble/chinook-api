@@ -153,6 +153,7 @@ export const tracks = pgTable(
 export const artists = pgTable('artists', {
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 255 }).notNull(),
+    deleted_at: timestamp(),
 });
 
 export const albums = pgTable(
@@ -161,6 +162,7 @@ export const albums = pgTable(
         id: serial().primaryKey().notNull(),
         title: varchar({ length: 255 }).notNull(),
         artist_id: integer().notNull(),
+        deleted_at: timestamp(),
     },
     (table) => [
         foreignKey({
@@ -233,11 +235,13 @@ export const playlists = pgTable('playlists', {
 export const genres = pgTable('genres', {
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 255 }).notNull(),
+    deleted_at: timestamp(),
 });
 
 export const media_types = pgTable('media_types', {
     id: serial().primaryKey().notNull(),
     name: varchar({ length: 255 }).notNull(),
+    deleted_at: timestamp(),
 });
 
 export const playlist_tracks = pgTable(

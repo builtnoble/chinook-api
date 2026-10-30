@@ -29,6 +29,13 @@
       "when": 1793302491167,
       "tag": "0003_soft_delete_tracks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793338379827,
+      "tag": "0004_add_remaining_soft_deletes",
+      "breakpoints": true
     }
   ]
 }
