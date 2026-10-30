@@ -49,12 +49,21 @@ export const stubDb = (...script: unknown[]) => {
         direct('insert'),
         direct('update'),
         direct('delete'),
-        // The transaction callback gets the same chain, so its queries draw from the same script.
-        spyOn(db, 'transaction').mockImplementation(((callback: (tx: unknown) => unknown) => callback(chain)) as never),
-        ...Object.values(db.query).flatMap((table) => [
-            spyOn(table, 'findFirst').mockReturnValue(chain as never),
-            spyOn(table, 'findMany').mockReturnValue(chain as never),
-        ]),
+        // The transaction callback gets the same chain, so its queries draw from the same script. Its relational reads
+        // go through `db.query`, which is stubbed below.
+        spyOn(db, 'transaction').mockImplementation(((callback: (tx: unknown) => unknown) =>
+            callback(
+                new Proxy({}, { get: (_, method) => (method === 'query' ? db.query : (chain as never)[method]) }),
+            )) as never),
+        ...Object.values(db.query).flatMap((table) =>
+            (['findFirst', 'findMany'] as const).map((method) =>
+                spyOn(table, method).mockImplementation(((...args: unknown[]) => {
+                    calls.push([method, args]);
+
+                    return chain;
+                }) as never),
+            ),
+        ),
     ];
 
     return {

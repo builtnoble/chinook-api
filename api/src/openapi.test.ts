@@ -36,8 +36,8 @@ beforeAll(async () => {
 });
 
 describe('openapi.json', () => {
-    it('describes all twenty-one data operations', () => {
-        expect(operations).toHaveLength(21);
+    it('describes all twenty-seven data operations', () => {
+        expect(operations).toHaveLength(27);
     });
 
     it('gives every operation an id, a tag, a summary and a description', () => {
