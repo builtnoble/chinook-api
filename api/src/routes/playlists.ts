@@ -4,8 +4,8 @@ import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { playlists } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { describeByID, describeList } from '@/utils/openapi';
-import { paramSchema, playlistSchema, querySchema } from '@/utils/schema';
+import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { paramSchema, playlistCreateSchema, playlistSchema, playlistUpdateSchema, querySchema } from '@/utils/schema';
 
 const playlistRoutes = new Hono();
 
@@ -52,6 +52,71 @@ playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validator('param', pa
     const data = await db.query.playlists.findFirst({
         where: eq(playlists.id, id),
     });
+
+    if (!data) {
+        return c.json({ error: 'Playlist not found.' }, 404);
+    }
+
+    return c.json({ data });
+});
+
+const createPlaylist = describeCreate({
+    operationId: 'createPlaylist',
+    tag: 'Playlists',
+    summary: 'Create a playlist',
+    description: 'Creates an empty playlist and returns it. Requires the admin role.',
+    schema: playlistSchema,
+    body: playlistCreateSchema,
+});
+
+playlistRoutes.post('/', describeRoute(createPlaylist), validator('json', playlistCreateSchema), async (c) => {
+    const [data] = await db.insert(playlists).values(c.req.valid('json')).returning();
+
+    return c.json({ data }, 201);
+});
+
+const updatePlaylist = describeUpdate({
+    operationId: 'updatePlaylist',
+    tag: 'Playlists',
+    summary: 'Update a playlist',
+    description:
+        'Changes the given fields of the playlist with the given id and returns it. An unknown id returns 404. Requires the admin role.',
+    schema: playlistSchema,
+    body: playlistUpdateSchema,
+});
+
+playlistRoutes.patch(
+    '/:id',
+    describeRoute(updatePlaylist),
+    validator('param', paramSchema),
+    validator('json', playlistUpdateSchema),
+    async (c) => {
+        const { id } = c.req.valid('param');
+
+        const [data] = await db.update(playlists).set(c.req.valid('json')).where(eq(playlists.id, id)).returning();
+
+        if (!data) {
+            return c.json({ error: 'Playlist not found.' }, 404);
+        }
+
+        return c.json({ data });
+    },
+);
+
+const deletePlaylist = describeDelete({
+    operationId: 'deletePlaylist',
+    tag: 'Playlists',
+    summary: 'Delete a playlist',
+    description:
+        'Removes the playlist with the given id, and its list of tracks, for good, and returns it. The tracks themselves are not touched. An unknown id returns 404. Requires the admin role.',
+    schema: playlistSchema,
+});
+
+playlistRoutes.delete('/:id', describeRoute(deletePlaylist), validator('param', paramSchema), async (c) => {
+    const { id } = c.req.valid('param');
+
+    // The database removes the playlist's rows in playlist_tracks with it.
+    const [data] = await db.delete(playlists).where(eq(playlists.id, id)).returning();
 
     if (!data) {
         return c.json({ error: 'Playlist not found.' }, 404);
