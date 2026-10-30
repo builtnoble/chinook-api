@@ -42,7 +42,7 @@ const getPlaylistByID = describeByID({
     operationId: 'getPlaylistByID',
     tag: 'Playlists',
     summary: 'Retrieve a playlist',
-    description: 'Returns the playlist with the given id. An unknown id returns 200 with no `data`.',
+    description: 'Returns the playlist with the given id. An unknown id returns 404.',
     schema: playlistSchema,
 });
 
@@ -52,6 +52,10 @@ playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validator('param', pa
     const data = await db.query.playlists.findFirst({
         where: eq(playlists.id, id),
     });
+
+    if (!data) {
+        return c.json({ error: 'Playlist not found.' }, 404);
+    }
 
     return c.json({ data });
 });

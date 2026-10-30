@@ -84,8 +84,11 @@ describe('openapi.json', () => {
     it('documents the 400 and 401 responses and requires the bearer scheme', () => {
         expect(spec.components.securitySchemes).toHaveProperty('bearerAuth');
 
-        for (const [, operation] of operations) {
-            expect(Object.keys(operation.responses ?? {})).toEqual(['200', '400', '401']);
+        for (const [name, operation] of operations) {
+            // A by-id read also documents the 404 for an unknown or deleted id.
+            const statuses = name.endsWith('/{id}') ? ['200', '400', '401', '404'] : ['200', '400', '401'];
+
+            expect([name, Object.keys(operation.responses ?? {})]).toEqual([name, statuses]);
             expect(operation.security).toEqual([{ bearerAuth: [] }]);
         }
     });

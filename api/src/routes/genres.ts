@@ -48,7 +48,7 @@ const getGenreByID = describeByID({
     operationId: 'getGenreByID',
     tag: 'Genres',
     summary: 'Retrieve a genre',
-    description: 'Returns the genre with the given id. An unknown id returns 200 with no `data`.',
+    description: 'Returns the genre with the given id. An unknown or deleted id returns 404.',
     schema: genreSchema,
 });
 
@@ -59,6 +59,10 @@ genreRoutes.get('/:id', describeRoute(getGenreByID), validator('param', paramSch
         columns: withoutDeletedAt,
         where: and(eq(genres.id, id), notDeleted),
     });
+
+    if (!data) {
+        return c.json({ error: 'Genre not found.' }, 404);
+    }
 
     return c.json({ data });
 });

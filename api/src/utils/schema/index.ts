@@ -56,6 +56,13 @@ export const paginationErrorSchema = z
         examples: [{ error: 'Page cannot exceed 35.' }],
     });
 
+// Returned when no item has the requested id, or the item has been deleted.
+export const notFoundSchema = z
+    .object({
+        error: z.string(),
+    })
+    .meta({ examples: [{ error: 'Artist not found.' }] });
+
 export const paginationSchema = snakeCaseSchema(
     z.object({
         currentPage: z.number().describe('The page returned.'),

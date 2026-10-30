@@ -48,7 +48,7 @@ const getArtistByID = describeByID({
     operationId: 'getArtistByID',
     tag: 'Artists',
     summary: 'Retrieve an artist',
-    description: 'Returns the artist with the given id. An unknown id returns 200 with no `data`.',
+    description: 'Returns the artist with the given id. An unknown or deleted id returns 404.',
     schema: artistSchema,
 });
 
@@ -59,6 +59,10 @@ artistRoutes.get('/:id', describeRoute(getArtistByID), validator('param', paramS
         columns: withoutDeletedAt,
         where: and(eq(artists.id, id), notDeleted),
     });
+
+    if (!data) {
+        return c.json({ error: 'Artist not found.' }, 404);
+    }
 
     return c.json({ data });
 });

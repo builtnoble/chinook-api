@@ -192,9 +192,9 @@ Single records come back as `{ "data": { … } }`.
 | `?page=` beyond the last page | `400` | `{"error":"Page cannot exceed 28."}` |
 | `?limit=` larger than the table | `400` | `{"error":"Limit cannot exceed 25."}` |
 | Non-numeric id, e.g. `/api/artists/abc` | `400` | `{"data":{"id":"abc"},"error":[…],"success":false}` |
-| An id that does not exist | `200` | `{}` |
+| An id that does not exist, or a deleted row | `404` | `{"error":"Artist not found."}` |
 
-There are no `404`s: a missing id is a `200` with an empty result.
+A missing id is a `404`, not a `200` with an empty result. The message names the resource.
 
 ## 7. Sign out
 

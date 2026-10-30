@@ -48,7 +48,7 @@ const getMediaTypeByID = describeByID({
     operationId: 'getMediaTypeByID',
     tag: 'Media Types',
     summary: 'Retrieve a media type',
-    description: 'Returns the media type with the given id. An unknown id returns 200 with no `data`.',
+    description: 'Returns the media type with the given id. An unknown or deleted id returns 404.',
     schema: mediaTypeSchema,
 });
 
@@ -59,6 +59,10 @@ mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', 
         columns: withoutDeletedAt,
         where: and(eq(media_types.id, id), notDeleted),
     });
+
+    if (!data) {
+        return c.json({ error: 'Media type not found.' }, 404);
+    }
 
     return c.json({ data });
 });

@@ -1,6 +1,12 @@
 import { type DescribeRouteOptions, resolver } from 'hono-openapi';
 import z, { type ZodType } from 'zod';
-import { paginationErrorSchema, paginationSchema, unauthorizedSchema, validationErrorSchema } from '@/utils/schema';
+import {
+    notFoundSchema,
+    paginationErrorSchema,
+    paginationSchema,
+    unauthorizedSchema,
+    validationErrorSchema,
+} from '@/utils/schema';
 
 type RouteDescription = {
     operationId: string;
@@ -64,7 +70,6 @@ export const describeList = ({
     },
 });
 
-// `data` is absent when no item has the requested id.
 export const describeByID = ({
     operationId,
     tag,
@@ -80,9 +85,10 @@ export const describeByID = ({
     responses: {
         200: jsonResponse(
             'The requested item.',
-            z.object({ data: schema.optional() }).meta({ examples: [{ data: sampleOf(schema) }] }),
+            z.object({ data: schema }).meta({ examples: [{ data: sampleOf(schema) }] }),
         ),
         400: jsonResponse('The id is not a number.', validationErrorSchema),
         401: unauthorized,
+        404: jsonResponse('No item has the requested id, or it has been deleted.', notFoundSchema),
     },
 });

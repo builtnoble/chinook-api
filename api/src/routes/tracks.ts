@@ -61,7 +61,7 @@ const getTrackByID = describeByID({
     tag: 'Tracks',
     summary: 'Retrieve a track',
     description:
-        'Returns the track with the given id. The track includes its album (with the album artist), genre and media type. An unknown id returns 200 with no `data`.',
+        'Returns the track with the given id. The track includes its album (with the album artist), genre and media type. An unknown or deleted id returns 404.',
     schema: trackSchema,
 });
 
@@ -82,6 +82,10 @@ trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSch
             media_type: { columns: withoutDeletedAt },
         },
     });
+
+    if (!data) {
+        return c.json({ error: 'Track not found.' }, 404);
+    }
 
     return c.json({ data });
 });

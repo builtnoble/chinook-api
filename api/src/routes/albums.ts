@@ -52,7 +52,7 @@ const getAlbumByID = describeByID({
     tag: 'Albums',
     summary: 'Retrieve an album',
     description:
-        'Returns the album with the given id. The album includes its artist. An unknown id returns 200 with no `data`.',
+        'Returns the album with the given id. The album includes its artist. An unknown or deleted id returns 404.',
     schema: albumSchema,
 });
 
@@ -66,6 +66,10 @@ albumRoutes.get('/:id', describeRoute(getAlbumByID), validator('param', paramSch
             artist: { columns: withoutDeletedAt },
         },
     });
+
+    if (!data) {
+        return c.json({ error: 'Album not found.' }, 404);
+    }
 
     return c.json({ data });
 });
