@@ -31,15 +31,6 @@ export const getAllowedOrigins = (): string[] =>
 // The address clients use for the API, which Better Auth and the Origin guard both trust.
 export const getBaseUrl = (): string => process.env.BETTER_AUTH_URL || 'http://localhost:3000';
 
-// Emails that get the admin role: a comma-separated list in ADMIN_EMAILS, compared without regard to case.
-export const getAdminEmails = (): string[] =>
-    (process.env.ADMIN_EMAILS ?? '')
-        .split(',')
-        .map((email) => email.trim().toLowerCase())
-        .filter(Boolean);
-
-export const isAdminEmail = (email: string): boolean => getAdminEmails().includes(email.trim().toLowerCase());
-
 export type PgError = { code: string; table?: string; constraint?: string };
 
 // Drizzle wraps the driver error, so the Postgres error with its SQLSTATE `code` sits somewhere down the `cause` chain.

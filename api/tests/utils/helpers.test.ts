@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test';
-import { findPgError, getAdminEmails, isAdminEmail, stripErrorDetails } from '@/utils/helpers';
+import { describe, expect, it } from 'bun:test';
+import { findPgError, stripErrorDetails } from '@/utils/helpers';
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
     new Response(JSON.stringify(body), {
@@ -82,39 +82,6 @@ describe('stripErrorDetails', () => {
 
         expect(res).toBe(original);
         expect(await res.text()).toBe('{not json');
-    });
-});
-
-describe('getAdminEmails', () => {
-    const original = process.env.ADMIN_EMAILS;
-
-    afterEach(() => {
-        if (original === undefined) {
-            delete process.env.ADMIN_EMAILS;
-        } else {
-            process.env.ADMIN_EMAILS = original;
-        }
-    });
-
-    it('returns no emails when ADMIN_EMAILS is unset or blank', () => {
-        delete process.env.ADMIN_EMAILS;
-        expect(getAdminEmails()).toEqual([]);
-
-        process.env.ADMIN_EMAILS = ' , ';
-        expect(getAdminEmails()).toEqual([]);
-    });
-
-    it('splits a comma-separated list, trims it and lowercases it', () => {
-        process.env.ADMIN_EMAILS = ' Ada@Example.test , grace@example.test ';
-
-        expect(getAdminEmails()).toEqual(['ada@example.test', 'grace@example.test']);
-    });
-
-    it('matches an email without regard to case', () => {
-        process.env.ADMIN_EMAILS = 'ada@example.test';
-
-        expect(isAdminEmail('ADA@example.test')).toBe(true);
-        expect(isAdminEmail('someone@example.test')).toBe(false);
     });
 });
 
