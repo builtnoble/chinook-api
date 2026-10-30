@@ -28,6 +28,15 @@ export const getAllowedOrigins = (): string[] =>
         .map((origin) => origin.trim())
         .filter(Boolean);
 
+// Emails that get the admin role: a comma-separated list in ADMIN_EMAILS, compared without regard to case.
+export const getAdminEmails = (): string[] =>
+    (process.env.ADMIN_EMAILS ?? '')
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean);
+
+export const isAdminEmail = (email: string): boolean => getAdminEmails().includes(email.trim().toLowerCase());
+
 // Better Auth attaches the raw error as `details` to some failures, which for a database error is the
 // failing SQL, its values and the underlying cause. Drop it from error responses before they leave the API.
 export const stripErrorDetails = async (res: Response): Promise<Response> => {
