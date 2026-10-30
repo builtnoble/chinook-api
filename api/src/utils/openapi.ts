@@ -139,7 +139,8 @@ const unprocessable = jsonResponse(
 
 const conflict = (description: string) => jsonResponse(description, conflictSchema);
 
-// Writes need the admin role, so every one documents the 403 beside the 401.
+// Writes need the admin role, so every one documents the 403 beside the 401. A create under another item, such as a
+// track in a playlist, sets `parent` to also document the 404 for an unknown parent id.
 export const describeCreate = ({
     operationId,
     tag,
@@ -147,7 +148,8 @@ export const describeCreate = ({
     description,
     schema,
     body,
-}: WriteDescription): DescribeRouteOptions => ({
+    parent = false,
+}: WriteDescription & { parent?: boolean }): DescribeRouteOptions => ({
     operationId,
     tags: [tag],
     summary,
@@ -162,6 +164,7 @@ export const describeCreate = ({
         400: invalidBody,
         401: unauthorized,
         403: forbidden,
+        ...(parent ? { 404: notFound } : {}),
         409: conflict('A unique value collides with an existing row.'),
         422: unprocessable,
     },

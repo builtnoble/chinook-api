@@ -33,6 +33,14 @@ describe('describeCreate', () => {
     });
 });
 
+describe('describeCreate for an item under a parent', () => {
+    it('also documents the 404 for an unknown parent', () => {
+        const options = describeCreate({ ...common, body, parent: true });
+
+        expect(statuses(options)).toEqual(['201', '400', '401', '403', '404', '409', '422']);
+    });
+});
+
 describe('describeUpdate', () => {
     const options = describeUpdate({ ...common, body });
 

@@ -1,11 +1,21 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
-import { playlists } from '@/db/schema';
+import { playlist_tracks, playlists, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import { paramSchema, playlistCreateSchema, playlistSchema, playlistUpdateSchema, querySchema } from '@/utils/schema';
+import {
+    paramSchema,
+    playlistCreateSchema,
+    playlistSchema,
+    playlistTrackCreateSchema,
+    playlistTrackParamSchema,
+    playlistTrackSchema,
+    playlistUpdateSchema,
+    querySchema,
+} from '@/utils/schema';
+import { httpError, requireLiveParent } from '@/utils/write';
 
 const playlistRoutes = new Hono();
 
@@ -124,5 +134,85 @@ playlistRoutes.delete('/:id', describeRoute(deletePlaylist), validator('param', 
 
     return c.json({ data });
 });
+
+const addPlaylistTrack = describeCreate({
+    operationId: 'addPlaylistTrack',
+    tag: 'Playlists',
+    summary: 'Add a track to a playlist',
+    description:
+        'Adds the track to the playlist with the given id. Adding a track that is already in the playlist returns 409, an unknown playlist returns 404, and a `track_id` that does not exist or is deleted returns 422. Requires the admin role.',
+    schema: playlistTrackSchema,
+    body: playlistTrackCreateSchema,
+    parent: true,
+});
+
+playlistRoutes.post(
+    '/:id/tracks',
+    describeRoute(addPlaylistTrack),
+    validator('param', paramSchema),
+    validator('json', playlistTrackCreateSchema),
+    async (c) => {
+        const { id } = c.req.valid('param');
+        const { track_id } = c.req.valid('json');
+
+        const data = await db.transaction(async (tx) => {
+            // Share-locked, so the playlist cannot be deleted while the track is added to it.
+            const [playlist] = await tx
+                .select({ id: playlists.id })
+                .from(playlists)
+                .where(eq(playlists.id, id))
+                .for('share');
+
+            if (!playlist) {
+                throw httpError(404, 'Playlist not found.');
+            }
+
+            await requireLiveParent(tx, tracks, track_id, 'track_id', 'track');
+
+            const [added] = await tx
+                .insert(playlist_tracks)
+                .values({ playlist_id: id, track_id })
+                .onConflictDoNothing()
+                .returning();
+
+            if (!added) {
+                throw httpError(409, 'The track is already in the playlist.');
+            }
+
+            return added;
+        });
+
+        return c.json({ data }, 201);
+    },
+);
+
+const removePlaylistTrack = describeDelete({
+    operationId: 'removePlaylistTrack',
+    tag: 'Playlists',
+    summary: 'Remove a track from a playlist',
+    description:
+        'Removes the track from the playlist with the given id and returns the entry that was removed. The track itself is not touched. A track that is not in the playlist, or an unknown playlist, returns 404. Requires the admin role.',
+    schema: playlistTrackSchema,
+});
+
+playlistRoutes.delete(
+    '/:id/tracks/:track_id',
+    describeRoute(removePlaylistTrack),
+    validator('param', playlistTrackParamSchema),
+    async (c) => {
+        const { id, track_id } = c.req.valid('param');
+
+        const [data] = await db
+            .delete(playlist_tracks)
+            .where(and(eq(playlist_tracks.playlist_id, id), eq(playlist_tracks.track_id, track_id)))
+            .returning();
+
+        if (!data) {
+            return c.json({ error: 'The playlist does not contain that track.' }, 404);
+        }
+
+        return c.json({ data });
+    },
+);
 
 export default playlistRoutes;
