@@ -5,7 +5,8 @@
         "dev": "bun --env-file=../.env run --hot src/index.ts",
         "test": "bun --env-file=../.env test",
         "lint": "biome check ..",
-        "openapi:export": "bun scripts/export-openapi.ts"
+        "openapi:export": "bun scripts/export-openapi.ts",
+        "create-admin": "cd .. && bun x auth@1.7.14 create-admin --cwd api"
     },
     "dependencies": {
         "@hono/standard-validator": "^0.1.5",

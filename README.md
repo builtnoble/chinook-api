@@ -62,6 +62,12 @@ Authorization: Bearer <access_token>
 
 If no valid session exists, a `401 Unauthorized` response is returned.
 
+### Roles
+
+Any signed-in user can read. Writes (`POST`, `PATCH` and `DELETE`) need the `admin` role, and a signed-in user without
+it gets `403`. Signing up always creates an ordinary user, so the first admin is created from the command line; see
+[Create an admin](#create-an-admin).
+
 ---
 
 ## Frontend Context
@@ -188,6 +194,31 @@ In the database, deleting a playlist, track or invoice also deletes its `playlis
 deleting an artist that still has albums, or a track that appears on an invoice line, fails with a foreign key error. The
 API soft-deletes tracks (it sets `tracks.deleted_at`, a column the image adds) so that sold tracks never hit that error.
 A database created from an older image gets the column from the first `drizzle-kit migrate`.
+
+---
+
+### Create an admin
+
+Once the database is running and migrated (see above), create the first admin:
+
+```sh
+cd api
+bun run create-admin --email admin@example.com --name "Admin"
+```
+
+It asks for a password. Passing `--password` skips the question but leaves the password in your shell history. If any
+users already exist it asks `Create an admin user anyway?`; answer `y`, or pass `--yes`. The new account has a verified
+email, so you can sign in with it straight away (see [docs/guides/INSOMNIA.md](docs/guides/INSOMNIA.md)). Running it
+again for an email that already has an account fails with `User already exists`.
+
+The API does not need to be running. The script runs the [Better Auth CLI](https://www.better-auth.com/docs/concepts/cli)
+(`auth create-admin`) from the repository root with `--cwd api`, which is how the CLI finds `api/src/utils/auth.ts` and
+the `@/` import alias; it reads the database from the `.env` in the repository root. Other `create-admin` options, such
+as `--role` and `--no-email-verified`, can be added to the command. The CLI version is pinned in the script, because
+`create-admin` only exists from version 1.7; change it there to upgrade.
+
+Accounts live in the database volume, so `docker compose down -v` removes the admin along with everything else. Run the
+migrations and `create-admin` again after it.
 
 ---
 

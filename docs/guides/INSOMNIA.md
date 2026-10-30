@@ -111,6 +111,20 @@ The response headers include `set-auth-token` (the session token) and
 | Email already registered | `422` | `{"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}` |
 | `name` missing | `422` | `{"code":"FAILED_TO_CREATE_USER","message":"Failed to create user"}` |
 
+### Create an admin account
+
+An account made with the request above is an ordinary user. It can read every route, but a write (`POST`, `PATCH` or
+`DELETE`) returns `403` with `{"error":"This action requires the admin role."}`. To send writes, create an admin
+from the command line instead of signing up:
+
+```sh
+cd api && bun run create-admin --email admin@example.com --name "Admin"
+```
+
+It asks for a password (passing `--password` leaves it in your shell history) and, if any users already exist, asks
+`Create an admin user anyway?`; answer `y` or pass `--yes`. The database must be running and migrated, but the API does
+not need to be. Skip the sign-up request and go to step 4: sign in with that email and password.
+
 ## 4. Sign in
 
 `POST {{ _.base_url }}/api/auth/sign-in/email` with a JSON body:
@@ -193,6 +207,7 @@ Single records come back as `{ "data": { … } }`.
 | `?limit=` larger than the table | `400` | `{"error":"Limit cannot exceed 25."}` |
 | Non-numeric id, e.g. `/api/artists/abc` | `400` | `{"data":{"id":"abc"},"error":[…],"success":false}` |
 | An id that does not exist, or a deleted row | `404` | `{"error":"Artist not found."}` |
+| A write by a signed-in user who is not an admin | `403` | `{"error":"This action requires the admin role."}` |
 
 A missing id is a `404`, not a `200` with an empty result. The message names the resource.
 
@@ -228,8 +243,17 @@ Bearer token), and the `Origin` header from step 2. Returns `200` `{"success":tr
   in `.env`) are the trusted origins. A browser request from `http://api.chinook.localhost` gets this unless
   `BETTER_AUTH_URL` is that address (older copies of `.env` have `http://localhost:3000`). See the README for
   configuring a frontend.
+- **`403` `This action requires the admin role.`** You are signed in as an ordinary user. Create an admin as in
+  [Create an admin account](#create-an-admin-account) and sign in with it.
+- **`create-admin` says `Failed to inspect existing users`.** The command cannot reach the database, or the auth tables
+  do not exist yet: the same causes as the `500` above. Check that `db` is healthy and run `bunx drizzle-kit migrate`.
+- **`create-admin` says `User already exists`.** That email already has an account. Use another email, or sign in
+  with the existing account.
+- **`create-admin` says `Cannot find module '@/db'`.** The Better Auth CLI was run from the wrong directory (use
+  `bun run create-admin` in `api/`, which sets the right one), and it cached its failed attempt. Delete `jiti` from your
+  temporary directory (`$TMPDIR/jiti`, or `/tmp/jiti` where `TMPDIR` is not set) and run the script again.
 - **Start over.** `docker compose down -v` deletes the database volume, accounts included, and re-seeds on
-  the next start (then run the migrations again).
+  the next start (then run the migrations and `create-admin` again).
 
 ## The same requests with curl
 
