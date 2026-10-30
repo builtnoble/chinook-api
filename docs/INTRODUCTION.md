@@ -83,12 +83,14 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
    Zod schema (`api/src/utils/schema/index.ts`), then, for list endpoints, runs `paginationMiddleware`.
 5. `paginationMiddleware` does a `db.$count()` against the target table, derives
    `currentPage` / `perPage` / `offset`, and rejects out-of-range pages with `400` before the
-   main query runs. A route can pass a `where` to narrow the count to the rows it lists: the tracks
-   route passes "not soft-deleted", so a deleted track does not count towards `total_items`.
+   main query runs. When the table has a `deleted_at` column the count leaves out soft-deleted rows,
+   so they do not count towards `total_items`; a route can pass `false` as the second argument to
+   count every row.
 6. The route handler queries Drizzle's relational query builder (`db.query.tracks.findMany`),
    eager-loading related rows (`album.artist`, `genre`, `media_type`) in one round trip via the
-   relations defined in `api/src/db/relations.ts`. The track routes also leave out soft-deleted rows
-   (`deleted_at IS NULL`) and never select the `deleted_at` column.
+   relations defined in `api/src/db/relations.ts`. The track, album, artist, genre and media type
+   routes also leave out soft-deleted rows (`deleted_at IS NULL`) and never select the `deleted_at`
+   column, including on eager-loaded rows.
 7. Response flows back through `snakeCaseKeysMiddleware`, which re-serializes the JSON body with
    snake_case keys before it reaches the client.
 

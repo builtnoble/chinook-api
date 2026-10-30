@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
@@ -8,6 +8,10 @@ import { describeByID, describeList } from '@/utils/openapi';
 import { albumSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const albumRoutes = new Hono();
+
+// Deleting an album sets deleted_at, so every read leaves those rows out and never returns the column.
+const notDeleted = isNull(albums.deleted_at);
+const withoutDeletedAt = { deleted_at: false } as const;
 
 const getAlbums = describeList({
     operationId: 'getAlbums',
@@ -27,8 +31,10 @@ albumRoutes.get(
         const { offset, ...pagination } = c.get('pagination');
 
         const albums = await db.query.albums.findMany({
+            columns: withoutDeletedAt,
+            where: notDeleted,
             with: {
-                artist: true,
+                artist: { columns: withoutDeletedAt },
             },
             limit: pagination.perPage,
             offset,
@@ -54,9 +60,10 @@ albumRoutes.get('/:id', describeRoute(getAlbumByID), validator('param', paramSch
     const { id } = c.req.valid('param');
 
     const data = await db.query.albums.findFirst({
-        where: eq(albums.id, id),
+        columns: withoutDeletedAt,
+        where: and(eq(albums.id, id), notDeleted),
         with: {
-            artist: true,
+            artist: { columns: withoutDeletedAt },
         },
     });
 

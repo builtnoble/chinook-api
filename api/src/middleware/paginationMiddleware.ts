@@ -1,4 +1,4 @@
-import type { SQL } from 'drizzle-orm';
+import { getTableColumns, isNull } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context as GenericContext } from 'hono';
 import { createMiddleware } from 'hono/factory';
@@ -33,8 +33,13 @@ type Context = GenericContext<
     QuerySchema<typeof querySchema>
 >;
 
-// `where` narrows the count to the rows the route lists, for example the ones that are not soft-deleted.
-const paginationMiddleware = (table: PgTable, where?: SQL) => {
+// Deleting a row sets deleted_at, so by default the count leaves those rows out
+// to match what the route lists. Tables without a deleted_at column are counted
+// in full; pass `false` to count every row.
+const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
+    const { deleted_at } = getTableColumns(table);
+    const where = excludeDeleted && deleted_at ? isNull(deleted_at) : undefined;
+
     return createMiddleware<{ Bindings: Bindings; Variables: { pagination: PaginationVariables } }>(
         async (c: Context, next) => {
             const totalItems = await db.$count(table, where);

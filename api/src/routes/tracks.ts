@@ -27,7 +27,7 @@ trackRoutes.get(
     '/',
     describeRoute(getTracks),
     validator('query', querySchema),
-    paginationMiddleware(tracks, notDeleted),
+    paginationMiddleware(tracks),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
@@ -37,12 +37,13 @@ trackRoutes.get(
             orderBy: (albums, { asc }) => asc(albums.id),
             with: {
                 album: {
+                    columns: withoutDeletedAt,
                     with: {
-                        artist: true,
+                        artist: { columns: withoutDeletedAt },
                     },
                 },
-                genre: true,
-                media_type: true,
+                genre: { columns: withoutDeletedAt },
+                media_type: { columns: withoutDeletedAt },
             },
             limit: pagination.perPage,
             offset,
@@ -72,12 +73,13 @@ trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSch
         where: and(eq(tracks.id, id), notDeleted),
         with: {
             album: {
+                columns: withoutDeletedAt,
                 with: {
-                    artist: true,
+                    artist: { columns: withoutDeletedAt },
                 },
             },
-            genre: true,
-            media_type: true,
+            genre: { columns: withoutDeletedAt },
+            media_type: { columns: withoutDeletedAt },
         },
     });
 

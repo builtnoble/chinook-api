@@ -70,13 +70,16 @@ const mediaTypeExample = { id: 1, name: 'MPEG audio file' };
 export const artistSchema = createSelectSchema(artists, {
     id: (schema) => schema.describe('Unique identifier for the artist.'),
     name: (schema) => schema.describe('Name of the artist.'),
-}).meta({ examples: [artistExample] });
+})
+    .omit({ deleted_at: true })
+    .meta({ examples: [artistExample] });
 
 export const albumSchema = createSelectSchema(albums, {
     id: (schema) => schema.describe('Unique identifier for the album.'),
     title: (schema) => schema.describe('Title of the album.'),
     artist_id: (schema) => schema.describe('Identifier of the album artist.'),
 })
+    .omit({ deleted_at: true })
     .extend({
         artist: artistSchema.describe('The artist who made the album.'),
     })
@@ -85,12 +88,16 @@ export const albumSchema = createSelectSchema(albums, {
 export const genreSchema = createSelectSchema(genres, {
     id: (schema) => schema.describe('Unique identifier for the genre.'),
     name: (schema) => schema.describe('Name of the genre.'),
-}).meta({ examples: [genreExample] });
+})
+    .omit({ deleted_at: true })
+    .meta({ examples: [genreExample] });
 
 export const mediaTypeSchema = createSelectSchema(media_types, {
     id: (schema) => schema.describe('Unique identifier for the media type.'),
     name: (schema) => schema.describe('Name of the media type.'),
-}).meta({ examples: [mediaTypeExample] });
+})
+    .omit({ deleted_at: true })
+    .meta({ examples: [mediaTypeExample] });
 
 export const playlistSchema = createSelectSchema(playlists, {
     id: (schema) => schema.describe('Unique identifier for the playlist.'),

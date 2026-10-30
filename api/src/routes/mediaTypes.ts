@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
@@ -8,6 +8,10 @@ import { describeByID, describeList } from '@/utils/openapi';
 import { mediaTypeSchema, paramSchema, querySchema } from '@/utils/schema';
 
 const mediaTypeRoutes = new Hono();
+
+// Deleting a media type sets deleted_at, so every read leaves those rows out and never returns the column.
+const notDeleted = isNull(media_types.deleted_at);
+const withoutDeletedAt = { deleted_at: false } as const;
 
 const getMediaTypes = describeList({
     operationId: 'getMediaTypes',
@@ -27,6 +31,8 @@ mediaTypeRoutes.get(
         const { offset, ...pagination } = c.get('pagination');
 
         const mediaTypes = await db.query.media_types.findMany({
+            columns: withoutDeletedAt,
+            where: notDeleted,
             limit: pagination.perPage,
             offset,
         });
@@ -50,7 +56,8 @@ mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', 
     const { id } = c.req.valid('param');
 
     const data = await db.query.media_types.findFirst({
-        where: eq(media_types.id, id),
+        columns: withoutDeletedAt,
+        where: and(eq(media_types.id, id), notDeleted),
     });
 
     return c.json({ data });
