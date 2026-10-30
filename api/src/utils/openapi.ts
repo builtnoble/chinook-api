@@ -39,7 +39,18 @@ const forbidden = jsonResponse(
     forbiddenSchema,
 );
 
-const notFound = jsonResponse('No item has the requested id, or it has been deleted.', notFoundSchema);
+// "Media Types" -> "Media type not found.", the message the routes return, so each page shows its own resource.
+const notFoundMessage = (tag: string) => {
+    const name = tag.replace(/s$/, '').toLowerCase();
+
+    return `${name.charAt(0).toUpperCase()}${name.slice(1)} not found.`;
+};
+
+const notFound = (tag: string, message = notFoundMessage(tag)) =>
+    jsonResponse(
+        'No item has the requested id, or it has been deleted.',
+        notFoundSchema.meta({ examples: [{ error: message }] }),
+    );
 
 export const describeList = ({
     operationId,
@@ -100,7 +111,7 @@ export const describeByID = ({
         ),
         400: jsonResponse('The id is not a number.', validationErrorSchema),
         401: unauthorized,
-        404: notFound,
+        404: notFound(tag),
     },
 });
 
@@ -166,7 +177,7 @@ export const describeCreate = ({
         400: invalidBody,
         401: unauthorized,
         403: forbidden,
-        ...(parent ? { 404: notFound } : {}),
+        ...(parent ? { 404: notFound(tag) } : {}),
         409: conflict('A unique value collides with an existing row.'),
         422: unprocessable,
     },
@@ -194,7 +205,7 @@ export const describeUpdate = ({
         400: invalidBody,
         401: unauthorized,
         403: forbidden,
-        404: notFound,
+        404: notFound(tag),
         409: conflict('A unique value collides with an existing row.'),
         422: unprocessable,
     },
@@ -208,7 +219,12 @@ export const describeDelete = ({
     description,
     schema,
     blockedBy,
-}: RouteDescription & { blockedBy?: string }): DescribeRouteOptions => ({
+    notFoundError,
+}: RouteDescription & {
+    blockedBy?: string;
+    // The 404 message, when it is not "<Resource> not found.".
+    notFoundError?: string;
+}): DescribeRouteOptions => ({
     operationId,
     tags: [tag],
     summary,
@@ -222,7 +238,7 @@ export const describeDelete = ({
         400: jsonResponse('The id is not a number, or a query parameter is invalid.', validationErrorSchema),
         401: unauthorized,
         403: forbidden,
-        404: notFound,
+        404: notFound(tag, notFoundError),
         ...(blockedBy ? { 409: conflict(blockedBy) } : {}),
     },
 });

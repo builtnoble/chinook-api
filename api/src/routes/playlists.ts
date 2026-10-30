@@ -193,6 +193,7 @@ const removePlaylistTrack = describeDelete({
     description:
         'Removes the track from the playlist with the given id and returns the entry that was removed. The track itself is not touched. A track that is not in the playlist, or an unknown playlist, returns 404. Requires the admin role.',
     schema: playlistTrackSchema,
+    notFoundError: 'The playlist does not contain that track.',
 });
 
 playlistRoutes.delete(
