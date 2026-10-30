@@ -25,6 +25,28 @@
             }
         }
     },
+    "overrides": [
+        {
+            "includes": ["api/src/lib/problem-details/**"],
+            "linter": {
+                "rules": {
+                    "style": {
+                        "noRestrictedImports": {
+                            "level": "error",
+                            "options": {
+                                "patterns": [
+                                    {
+                                        "group": ["@/*", "..", "../**"],
+                                        "message": "This library must not import from the application or from outside its own directory."
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    ],
     "javascript": {
         "formatter": {
             "jsxQuoteStyle": "double",
