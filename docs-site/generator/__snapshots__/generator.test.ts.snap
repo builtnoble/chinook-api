@@ -175,6 +175,151 @@ The album model contains the following properties.
 
 ---
 
+## Create an album {{ tag: 'POST', label: '/api/albums' }}
+
+<Row>
+  <Col>
+
+    Creates an album for an existing artist and returns it with its artist. An \`artist_id\` that does not exist, or whose artist is deleted, returns 422. Requires the admin role.
+
+    ### Required attributes
+
+    <Properties>
+      <Property name="title" type="string">
+        Title of the album.
+      </Property>
+      <Property name="artist_id" type="integer">
+        Identifier of the album artist, who must exist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The album. See [the album model](#the-album-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="POST" label="/api/albums">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X POST http://localhost:3000/api/albums \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{
+      "title": "For Those About To Rock We Salute You",
+      "artist_id": 1
+    }'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/albums', {
+      method: 'POST',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: 'For Those About To Rock We Salute You',
+        artist_id: 1,
+      }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "title": "For Those About To Rock We Salute You",
+        "artist_id": 1,
+        "artist": {
+          "id": 1,
+          "name": "AC/DC"
+        }
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
 ## Retrieve an album {{ tag: 'GET', label: '/api/albums/:id' }}
 
 <Row>
@@ -271,7 +416,301 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Artist not found."
+      "error": "Album not found."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Update an album {{ tag: 'PATCH', label: '/api/albums/:id' }}
+
+<Row>
+  <Col>
+
+    Changes the given fields of the album with the given id and returns it with its artist. An unknown or deleted id returns 404, and an \`artist_id\` that does not exist or is deleted returns 422. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Optional attributes
+
+    <Properties>
+      <Property name="title" type="string, optional">
+        Title of the album.
+      </Property>
+      <Property name="artist_id" type="integer, optional">
+        Identifier of the album artist, who must exist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The album. See [the album model](#the-album-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="PATCH" label="/api/albums/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X PATCH http://localhost:3000/api/albums/1 \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{
+      "title": "For Those About To Rock We Salute You",
+      "artist_id": 1
+    }'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/albums/1', {
+      method: 'PATCH',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        title: 'For Those About To Rock We Salute You',
+        artist_id: 1,
+      }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "title": "For Those About To Rock We Salute You",
+        "artist_id": 1,
+        "artist": {
+          "id": 1,
+          "name": "AC/DC"
+        }
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Album not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Delete an album {{ tag: 'DELETE', label: '/api/albums/:id' }}
+
+<Row>
+  <Col>
+
+    Deletes the album with the given id and returns it with its artist. The album is kept but no longer listed. While the album has tracks the delete is refused with 409, unless \`cascade=true\`, which deletes the tracks too, all or nothing. An unknown or deleted id returns 404. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="cascade" type={"\\"true\\" | \\"false\\", optional"}>
+        Set to \`true\` to delete what depends on the item too. Defaults to \`false\`.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The album. See [the album model](#the-album-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number, or a query parameter is invalid.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        The album still has tracks, and \`cascade=true\` was not passed.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="DELETE" label="/api/albums/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X DELETE http://localhost:3000/api/albums/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/albums/1', {
+      method: 'DELETE',
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "title": "For Those About To Rock We Salute You",
+        "artist_id": 1,
+        "artist": {
+          "id": 1,
+          "name": "AC/DC"
+        }
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Album not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
     }
     \`\`\`
 
@@ -674,7 +1113,7 @@ The artist model contains the following properties.
 <Row>
   <Col>
 
-    Changes the given fields of an artist and returns it. Requires the admin role.
+    Changes the given fields of the artist with the given id and returns it. An unknown or deleted id returns 404. Requires the admin role.
 
     ### Required parameters
 
@@ -822,7 +1261,7 @@ The artist model contains the following properties.
 <Row>
   <Col>
 
-    Soft-deletes an artist and returns it. Requires the admin role.
+    Deletes the artist with the given id and returns it. The artist is kept but no longer listed. While the artist has albums the delete is refused with 409, unless \`cascade=true\`, which deletes their albums and the tracks on them too, all or nothing. An unknown or deleted id returns 404. Requires the admin role.
 
     ### Required parameters
 
@@ -836,7 +1275,7 @@ The artist model contains the following properties.
 
     <Properties>
       <Property name="cascade" type={"\\"true\\" | \\"false\\", optional"}>
-        Set to \`true\` to delete the albums and tracks too.
+        Set to \`true\` to delete what depends on the item too. Defaults to \`false\`.
       </Property>
     </Properties>
 
@@ -864,7 +1303,7 @@ The artist model contains the following properties.
         No item has the requested id, or it has been deleted.
       </Property>
       <Property name="409" type="error">
-        The artist still has albums. Pass \`cascade=true\` to delete them too.
+        The artist still has albums, and \`cascade=true\` was not passed.
       </Property>
     </Properties>
 
@@ -936,6 +1375,926 @@ The artist model contains the following properties.
     \`\`\`json {{ title: 'Error response (409)' }}
     {
       "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+"
+`;
+
+exports[`generate matches the recorded pages 3`] = `
+"export const metadata = {
+  title: "Playlists",
+  description: "Named playlists.",
+}
+
+# Playlists
+
+Named playlists. {{ className: 'lead' }}
+
+## The playlist model
+
+The playlist model contains the following properties.
+
+### Properties
+
+<Properties>
+  <Property name="id" type="integer">
+    Unique identifier for the playlist.
+  </Property>
+  <Property name="name" type="string">
+    Name of the playlist.
+  </Property>
+</Properties>
+
+---
+
+## List all playlists {{ tag: 'GET', label: '/api/playlists' }}
+
+<Row>
+  <Col>
+
+    Returns a paginated list of playlists.
+
+    ### Optional parameters
+
+    <Properties>
+      <Property name="limit" type="number, optional">
+        Number of items per page. Defaults to 10, or the total if fewer.
+      </Property>
+      <Property name="page" type="number, optional">
+        Page number to return, starting at 1. Defaults to 1.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object[]">
+        The playlists on this page. See [the playlist model](#the-playlist-model).
+      </Property>
+      <Property name="pagination" type="object">
+        Where the returned page sits among all pages.
+      </Property>
+      <Property name="pagination.current_page" type="number">
+        The page returned.
+      </Property>
+      <Property name="pagination.per_page" type="number">
+        Number of items per page.
+      </Property>
+      <Property name="pagination.total_items" type="number">
+        Total number of items across all pages.
+      </Property>
+      <Property name="pagination.total_pages" type="number">
+        Total number of pages.
+      </Property>
+      <Property name="pagination.prev_page_url" type="string | null">
+        Path of the previous page, or null on the first page.
+      </Property>
+      <Property name="pagination.next_page_url" type="string | null">
+        Path of the next page, or null on the last page.
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The query is invalid, or the requested page or limit is out of range.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/playlists">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/playlists \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": [
+        {
+          "id": 1,
+          "name": "Music"
+        }
+      ],
+      "pagination": {
+        "current_page": 1,
+        "per_page": 1,
+        "total_items": 3,
+        "total_pages": 3,
+        "prev_page_url": null,
+        "next_page_url": "/api/playlists?page=2"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Page cannot exceed 35."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Create a playlist {{ tag: 'POST', label: '/api/playlists' }}
+
+<Row>
+  <Col>
+
+    Creates an empty playlist and returns it. Requires the admin role.
+
+    ### Required attributes
+
+    <Properties>
+      <Property name="name" type="string">
+        Name of the playlist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The playlist. See [the playlist model](#the-playlist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="POST" label="/api/playlists">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X POST http://localhost:3000/api/playlists \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"name":"Music"}'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists', {
+      method: 'POST',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Music' }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "Music"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Retrieve a playlist {{ tag: 'GET', label: '/api/playlists/:id' }}
+
+<Row>
+  <Col>
+
+    Returns the playlist with the given id. An unknown id returns 404.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The playlist. See [the playlist model](#the-playlist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="GET" label="/api/playlists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl http://localhost:3000/api/playlists/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists/1', {
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "Music"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Playlist not found."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Update a playlist {{ tag: 'PATCH', label: '/api/playlists/:id' }}
+
+<Row>
+  <Col>
+
+    Changes the given fields of the playlist with the given id and returns it. An unknown id returns 404. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Optional attributes
+
+    <Properties>
+      <Property name="name" type="string, optional">
+        Name of the playlist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The playlist. See [the playlist model](#the-playlist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="PATCH" label="/api/playlists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X PATCH http://localhost:3000/api/playlists/1 \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"name":"Music"}'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists/1', {
+      method: 'PATCH',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'Music' }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "Music"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Playlist not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Delete a playlist {{ tag: 'DELETE', label: '/api/playlists/:id' }}
+
+<Row>
+  <Col>
+
+    Removes the playlist with the given id, and its list of tracks, for good, and returns it. The tracks themselves are not touched. An unknown id returns 404. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        The playlist. See [the playlist model](#the-playlist-model).
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number, or a query parameter is invalid.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="DELETE" label="/api/playlists/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X DELETE http://localhost:3000/api/playlists/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists/1', {
+      method: 'DELETE',
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "id": 1,
+        "name": "Music"
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Playlist not found."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Add a track to a playlist {{ tag: 'POST', label: '/api/playlists/:id/tracks' }}
+
+<Row>
+  <Col>
+
+    Adds the track to the playlist with the given id. Adding a track that is already in the playlist returns 409, an unknown playlist returns 404, and a \`track_id\` that does not exist or is deleted returns 422. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the item.
+      </Property>
+    </Properties>
+
+    ### Required attributes
+
+    <Properties>
+      <Property name="track_id" type="integer">
+        Identifier of the track to add, which must exist.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        &nbsp;
+      </Property>
+      <Property name="data.playlist_id" type="integer">
+        Identifier of the playlist.
+      </Property>
+      <Property name="data.track_id" type="integer">
+        Identifier of the track.
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The body is not valid JSON, or a field is missing, unknown or of the wrong type.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+      <Property name="409" type="error">
+        A unique value collides with an existing row.
+      </Property>
+      <Property name="422" type="error">
+        A field refers to a parent that does not exist or is deleted, or a value is too long.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="POST" label="/api/playlists/1/tracks">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X POST http://localhost:3000/api/playlists/1/tracks \\
+      -H "Authorization: Bearer {token}" \\
+      -H "Content-Type: application/json" \\
+      -d '{"track_id":1}'
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists/1/tracks', {
+      method: 'POST',
+      headers: {
+        Authorization: \`Bearer \${token}\`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ track_id: 1 }),
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "playlist_id": 1,
+        "track_id": 1
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "name": 42
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected string, received number",
+          "path": [
+            "name"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "error": "Malformed JSON in request body"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "Playlist not found."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (409)' }}
+    {
+      "error": "A row with that value already exists."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (422)' }}
+    {
+      "error": "The row refers to a parent that does not exist."
+    }
+    \`\`\`
+
+  </Col>
+</Row>
+
+---
+
+## Remove a track from a playlist {{ tag: 'DELETE', label: '/api/playlists/:id/tracks/:track_id' }}
+
+<Row>
+  <Col>
+
+    Removes the track from the playlist with the given id and returns the entry that was removed. The track itself is not touched. A track that is not in the playlist, or an unknown playlist, returns 404. Requires the admin role.
+
+    ### Required parameters
+
+    <Properties>
+      <Property name="id" type="number">
+        Unique identifier of the playlist.
+      </Property>
+      <Property name="track_id" type="number">
+        Unique identifier of the track.
+      </Property>
+    </Properties>
+
+    ### Response attributes
+
+    <Properties>
+      <Property name="data" type="object">
+        &nbsp;
+      </Property>
+      <Property name="data.playlist_id" type="integer">
+        Identifier of the playlist.
+      </Property>
+      <Property name="data.track_id" type="integer">
+        Identifier of the track.
+      </Property>
+    </Properties>
+
+    ### Errors
+
+    <Properties>
+      <Property name="400" type="error">
+        The id is not a number, or a query parameter is invalid.
+      </Property>
+      <Property name="401" type="error">
+        Missing or invalid credentials.
+      </Property>
+      <Property name="403" type="error">
+        The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.
+      </Property>
+      <Property name="404" type="error">
+        No item has the requested id, or it has been deleted.
+      </Property>
+    </Properties>
+
+  </Col>
+  <Col sticky>
+
+    <CodeGroup title="Request" tag="DELETE" label="/api/playlists/1/tracks/1">
+
+    \`\`\`bash {{ title: 'cURL' }}
+    curl -X DELETE http://localhost:3000/api/playlists/1/tracks/1 \\
+      -H "Authorization: Bearer {token}"
+    \`\`\`
+
+    \`\`\`js
+    const response = await fetch('http://localhost:3000/api/playlists/1/tracks/1', {
+      method: 'DELETE',
+      headers: { Authorization: \`Bearer \${token}\` },
+    })
+    const body = await response.json()
+    \`\`\`
+
+    </CodeGroup>
+
+    \`\`\`json {{ title: 'Response' }}
+    {
+      "data": {
+        "playlist_id": 1,
+        "track_id": 1
+      }
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (400)' }}
+    {
+      "success": false,
+      "data": {
+        "id": "abc"
+      },
+      "error": [
+        {
+          "code": "invalid_type",
+          "message": "Invalid input: expected number, received NaN",
+          "path": [
+            "id"
+          ]
+        }
+      ]
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (401)' }}
+    {
+      "message": "Unauthorized"
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (403)' }}
+    {
+      "error": "This action requires the admin role."
+    }
+    \`\`\`
+
+    \`\`\`json {{ title: 'Error response (404)' }}
+    {
+      "error": "The playlist does not contain that track."
     }
     \`\`\`
 

@@ -42,6 +42,7 @@ describe('generate', () => {
             'src/app/artists/page.mdx',
             'src/app/insomnia/page.mdx',
             'src/app/page.mdx',
+            'src/app/playlists/page.mdx',
             'src/generated/meta.json',
             'src/generated/navigation.json',
         ]);
@@ -59,6 +60,7 @@ describe('generate', () => {
                 links: [
                     { title: 'Albums', href: '/albums', description: 'Albums, each with the artist who made it.' },
                     { title: 'Artists', href: '/artists', description: 'Artists who have made albums.' },
+                    { title: 'Playlists', href: '/playlists', description: 'Named playlists.' },
                 ],
             },
         ]);
@@ -80,6 +82,7 @@ describe('generate', () => {
 
         expect(files['src/app/albums/page.mdx']).toMatchSnapshot();
         expect(files['src/app/artists/page.mdx']).toMatchSnapshot();
+        expect(files['src/app/playlists/page.mdx']).toMatchSnapshot();
     });
 
     it('is deterministic', () => {
@@ -133,6 +136,47 @@ describe('the artist writes in the fixture', () => {
 
     it('documents the optional cascade parameter of a delete', () => {
         expect(page()).toContain('<Property name="cascade"');
+    });
+
+    it('shows the artist in the 404 example, not another resource', () => {
+        expect(page()).toContain('"error": "Artist not found."');
+    });
+});
+
+describe('the playlist membership routes in the fixture', () => {
+    const page = () => generate(fixture)['src/app/playlists/page.mdx'];
+
+    it('has a section for adding and one for removing a track, after the playlist routes', () => {
+        const headings = [...page().matchAll(/^## (.+) \{\{ tag: '(\w+)', label: '(.+)' \}\}$/gm)].map((match) =>
+            match.slice(1).join(' | '),
+        );
+
+        expect(headings.slice(-2)).toEqual([
+            'Add a track to a playlist | POST | /api/playlists/:id/tracks',
+            'Remove a track from a playlist | DELETE | /api/playlists/:id/tracks/:track_id',
+        ]);
+    });
+
+    it('fills the path, the body and the 404 in with the entry, not the playlist', () => {
+        const add = page().slice(page().indexOf('## Add a track to a playlist'));
+
+        expect(add).toContain('curl -X POST http://localhost:3000/api/playlists/1/tracks');
+        expect(add).toContain(`-d '{"track_id":1}'`);
+        expect(add).toContain('"error": "Playlist not found."');
+    });
+
+    it('lists the attributes of the entry instead of linking to the playlist model', () => {
+        const add = page().slice(page().indexOf('## Add a track to a playlist'));
+
+        expect(add).toContain('<Property name="data.playlist_id"');
+        expect(add).not.toContain('See [the playlist model]');
+    });
+
+    it('shows its own 404 message when removing a track that is not there', () => {
+        const remove = page().slice(page().indexOf('## Remove a track from a playlist'));
+
+        expect(remove).toContain('/api/playlists/1/tracks/1');
+        expect(remove).toContain('"error": "The playlist does not contain that track."');
     });
 });
 
