@@ -438,6 +438,13 @@ describe('write operations', () => {
         expect(page.split('## The thing model')[1].split('---')[0]).toContain('name="name"');
         expect(page.split('## The thing model')[1].split('---')[0]).not.toContain('part_id');
         expect(page.indexOf('## Add a part')).toBeGreaterThan(page.indexOf('## Delete a thing'));
+
+        // Its own response is not the model, so the page lists the attributes instead of linking to the model.
+        const add = sectionOf(page, 'Add a part');
+
+        expect(add).toContain('<Property name="data.part_id" type="integer, optional">');
+        expect(add).not.toContain('See [the thing model]');
+        expect(sectionOf(page, 'Create a thing')).toContain('See [the thing model](#the-thing-model).');
     });
 
     it('compiles every write page as MDX', async () => {

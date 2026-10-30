@@ -105,6 +105,12 @@ const modelOf = (spec: Spec, endpoints: Endpoint[]): Node | undefined => {
     return undefined;
 };
 
+const sameProperties = (a: Node, b: Node) => {
+    const names = (node: Node) => (node.properties ?? []).map((property) => property.name).sort();
+
+    return a.kind === 'object' && b.kind === 'object' && names(a).join() === names(b).join();
+};
+
 const exampleValue = (node: Node) => JSON.stringify(sample(node), null, 2);
 
 // A body example in the model's own words ("AC/DC", not "string"), falling back to a synthesized value for a field
@@ -249,11 +255,20 @@ const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | unde
 
     const status = successStatus(operation);
     const ok = status && responseNode(spec, operation, status, where);
-    if (ok?.kind === 'object' && ok.properties?.some((property) => property.name === 'data')) {
-        const isList = ok.properties.find((property) => property.name === 'data')?.node.kind === 'array';
-        const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`;
+    const data = ok && ok.kind === 'object' ? ok.properties?.find((property) => property.name === 'data') : undefined;
+    if (ok && data) {
+        const isList = data.node.kind === 'array';
+        const row = isList ? data.node.items : data.node;
 
-        left.push('### Response attributes', propertyRows(rows(ok, { collapse: new Map([['data', note]]) })));
+        // Link to the model only when `data` is the model. A response of another shape, such as a playlist entry,
+        // lists its own attributes.
+        if (model && row && sameProperties(row, model)) {
+            const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`;
+
+            left.push('### Response attributes', propertyRows(rows(ok, { collapse: new Map([['data', note]]) })));
+        } else {
+            left.push('### Response attributes', propertyRows(rows(ok)));
+        }
     } else if (model) {
         left.push(`Returns [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`);
     }
