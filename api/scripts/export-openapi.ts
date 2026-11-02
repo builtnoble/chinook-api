@@ -14,3 +14,6 @@ if (!response.ok) {
 await Bun.write(outFile, `${JSON.stringify(await response.json(), null, 2)}\n`);
 console.log(`Wrote ${outFile}`);
 process.exit(0);
+
+// Makes this file a module, which top-level await needs.
+export {};
