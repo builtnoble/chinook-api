@@ -42,7 +42,7 @@ Hono app (api/src/index.ts)
         ├─ snakeCaseKeysMiddleware   → rewrites outgoing JSON keys to snake_case
         ├─ authMiddleware            → verifies session, 401s if absent
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
-              ├─ validator(query/param)   → Zod schemas (api/src/utils/schema/index.ts)
+              ├─ validator(query/param)   → Zod schemas (api/src/utils/schema/)
               ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
               └─ Drizzle query            → api/src/db (schema.ts + relations.ts)
                                                 │
@@ -80,7 +80,7 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
    session → `401` before any route code runs. On success, `user`/`session` are set as Hono
    context variables for downstream handlers.
 4. The matched route (e.g. `api/src/routes/tracks.ts`) validates `query`/`param` input with a shared
-   Zod schema (`api/src/utils/schema/index.ts`), then, for list endpoints, runs `paginationMiddleware`.
+   Zod schema (`api/src/utils/schema/`), then, for list endpoints, runs `paginationMiddleware`.
 5. `paginationMiddleware` does a `db.$count()` against the target table, derives
    `currentPage` / `perPage` / `offset`, and rejects out-of-range pages with `400` before the
    main query runs. When the table has a `deleted_at` column the count leaves out soft-deleted rows,

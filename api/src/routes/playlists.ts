@@ -5,16 +5,13 @@ import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
 import {
-    paramSchema,
-    playlistCreateSchema,
-    playlistSchema,
     playlistTrackCreateSchema,
     playlistTrackParamSchema,
     playlistTrackSchema,
-    playlistUpdateSchema,
-    querySchema,
-} from '@/utils/schema';
+} from '@/utils/schema/resources/playlistTrackSchema';
 import { httpError, requireLiveParent } from '@/utils/write';
 
 const playlistRoutes = new Hono();

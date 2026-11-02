@@ -6,7 +6,7 @@ import type { Bindings } from 'hono/types';
 import type { ZodType, z } from 'zod';
 import db from '@/db';
 import { getPageUrls } from '@/utils/helpers';
-import type { querySchema } from '@/utils/schema';
+import type { querySchema } from '@/utils/schema/requestSchema';
 
 type QuerySchema<T extends ZodType> = {
     out: {

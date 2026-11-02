@@ -5,7 +5,8 @@ import db from '@/db';
 import { albums, genres, media_types, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import { paramSchema, querySchema, trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema';
+import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 import { httpError, requireLiveParent, type Transaction } from '@/utils/write';
 
 const trackRoutes = new Hono();

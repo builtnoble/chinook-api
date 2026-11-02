@@ -6,13 +6,12 @@ import db from '@/db';
 import { media_types, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import {
     mediaTypeCreateSchema,
     mediaTypeSchema,
     mediaTypeUpdateSchema,
-    paramSchema,
-    querySchema,
-} from '@/utils/schema';
+} from '@/utils/schema/resources/mediaTypeSchema';
 import { countOf, httpError } from '@/utils/write';
 
 const mediaTypeRoutes = new Hono();

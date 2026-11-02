@@ -6,14 +6,8 @@ import db from '@/db';
 import { albums, artists, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import {
-    artistCreateSchema,
-    artistSchema,
-    artistUpdateSchema,
-    cascadeQuerySchema,
-    paramSchema,
-    querySchema,
-} from '@/utils/schema';
+import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { artistCreateSchema, artistSchema, artistUpdateSchema } from '@/utils/schema/resources/artistSchema';
 import { countOf, httpError } from '@/utils/write';
 
 const artistRoutes = new Hono();

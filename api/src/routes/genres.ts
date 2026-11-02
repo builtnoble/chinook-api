@@ -6,7 +6,8 @@ import db from '@/db';
 import { genres, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import { genreCreateSchema, genreSchema, genreUpdateSchema, paramSchema, querySchema } from '@/utils/schema';
+import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { genreCreateSchema, genreSchema, genreUpdateSchema } from '@/utils/schema/resources/genreSchema';
 import { countOf, httpError } from '@/utils/write';
 
 const genreRoutes = new Hono();

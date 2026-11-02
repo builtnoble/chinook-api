@@ -5,14 +5,8 @@ import db from '@/db';
 import { albums, artists, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import {
-    albumCreateSchema,
-    albumSchema,
-    albumUpdateSchema,
-    cascadeQuerySchema,
-    paramSchema,
-    querySchema,
-} from '@/utils/schema';
+import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
 import { countOf, httpError, requireLiveParent } from '@/utils/write';
 
 const albumRoutes = new Hono();

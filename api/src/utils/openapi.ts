@@ -10,7 +10,7 @@ import {
     unauthorizedSchema,
     unprocessableSchema,
     validationErrorSchema,
-} from '@/utils/schema';
+} from '@/utils/schema/responseSchema';
 
 type RouteDescription = {
     operationId: string;
