@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { playlist_tracks as playlistTracks } from '@/db/schema';
+import { playlist_tracks as playlistTracks } from '@/db/chinookSchema';
 import playlistRoutes from '@/routes/playlists';
 import { appFor, send } from '../support/app';
 import { stubDb } from '../support/stubDb';

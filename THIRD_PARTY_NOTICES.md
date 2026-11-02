@@ -2,7 +2,7 @@
 
 ## Chinook database
 
-The Chinook table and column definitions in `api/src/db/schema.ts` and in the baseline migration under `api/drizzle/`
+The Chinook table and column definitions in `api/src/db/chinookSchema.ts` and in the baseline migration under `api/drizzle/`
 mirror the schema of the [Chinook database](https://github.com/lerocha/chinook-database) by Luis Rocha, which is
 distributed under the following license. This notice is reproduced as that license requires. The sample rows shown in
 the documentation's examples come from the same dataset.

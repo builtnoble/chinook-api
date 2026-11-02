@@ -1,6 +1,6 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import z from 'zod';
-import { playlist_tracks } from '@/db/schema';
+import { playlist_tracks } from '@/db/chinookSchema';
 
 export const playlistTrackParamSchema = z.object({
     id: z.coerce.number().describe('Unique identifier of the playlist.'),

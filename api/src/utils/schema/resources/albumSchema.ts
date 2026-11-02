@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { albums } from '@/db/schema';
+import { albums } from '@/db/chinookSchema';
 import { updateSchema } from '@/utils/schema/requestSchema';
 import { artistExample, artistSchema } from '@/utils/schema/resources/artistSchema';
 

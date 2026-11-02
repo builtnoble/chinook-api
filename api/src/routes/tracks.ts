@@ -2,7 +2,7 @@ import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
-import { albums, genres, media_types, tracks } from '@/db/schema';
+import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';

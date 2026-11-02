@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { media_types } from '@/db/schema';
+import { media_types } from '@/db/chinookSchema';
 import { updateSchema } from '@/utils/schema/requestSchema';
 
 export const mediaTypeExample = { id: 1, name: 'MPEG audio file' };

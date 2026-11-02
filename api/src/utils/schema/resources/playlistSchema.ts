@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { playlists } from '@/db/schema';
+import { playlists } from '@/db/chinookSchema';
 import { updateSchema } from '@/utils/schema/requestSchema';
 
 export const playlistSchema = createSelectSchema(playlists, {

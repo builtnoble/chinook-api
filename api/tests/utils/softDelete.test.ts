@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { PgDialect } from 'drizzle-orm/pg-core';
-import { artists, media_types, tracks } from '@/db/schema';
+import { artists, media_types, tracks } from '@/db/chinookSchema';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 
 const dialect = new PgDialect();

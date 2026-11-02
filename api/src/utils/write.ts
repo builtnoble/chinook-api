@@ -1,7 +1,7 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import type db from '@/db';
-import type { albums, artists, genres, media_types, tracks } from '@/db/schema';
+import type { albums, artists, genres, media_types, tracks } from '@/db/chinookSchema';
 
 // What `db.transaction` hands its callback.
 export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];

@@ -44,7 +44,7 @@ Hono app (api/src/index.ts)
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
               ├─ validator(query/param)   → Zod schemas (api/src/utils/schema/)
               ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
-              └─ Drizzle query            → api/src/db (schema.ts + relations.ts)
+              └─ Drizzle query            → api/src/db (chinook and auth schemas)
                                                 │
                                                 ▼
                                          PostgreSQL (Chinook dataset)
@@ -88,14 +88,14 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
    count every row.
 6. The route handler queries Drizzle's relational query builder (`db.query.tracks.findMany`),
    eager-loading related rows (`album.artist`, `genre`, `media_type`) in one round trip via the
-   relations defined in `api/src/db/relations.ts`. The track, album, artist, genre and media type
+   relations defined in `api/src/db/chinookRelations.ts`. The track, album, artist, genre and media type
    routes also leave out soft-deleted rows (`deleted_at IS NULL`) and never select the `deleted_at`
    column, including on eager-loaded rows.
 7. Response flows back through `snakeCaseKeysMiddleware`, which re-serializes the JSON body with
    snake_case keys before it reaches the client.
 
 **Auth integration:** Better Auth owns its own tables (`users`, `sessions`, `accounts`,
-`verifications` in `api/src/db/schema.ts`) alongside the Chinook domain tables, sharing the same
+`verifications` in `api/src/db/authSchema.ts`) alongside the Chinook domain tables, sharing the same
 Postgres pool (`api/src/db/index.ts`). `/api/auth/*` is routed directly to Better Auth's handler,
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
 while everything under `/api/*` requires a valid bearer session. Because that route skips the `/api`
@@ -162,7 +162,7 @@ newer image does not change existing data until `docker compose down -v`.
   the database does not hide the row. The column is created by the image, so `chinook-reset` keeps it, and
   migration `0003` adds it to volumes made from an older image.
 - **Foreign key rules are declared twice.** The image's `init.sql` is the source of truth for the
-  Chinook tables (including `tracks.deleted_at`, which it adds for soft deletes), and `api/src/db/schema.ts`
+  Chinook tables (including `tracks.deleted_at`, which it adds for soft deletes), and `api/src/db/chinookSchema.ts`
   mirrors it so Drizzle's snapshots match the real database.
   If the two drift, the next `drizzle-kit generate` proposes the difference as a migration, so check
   that diff against the image before applying it.

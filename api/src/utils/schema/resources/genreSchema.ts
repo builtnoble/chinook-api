@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { genres } from '@/db/schema';
+import { genres } from '@/db/chinookSchema';
 import { updateSchema } from '@/utils/schema/requestSchema';
 
 export const genreExample = { id: 1, name: 'Rock' };

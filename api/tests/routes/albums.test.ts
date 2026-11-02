@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'bun:test';
-import { albums, tracks } from '@/db/schema';
+import { albums, tracks } from '@/db/chinookSchema';
 import albumRoutes from '@/routes/albums';
 import { appFor, send } from '../support/app';
 import { stubDb } from '../support/stubDb';

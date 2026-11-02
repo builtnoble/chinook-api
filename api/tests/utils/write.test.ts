@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import db from '@/db';
-import { artists } from '@/db/schema';
+import { artists } from '@/db/chinookSchema';
 import { httpError, requireLiveParent, type Transaction } from '@/utils/write';
 import { stubDb } from '../support/stubDb';
 

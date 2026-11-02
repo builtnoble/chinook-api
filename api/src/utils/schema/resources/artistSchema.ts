@@ -1,5 +1,5 @@
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
-import { artists } from '@/db/schema';
+import { artists } from '@/db/chinookSchema';
 import { updateSchema } from '@/utils/schema/requestSchema';
 
 // A sample row from the Chinook database, used as a response example in the
