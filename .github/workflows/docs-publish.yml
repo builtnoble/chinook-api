@@ -1,13 +1,17 @@
 name: Publish docs image
 
-# Builds the docs site with the private theme and publishes it as builtnoble/chinook-docs, which docker compose pulls.
+# Builds the docs site with the private theme and publishes it as
+# builtnoble/chinook-docs, which docker compose pulls.
 #   main            -> edge
 #   a v1.2.3 tag    -> 1.2.3, 1.2, 1 (and latest)
-# It never runs for pull requests, so forks cannot reach the theme or the registry credentials.
+# It never runs for pull requests, so forks cannot reach the theme or the
+# registry credentials.
 #
-# Setup, once: the private theme repository, a read-only deploy key on it, and these repository secrets:
+# Setup, once: the private theme repository, a read-only deploy key on it, and
+# these repository secrets:
 #   THEME_DEPLOY_KEY      the private half of that deploy key
-#   DOCKERHUB_USERNAME    a Docker Hub user that can push to builtnoble/chinook-docs
+#   DOCKERHUB_USERNAME    a Docker Hub user that can push to
+#                         builtnoble/chinook-docs
 #   DOCKERHUB_TOKEN       an access token for that user
 on:
   push:
@@ -19,7 +23,8 @@ on:
       - .dockerignore
       - .github/workflows/docs-publish.yml
     tags: ['v*']
-  # Run it by hand after changing the theme, which does not trigger a build by itself.
+  # Run it by hand after changing the theme, which does not trigger a build by
+  # itself.
   workflow_dispatch:
 
 permissions:
@@ -32,7 +37,8 @@ concurrency:
 env:
   IMAGE: builtnoble/chinook-docs
   THEME_REPOSITORY: builtnoble/chinook-docs-theme
-  # A tag or commit of the theme. Pin it for reproducible builds; main builds whatever the theme has now.
+  # A tag or commit of the theme. Pin it for reproducible builds; main builds
+  # whatever the theme has now.
   THEME_REF: main
 
 jobs:
@@ -46,8 +52,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # The theme is licensed and must not be public, so it is only ever a build input here: it is not pushed, not
-      # logged and not cached. Only the compiled static site ends up in the image.
+      # The theme is licensed and must not be public, so it is only ever a build
+      # input here: it is not pushed, not logged and not cached. Only the
+      # compiled static site ends up in the image.
       - name: Check out the private theme
         uses: actions/checkout@v4
         with:
@@ -77,8 +84,9 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      # No cache-from or cache-to: a cache would hold layers made from the theme's source. The stages that build the
-      # site run on the runner's own architecture, so building for both platforms needs no emulation.
+      # No cache-from or cache-to: a cache would hold layers made from the
+      # theme's source. The stages that build the site run on the runner's own
+      # architecture, so building for both platforms needs no emulation.
       - id: build
         uses: docker/build-push-action@v6
         with:
@@ -89,9 +97,11 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
-          # The static labels (title, description, source, licenses) are in the Dockerfile. The metadata action's own
-          # defaults for those come from the GitHub repository (its name, its description, its MIT license), and a
-          # label passed here replaces the Dockerfile's, so only the labels that change per build are passed.
+          # The static labels (title, description, source, licenses) are in the
+          # Dockerfile. The metadata action's own defaults for those come from
+          # the GitHub repository (its name, its description, its MIT license),
+          # and a label passed here replaces the Dockerfile's, so only the
+          # labels that change per build are passed.
           labels: |
             org.opencontainers.image.created=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
             org.opencontainers.image.revision=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}

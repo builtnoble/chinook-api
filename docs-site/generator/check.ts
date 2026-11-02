@@ -1,5 +1,6 @@
-// Renders every page from an exported spec and the published documents, and compiles each as MDX, so a change to
-// the API or to docs/ that the site could not build fails in CI without needing the private theme.
+// Renders every page from an exported spec and the published documents, and
+// compiles each as MDX, so a change to the API or to docs/ that the site could
+// not build fails in CI without needing the private theme.
 // Usage: bun generator/check.ts <openapi.json>
 import { readFile } from 'node:fs/promises';
 import { compile } from '@mdx-js/mdx';

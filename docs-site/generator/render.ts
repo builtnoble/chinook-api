@@ -11,11 +11,13 @@ export const slugify = (text: string) =>
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '');
 
-// "Media Types" -> "media type". Tag names are plural nouns, so dropping the final "s" is enough.
+// "Media Types" -> "media type". Tag names are plural nouns, so dropping the
+// final "s" is enough.
 const singular = (tag: string) => tag.toLowerCase().replace(/s$/, '');
 
-// Descriptions come from the API's source and land inside MDX, where `{`, `}` and `<` start expressions and
-// tags. Backslash-escape them outside code spans, which MDX leaves alone.
+// Descriptions come from the API's source and land inside MDX, where `{`, `}`
+// and `<` start expressions and tags. Backslash-escape them outside code spans,
+// which MDX leaves alone.
 export const escapeMdx = (text: string) =>
     text
         .replace(/\s+/g, ' ')
@@ -33,7 +35,8 @@ const indent = (text: string, spaces: number) =>
 const fence = (language: string, title: string | undefined, body: string) =>
     `\`\`\`${language}${title ? ` {{ title: '${title}' }}` : ''}\n${body}\n\`\`\``;
 
-// A JSX attribute has no escape sequences, so a value with a quote or backslash goes in as an expression.
+// A JSX attribute has no escape sequences, so a value with a quote or backslash
+// goes in as an expression.
 const attribute = (value: string) => (/["\\]/.test(value) ? `{${JSON.stringify(value)}}` : `"${value}"`);
 
 const propertyRows = (items: Row[]) =>
@@ -66,7 +69,8 @@ const responseNode = (spec: Spec, operation: Operation, status: string, where: s
     return schema ? normalize(spec, schema, `${where}.responses.${status}`) : undefined;
 };
 
-// A read answers 200 and a create 201, so the page documents whichever 2xx the operation declares.
+// A read answers 200 and a create 201, so the page documents whichever 2xx the
+// operation declares.
 const successStatus = (operation: Operation): string | undefined =>
     Object.keys(operation.responses ?? {})
         .sort()
@@ -113,8 +117,9 @@ const sameProperties = (a: Node, b: Node) => {
 
 const exampleValue = (node: Node) => JSON.stringify(sample(node), null, 2);
 
-// A body example in the model's own words ("AC/DC", not "string"), falling back to a synthesized value for a field
-// the model does not have, such as the id of a playlist track.
+// A body example in the model's own words ("AC/DC", not "string"), falling back
+// to a synthesized value for a field the model does not have, such as the id of
+// a playlist track.
 const bodyExample = (body: Node, model: Node | undefined): unknown => {
     const known = model ? sample(model) : undefined;
     const values = known && typeof known === 'object' ? (known as Record<string, unknown>) : {};
@@ -130,7 +135,8 @@ const jsString = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/
 
 const jsKey = (key: string) => (/^[A-Za-z_$][\w$]*$/.test(key) ? key : jsString(key));
 
-// A JSON value as a JavaScript literal: one line when short, one property per line otherwise.
+// A JSON value as a JavaScript literal: one line when short, one property per
+// line otherwise.
 const jsLiteral = (value: unknown, depth = 0): string => {
     if (typeof value === 'string') return jsString(value);
     if (Array.isArray(value)) return `[${value.map((item) => jsLiteral(item, depth + 1)).join(', ')}]`;
@@ -146,7 +152,8 @@ const jsLiteral = (value: unknown, depth = 0): string => {
     return `{\n${entries.map((entry) => `${pad}${entry}`).join(',\n')},\n${'  '.repeat(depth)}}`;
 };
 
-// A shell single-quoted string: a quote inside it closes the string, adds an escaped quote and reopens it.
+// A shell single-quoted string: a quote inside it closes the string, adds an
+// escaped quote and reopens it.
 const shellQuote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
 
 const requestExamples = (
@@ -260,8 +267,8 @@ const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | unde
         const isList = data.node.kind === 'array';
         const row = isList ? data.node.items : data.node;
 
-        // Link to the model only when `data` is the model. A response of another shape, such as a playlist entry,
-        // lists its own attributes.
+        // Link to the model only when `data` is the model. A response of
+        // another shape, such as a playlist entry, lists its own attributes.
         if (model && row && sameProperties(row, model)) {
             const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`;
 
@@ -330,7 +337,8 @@ export const endpointsByTag = (spec: Spec): Map<string, Endpoint[]> => {
         }
     }
 
-    // A collection comes before the operations on one item, and the operations on one path run in METHODS order.
+    // A collection comes before the operations on one item, and the operations
+    // on one path run in METHODS order.
     const params = (path: string) => (path.match(/\{/g) ?? []).length;
     for (const endpoints of byTag.values()) {
         endpoints.sort(

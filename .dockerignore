@@ -1,5 +1,6 @@
-# Applies to builds with the repository root as the context, which is how the docs image is built. Keeps the context
-# small, and keeps secrets and local state out of the image's build stages.
+# Applies to builds with the repository root as the context, which is how the
+# docs image is built. Keeps the context small, and keeps secrets and local
+# state out of the image's build stages.
 .git
 **/node_modules
 **/.next

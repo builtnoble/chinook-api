@@ -269,7 +269,8 @@ describe('operations', () => {
     });
 });
 
-// A resource with the reads and the writes the API offers, so each test can say what it changes.
+// A resource with the reads and the writes the API offers, so each test can say
+// what it changes.
 const model: Schema = {
     type: 'object',
     properties: { id: { type: 'integer' }, name: { type: 'string' } },
@@ -406,7 +407,8 @@ describe('write operations', () => {
         const create = sectionOf(thingsPage(spec), 'Create a thing');
 
         expect(create).toContain('body: JSON.stringify({\n        composer: ');
-        // The page indents its code blocks by four spaces, and the JSON adds two more.
+        // The page indents its code blocks by four spaces, and the JSON adds
+        // two more.
         expect(create).toContain(`-d '{\n      "composer": `);
     });
 
@@ -432,7 +434,8 @@ describe('write operations', () => {
         expect(create).toContain('<Property name="name" type="string">\n        Name of the thing.');
         expect(create).toContain('### Optional attributes');
         expect(create).toContain('<Property name="note" type="string, optional">');
-        // Every field of an update is optional, so there is nothing required to list.
+        // Every field of an update is optional, so there is nothing required to
+        // list.
         expect(update).not.toContain('### Required attributes');
         expect(update).toContain('### Optional attributes');
     });
@@ -483,7 +486,8 @@ describe('write operations', () => {
         expect(page.split('## The thing model')[1].split('---')[0]).not.toContain('part_id');
         expect(page.indexOf('## Add a part')).toBeGreaterThan(page.indexOf('## Delete a thing'));
 
-        // Its own response is not the model, so the page lists the attributes instead of linking to the model.
+        // Its own response is not the model, so the page lists the attributes
+        // instead of linking to the model.
         const add = sectionOf(page, 'Add a part');
 
         expect(add).toContain('<Property name="data.part_id" type="integer, optional">');

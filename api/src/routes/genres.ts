@@ -127,7 +127,8 @@ genreRoutes.delete('/:id', describeRoute(deleteGenre), validator('param', paramS
     const { id } = c.req.valid('param');
 
     const data = await db.transaction(async (tx) => {
-        // Locked first, so a track that is being added to the genre finishes before the tracks are counted.
+        // Locked first, so a track that is being added to the genre finishes
+        // before the tracks are counted.
         const [genre] = await tx
             .select({ id: genres.id })
             .from(genres)

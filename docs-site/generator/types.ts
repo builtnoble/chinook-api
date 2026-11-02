@@ -1,4 +1,5 @@
-// The slice of OpenAPI 3.1 the generator reads. Anything outside it is rejected by `normalize`.
+// The slice of OpenAPI 3.1 the generator reads. Anything outside it is rejected
+// by `normalize`.
 export type Schema = {
     $ref?: string;
     type?: string | string[];

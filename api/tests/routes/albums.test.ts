@@ -20,7 +20,8 @@ describe('POST /', () => {
 
         expect(res.status).toBe(201);
         expect(await res.json()).toEqual({ data: album });
-        // The parent check comes first and share-locks the artist, then the insert.
+        // The parent check comes first and share-locks the artist, then the
+        // insert.
         expect(stub.methods().slice(0, 4)).toEqual(['select', 'from', 'where', 'for']);
         expect(stub.calls).toContainEqual(['for', ['share']]);
         expect(stub.methods()).toContain('insert');

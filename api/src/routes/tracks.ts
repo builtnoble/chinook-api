@@ -12,7 +12,8 @@ import { httpError, requireLiveParent, type Transaction } from '@/utils/write';
 
 const trackRoutes = new Hono();
 
-// A track as every read and write returns it, with its album (and the album's artist), genre and media type.
+// A track as every read and write returns it, with its album (and the album's
+// artist), genre and media type.
 const findTrack = (executor: Pick<typeof db, 'query'>, where: SQL) =>
     executor.query.tracks.findFirst({
         columns: withoutDeletedAt,
@@ -31,8 +32,9 @@ const findTrack = (executor: Pick<typeof db, 'query'>, where: SQL) =>
 
 type References = { album_id?: number | null; genre_id?: number | null; media_type_id?: number };
 
-// Each reference a write sets must be live: an unset or null album or genre is allowed, a media type is required. The
-// parents are always locked in this order.
+// Each reference a write sets must be live: an unset or null album or genre is
+// allowed, a media type is required. The parents are always locked in this
+// order.
 const requireLiveReferences = async (tx: Transaction, { album_id, genre_id, media_type_id }: References) => {
     if (album_id != null) {
         await requireLiveParent(tx, albums, album_id, 'album_id', 'album');

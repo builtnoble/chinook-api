@@ -1,5 +1,7 @@
-// Regenerates the docs pages whenever their sources change, for `bun run preview`. The dev server watching the output
-// directory does the rest, so an edit to docs/ shows up in the open browser tab without restarting anything.
+// Regenerates the docs pages whenever their sources change, for
+// `bun run preview`. The dev server watching the output directory does the
+// rest, so an edit to docs/ shows up in the open browser tab without
+// restarting anything.
 //
 //   bun scripts/watch.ts <out-dir> <spec-path>
 import { watch } from 'node:fs';
@@ -14,7 +16,8 @@ if (!out || !spec) {
 const docsSite = resolve(import.meta.dir, '..');
 const api = resolve(docsSite, '../api');
 
-// A change to the API source can change the spec, so it re-exports that first. Everything else only regenerates.
+// A change to the API source can change the spec, so it re-exports that first.
+// Everything else only regenerates.
 const sources = [
     { dir: resolve(docsSite, '../docs'), exportSpec: false },
     { dir: join(docsSite, 'content'), exportSpec: false },
@@ -36,7 +39,8 @@ const regenerate = async () => {
     pending = undefined;
     running = true;
 
-    // A failed step is already reported by the command, and the dev server keeps serving the last good pages.
+    // A failed step is already reported by the command, and the dev server
+    // keeps serving the last good pages.
     const exported = !exportSpec || (await run(['bun', 'run', 'openapi:export', resolve(spec)], api)) === 0;
     if (exported) {
         await run(

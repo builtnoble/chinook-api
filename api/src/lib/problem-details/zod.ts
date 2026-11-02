@@ -1,7 +1,8 @@
 import z from 'zod';
 
-// Zod schemas that describe the responses of this library, for an OpenAPI document. They are a separate entry point
-// so that the rest of the library does not need Zod.
+// Zod schemas that describe the responses of this library, for an OpenAPI
+// document. They are a separate entry point so that the rest of the library
+// does not need Zod.
 
 export const fieldErrorSchema = z.object({
     field: z.string().describe('A JSON Pointer to the offending value, relative to the part of the request in `in`.'),

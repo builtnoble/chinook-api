@@ -1,8 +1,9 @@
 import type { FieldError } from './problem';
 import { problem } from './problem';
 
-// The part of a Standard Schema issue this library reads. `code` and `keys` are not in the standard; validators such as
-// Zod add them, and they are used when present.
+// The part of a Standard Schema issue this library reads. `code` and `keys` are
+// not in the standard; validators such as Zod add them, and they are used when
+// present.
 type Issue = {
     message: string;
     path?: ReadonlyArray<PropertyKey | { key: PropertyKey }>;
@@ -30,7 +31,8 @@ const LOCATIONS: Record<string, FieldError['in']> = {
 
 const escapePointer = (segment: string) => segment.replace(/~/g, '~0').replace(/\//g, '~1');
 
-// A JSON Pointer (RFC 6901) to a value. The empty path is the whole value, which is the empty pointer.
+// A JSON Pointer (RFC 6901) to a value. The empty path is the whole value,
+// which is the empty pointer.
 const pointer = (segments: readonly PropertyKey[]) =>
     segments.map((segment) => `/${escapePointer(String(segment))}`).join('');
 
@@ -42,7 +44,8 @@ const fieldErrors = (issues: readonly Issue[], location: FieldError['in']): Fiel
         const base = { ...(location ? { in: location } : {}), message: issue.message };
         const code = issue.code ? { code: issue.code } : {};
 
-        // An unknown key has no path of its own, so each one is reported where it is.
+        // An unknown key has no path of its own, so each one is reported where
+        // it is.
         if (issue.keys?.length) {
             return issue.keys.map((key) => ({ field: pointer([...path, key]), ...base, ...code }));
         }
@@ -51,8 +54,9 @@ const fieldErrors = (issues: readonly Issue[], location: FieldError['in']): Fiel
     });
 
 /**
- * A validator hook that fails a request with a problem document listing every issue. It works with any validator that
- * calls a hook with Standard Schema issues, such as `@hono/standard-validator` and `hono-openapi`.
+ * A validator hook that fails a request with a problem document listing every
+ * issue. It works with any validator that calls a hook with Standard Schema
+ * issues, such as `@hono/standard-validator` and `hono-openapi`.
  *
  * ```ts
  * validator('json', schema, validationHook());

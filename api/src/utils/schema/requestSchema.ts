@@ -16,7 +16,8 @@ export const cascadeQuerySchema = z.object({
         .describe('Set to `true` to delete what depends on the item too. Defaults to `false`.'),
 });
 
-// The body of an update: any of the fields of a create, but at least one, and none the table does not have.
+// The body of an update: any of the fields of a create, but at least one, and
+// none the table does not have.
 export const updateSchema = <T extends z.ZodObject>(create: T) =>
     create
         .partial()

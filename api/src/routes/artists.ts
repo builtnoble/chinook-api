@@ -133,8 +133,9 @@ artistRoutes.delete(
         const cascade = c.req.valid('query').cascade === 'true';
 
         const data = await db.transaction(async (tx) => {
-            // The artist and then its albums are locked, so an album or a track being added under them finishes first
-            // and is counted, and nothing can be added once they are deleted.
+            // The artist and then its albums are locked, so an album or a track
+            // being added under them finishes first and is counted, and nothing
+            // can be added once they are deleted.
             const [artist] = await tx
                 .select({ id: artists.id })
                 .from(artists)

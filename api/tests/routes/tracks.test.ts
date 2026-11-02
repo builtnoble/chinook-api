@@ -131,7 +131,8 @@ describe('DELETE /:id', () => {
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({ data: track });
         expect(stub.calls.filter(([method]) => method === 'update')).toEqual([['update', [tracks]]]);
-        // Only a soft delete: the row, and with it every invoice line that points at it, is kept.
+        // Only a soft delete: the row, and with it every invoice line that
+        // points at it, is kept.
         expect(stub.methods()).not.toContain('delete');
     });
 

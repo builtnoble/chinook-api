@@ -51,7 +51,8 @@ describe('PATCH /:id', () => {
 });
 
 describe('DELETE /:id', () => {
-    // The queries a delete runs, in order: lock the artist, lock its live albums, then the soft deletes.
+    // The queries a delete runs, in order: lock the artist, lock its live
+    // albums, then the soft deletes.
     it('soft-deletes an artist with no albums, locking it first, and answers 200 with the row', async () => {
         stub = stubDb([{ id: 7 }], [], [row]);
 
@@ -104,7 +105,8 @@ describe('DELETE /:id', () => {
 
         expect(res.status).toBe(200);
         expect(await res.json()).toEqual({ data: row });
-        // The children go first, so a failure part way leaves the artist, and the transaction rolls all of it back.
+        // The children go first, so a failure part way leaves the artist, and
+        // the transaction rolls all of it back.
         expect(stub.calls.filter(([method]) => method === 'update')).toEqual([
             ['update', [tracks]],
             ['update', [albums]],

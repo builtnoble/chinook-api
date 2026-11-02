@@ -1,14 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 
-// Serve the app the way production does (`fetch: app.fetch` under Bun), where Hono's `c.env`
-// is the server object and not the process environment.
+// Serve the app the way production does (`fetch: app.fetch` under Bun), where
+// Hono's `c.env` is the server object and not the process environment.
 let server: ReturnType<typeof Bun.serve>;
 const originalOrigins = process.env.CORS_ORIGINS;
 const originalNodeEnv = process.env.NODE_ENV;
 
 beforeAll(async () => {
-    // `bun test` sets NODE_ENV=test, and Better Auth skips its origin check in that mode. Import the app
-    // under another value so the tests exercise the check that runs in development and production.
+    // `bun test` sets NODE_ENV=test, and Better Auth skips its origin check in
+    // that mode. Import the app under another value so the tests exercise the
+    // check that runs in development and production.
     process.env.NODE_ENV = 'development';
     const { default: app } = await import('@/index');
 
@@ -36,8 +37,9 @@ const request = (origin: string, init: { method?: string; headers?: Record<strin
         headers: { Origin: origin, ...init.headers },
     });
 
-// A cookie header makes Better Auth enforce its origin check, as it does for a browser frontend.
-// The credentials are wrong on purpose: only the origin check is observed, and nothing is created.
+// A cookie header makes Better Auth enforce its origin check, as it does for a
+// browser frontend. The credentials are wrong on purpose: only the origin check
+// is observed, and nothing is created.
 const signIn = (origin: string) =>
     fetch(`http://localhost:${server.port}/api/auth/sign-in/email`, {
         method: 'POST',

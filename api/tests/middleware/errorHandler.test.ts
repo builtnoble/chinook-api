@@ -15,13 +15,15 @@ afterEach(() => {
     logged.mockRestore();
 });
 
-// What Drizzle throws: its own error, with the driver's error as the cause. Its message holds the SQL.
+// What Drizzle throws: its own error, with the driver's error as the cause. Its
+// message holds the SQL.
 const drizzleError = (code: string, table = 'albums', constraint = 'albums_artist_id_fkey') =>
     Object.assign(new Error('Failed query: insert into "albums" ("title") values ($1)'), {
         cause: Object.assign(new Error('insert or update violates a constraint'), { code, table, constraint }),
     });
 
-// Mounted under a parent, as the routes are, to show the parent's handler also covers thrown errors in a sub-app.
+// Mounted under a parent, as the routes are, to show the parent's handler also
+// covers thrown errors in a sub-app.
 const appThrowing = (error: unknown) => {
     const child = new Hono().get('/', () => {
         throw error;

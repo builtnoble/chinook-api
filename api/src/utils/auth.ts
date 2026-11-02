@@ -7,7 +7,8 @@ import { getAllowedOrigins, getBaseUrl } from '@/utils/helpers';
 export const auth = betterAuth({
     baseURL: getBaseUrl(),
     secret: process.env.BETTER_AUTH_SECRET || undefined,
-    // The same origins the CORS middleware allows; the base URL is always trusted.
+    // The same origins the CORS middleware allows; the base URL is always
+    // trusted.
     trustedOrigins: () => getAllowedOrigins(),
     plugins: [bearer(), admin()],
     emailAndPassword: {

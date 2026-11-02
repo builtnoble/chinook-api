@@ -3,13 +3,15 @@ import db from '@/db';
 
 type Call = [method: string, args: unknown[]];
 
-// Stands in for the database in a route test. Every query is a chain, and awaiting one takes the next scripted result
-// in order, so a test states what the database returns and the route's own logic decides the status. An `Error` in
-// the script is thrown, as a driver error would be. Anything the script does not cover fails the test, so a route
-// that runs more queries than expected cannot pass by accident.
+// Stands in for the database in a route test. Every query is a chain, and
+// awaiting one takes the next scripted result in order, so a test states what
+// the database returns and the route's own logic decides the status. An `Error`
+// in the script is thrown, as a driver error would be. Anything the script does
+// not cover fails the test, so a route that runs more queries than expected
+// cannot pass by accident.
 //
-// It cannot show that a query is right, only what the route does with its result. Foreign keys, locks and cascades
-// need a real database.
+// It cannot show that a query is right, only what the route does with its
+// result. Foreign keys, locks and cascades need a real database.
 export const stubDb = (...script: unknown[]) => {
     const results = [...script];
     const calls: Call[] = [];
@@ -36,7 +38,8 @@ export const stubDb = (...script: unknown[]) => {
         },
     });
 
-    // A call straight on `db` is recorded like one on a transaction, so a route can use either.
+    // A call straight on `db` is recorded like one on a transaction, so a route
+    // can use either.
     const direct = (method: 'select' | 'insert' | 'update' | 'delete') =>
         spyOn(db, method).mockImplementation(((...args: unknown[]) => {
             calls.push([method, args]);
@@ -49,8 +52,9 @@ export const stubDb = (...script: unknown[]) => {
         direct('insert'),
         direct('update'),
         direct('delete'),
-        // The transaction callback gets the same chain, so its queries draw from the same script. Its relational reads
-        // go through `db.query`, which is stubbed below.
+        // The transaction callback gets the same chain, so its queries draw
+        // from the same script. Its relational reads go through `db.query`,
+        // which is stubbed below.
         spyOn(db, 'transaction').mockImplementation(((callback: (tx: unknown) => unknown) =>
             callback(
                 new Proxy({}, { get: (_, method) => (method === 'query' ? db.query : (chain as never)[method]) }),
@@ -68,7 +72,8 @@ export const stubDb = (...script: unknown[]) => {
 
     return {
         calls,
-        // The methods called, in order, for example ['select', 'from', 'where', 'for'].
+        // The methods called, in order, for example
+        // ['select', 'from', 'where', 'for'].
         methods: () => calls.map(([method]) => method),
         // How many scripted results were never asked for.
         unused: () => results.length,

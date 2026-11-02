@@ -8,7 +8,8 @@ import mediaTypeRoutes from '@/routes/mediaTypes';
 import playlistRoutes from '@/routes/playlists';
 import trackRoutes from '@/routes/tracks';
 
-// The routes are mounted without the auth middleware and `db.query` is stubbed, so no session or database is needed.
+// The routes are mounted without the auth middleware and `db.query` is stubbed,
+// so no session or database is needed.
 const resources: { name: string; table: keyof typeof db.query; routes: Hono; notFound: string }[] = [
     { name: 'artists', table: 'artists', routes: artistRoutes, notFound: 'Artist not found.' },
     { name: 'albums', table: 'albums', routes: albumRoutes, notFound: 'Album not found.' },

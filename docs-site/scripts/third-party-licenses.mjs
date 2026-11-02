@@ -1,17 +1,23 @@
-// Writes the notices for the open-source packages bundled into the built site's JavaScript.
+// Writes the notices for the open-source packages bundled into the built site's
+// JavaScript.
 //
-// The minified bundles carry no license comments, and MIT and Apache-2.0 both require the notice to travel with a
-// copy, so the published image ships this file next to the site. Which packages are bundled is read from the source
-// maps of a build made with them enabled, instead of guessed from package.json: build tools and libraries that only run
-// during the build (the CSS compiler, image libraries) are not in the output and are not listed.
+// The minified bundles carry no license comments, and MIT and Apache-2.0 both
+// require the notice to travel with a copy, so the published image ships this
+// file next to the site. Which packages are bundled is read from the source
+// maps of a build made with them enabled, instead of guessed from package.json:
+// build tools and libraries that only run during the build (the CSS compiler,
+// image libraries) are not in the output and are not listed.
 //
-//   node third-party-licenses.mjs <project dir> <output file> [--also name,name]
+//   node third-party-licenses.mjs <project dir> <output file>
+//     [--also name,name]
 //
-// <project dir> holds the built `out/` (with .map files) and `node_modules/`. --also adds packages whose code is
-// in the output without appearing in a source map, such as the CSS framework.
+// <project dir> holds the built `out/` (with .map files) and `node_modules/`.
+// --also adds packages whose code is in the output without appearing in a
+// source map, such as the CSS framework.
 //
-// Fails if a bundled package has no recognized permissive license, or no license text and no declared license, so a
-// new dependency that needs a decision cannot slip into the image unnoticed.
+// Fails if a bundled package has no recognized permissive license, or no
+// license text and no declared license, so a new dependency that needs a
+// decision cannot slip into the image unnoticed.
 import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -22,7 +28,8 @@ if (!projectDir || !outputFile) {
 }
 const also = flags[0] === '--also' ? (flags[1] ?? '').split(',').filter(Boolean) : [];
 
-// The licenses that allow redistribution with only a notice. Anything else is a decision for a person.
+// The licenses that allow redistribution with only a notice. Anything else is a
+// decision for a person.
 const PERMISSIVE = /^(MIT|MIT-0|ISC|BSD-2-Clause|BSD-3-Clause|Apache-2\.0|0BSD|CC0-1\.0|Unlicense|BlueOak-1\.0\.0)$/;
 const LICENSE_FILE = /^(licen[cs]e|copying|notice)(\.|$)/i;
 
@@ -36,7 +43,8 @@ const walk = async (dir) => {
     return found;
 };
 
-// "webpack://_N_E/./node_modules/a/node_modules/@s/b/dist/x.js" -> "node_modules/a/node_modules/@s/b"
+// "webpack://_N_E/./node_modules/a/node_modules/@s/b/dist/x.js" ->
+// "node_modules/a/node_modules/@s/b"
 const packageDirOf = (source) => {
     const first = source.indexOf('node_modules/');
     if (first < 0) return undefined;

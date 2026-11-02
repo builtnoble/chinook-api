@@ -1,5 +1,6 @@
 // Writes the OpenAPI document to disk without a database or a running server,
-// so docs can be generated from it at build time. Usage: bun scripts/export-openapi.ts [outFile]
+// so docs can be generated from it at build time.
+// Usage: bun scripts/export-openapi.ts [outFile]
 const outFile = process.argv[2] ?? 'openapi.json';
 
 const { default: app } = await import('@/index');

@@ -153,7 +153,8 @@ playlistRoutes.post(
         const { track_id } = c.req.valid('json');
 
         const data = await db.transaction(async (tx) => {
-            // Share-locked, so the playlist cannot be deleted while the track is added to it.
+            // Share-locked, so the playlist cannot be deleted while the track
+            // is added to it.
             const [playlist] = await tx
                 .select({ id: playlists.id })
                 .from(playlists)

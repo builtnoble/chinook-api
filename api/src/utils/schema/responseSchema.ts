@@ -52,28 +52,32 @@ export const notFoundSchema = z
     })
     .meta({ examples: [{ error: 'Artist not found.' }] });
 
-// Returned when a write has a body that is not valid JSON. A body that is JSON but invalid gets validationErrorSchema.
+// Returned when a write has a body that is not valid JSON. A body that is JSON
+// but invalid gets validationErrorSchema.
 export const malformedJsonSchema = z
     .object({
         error: z.string(),
     })
     .meta({ examples: [{ error: 'Malformed JSON in request body' }] });
 
-// Returned when the caller is signed in but may not write: not an admin, or a cookie write from an unlisted origin.
+// Returned when the caller is signed in but may not write: not an admin, or a
+// cookie write from an unlisted origin.
 export const forbiddenSchema = z
     .object({
         error: z.string(),
     })
     .meta({ examples: [{ error: 'This action requires the admin role.' }] });
 
-// Returned when a write collides with existing data, or a delete is blocked by rows that still depend on the item.
+// Returned when a write collides with existing data, or a delete is blocked by
+// rows that still depend on the item.
 export const conflictSchema = z
     .object({
         error: z.string(),
     })
     .meta({ examples: [{ error: 'A row with that value already exists.' }] });
 
-// Returned when a write refers to a parent that does not exist or is deleted, or a value is too long for its column.
+// Returned when a write refers to a parent that does not exist or is deleted,
+// or a value is too long for its column.
 export const unprocessableSchema = z
     .object({
         error: z.string(),

@@ -16,7 +16,8 @@ const signedInAs = (role: string | null) => {
     spies.push(spyOn(auth.api, 'getSession').mockResolvedValue(session as never));
 };
 
-// Nothing is routed at this path, so a request that passes the guards ends in 404.
+// Nothing is routed at this path, so a request that passes the guards ends in
+// 404.
 const post = () => api.request('/api/unrouted', { method: 'POST' });
 
 describe('write authorization', () => {

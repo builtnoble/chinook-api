@@ -39,7 +39,8 @@ const forbidden = jsonResponse(
     forbiddenSchema,
 );
 
-// "Media Types" -> "Media type not found.", the message the routes return, so each page shows its own resource.
+// "Media Types" -> "Media type not found.", the message the routes return, so
+// each page shows its own resource.
 const notFoundMessage = (tag: string) => {
     const name = tag.replace(/s$/, '').toLowerCase();
 
@@ -116,18 +117,21 @@ export const describeByID = ({
 });
 
 type WriteDescription = RouteDescription & {
-    // The request body: the table's insert schema for a create, its partial for an update.
+    // The request body: the table's insert schema for a create, its partial for
+    // an update.
     body: ZodType;
 };
 
-// `resolver` returns the lazy schema hono-openapi expands when it builds the document, which its types do not allow here.
+// `resolver` returns the lazy schema hono-openapi expands when it builds the
+// document, which its types do not allow here.
 const requestBody = (body: ZodType) =>
     ({
         required: true,
         content: { 'application/json': { schema: resolver(body) } },
     }) as DescribeRouteOptions['requestBody'];
 
-// The shared validation error shows a bad path parameter, so a body error gets its own example.
+// The shared validation error shows a bad path parameter, so a body error gets
+// its own example.
 const invalidBodySchema = validationErrorSchema.meta({
     examples: [
         {
@@ -152,8 +156,9 @@ const unprocessable = jsonResponse(
 
 const conflict = (description: string) => jsonResponse(description, conflictSchema);
 
-// Writes need the admin role, so every one documents the 403 beside the 401. A create under another item, such as a
-// track in a playlist, sets `parent` to also document the 404 for an unknown parent id.
+// Writes need the admin role, so every one documents the 403 beside the 401. A
+// create under another item, such as a track in a playlist, sets `parent` to
+// also document the 404 for an unknown parent id.
 export const describeCreate = ({
     operationId,
     tag,
@@ -211,7 +216,8 @@ export const describeUpdate = ({
     },
 });
 
-// `blockedBy` says what makes the delete a 409. Leave it out for an item that nothing depends on.
+// `blockedBy` says what makes the delete a 409. Leave it out for an item that
+// nothing depends on.
 export const describeDelete = ({
     operationId,
     tag,

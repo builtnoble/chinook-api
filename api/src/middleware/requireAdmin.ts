@@ -2,7 +2,8 @@ import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { auth } from '@/utils/auth';
 
-// Reads stay open to any signed-in user, so only methods that change data need the admin role.
+// Reads stay open to any signed-in user, so only methods that change data need
+// the admin role.
 const readMethods = ['GET', 'HEAD'];
 
 // Runs after authMiddleware, which has already rejected a missing session.

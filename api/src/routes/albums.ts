@@ -125,7 +125,8 @@ albumRoutes.patch(
                 throw httpError(404, 'Album not found.');
             }
 
-            // The parent is locked before the album, as a delete of the artist does, so the two cannot wait on each other.
+            // The parent is locked before the album, as a delete of the artist
+            // does, so the two cannot wait on each other.
             if (body.artist_id !== undefined) {
                 await requireLiveParent(tx, artists, body.artist_id, 'artist_id', 'artist');
             }
@@ -163,7 +164,8 @@ albumRoutes.delete(
         const cascade = c.req.valid('query').cascade === 'true';
 
         const data = await db.transaction(async (tx) => {
-            // Locked first, so a track being added to the album finishes before the tracks are counted.
+            // Locked first, so a track being added to the album finishes before
+            // the tracks are counted.
             const [album] = await tx
                 .select({ id: albums.id })
                 .from(albums)

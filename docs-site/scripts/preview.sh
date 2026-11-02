@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Previews the docs site: exports the spec, generates the pages into a copy of the private theme, and starts the
-# theme's dev server, then keeps the pages in step with docs/ and the API. The theme itself is never modified.
+# Previews the docs site: exports the spec, generates the pages into a copy of
+# the private theme, and starts the theme's dev server, then keeps the pages in
+# step with docs/ and the API. The theme itself is never modified.
 #
-#   THEME_DIR    the chinook-docs-theme checkout (default: next to this repository)
-#   PREVIEW_DIR  where the copy lives (default: docs-site/.preview, ignored by git)
+#   THEME_DIR    the chinook-docs-theme checkout (default: next to this
+#                repository)
+#   PREVIEW_DIR  where the copy lives (default: docs-site/.preview, ignored
+#                by git)
 #   PORT         dev server port (default: 3001)
 set -euo pipefail
 
@@ -31,7 +34,8 @@ rsync -a --delete --exclude .git --exclude node_modules --exclude .next --exclud
 echo "Generating the pages..."
 bun generator/index.ts --spec "$PREVIEW_DIR/openapi.json" --pages content/pages.json --out "$SITE"
 
-# Regenerates the pages when docs/, the generator or the API change; the dev server hot-reloads what it writes.
+# Regenerates the pages when docs/, the generator or the API change; the dev
+# server hot-reloads what it writes.
 bun scripts/watch.ts "$SITE" "$PREVIEW_DIR/openapi.json" &
 trap 'kill $! 2>/dev/null' EXIT
 

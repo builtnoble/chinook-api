@@ -4,9 +4,15 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 /** The media type of a problem document, from RFC 9457. */
 export const PROBLEM_CONTENT_TYPE = 'application/problem+json';
 
-/** One thing wrong with the request, as listed in the `errors` member of a validation problem. */
+/**
+ * One thing wrong with the request, as listed in the `errors` member of a
+ * validation problem.
+ */
 export type FieldError = {
-    /** A JSON Pointer (RFC 6901) to the offending value, relative to the part of the request named by `in`. */
+    /**
+     * A JSON Pointer (RFC 6901) to the offending value, relative to the part of
+     * the request named by `in`.
+     */
     field: string;
     /** Which part of the request `field` points into. */
     in?: 'body' | 'path' | 'query' | 'header' | 'cookie';
@@ -15,7 +21,10 @@ export type FieldError = {
     code?: string;
 };
 
-/** A problem document: the members RFC 9457 defines, plus the extensions this library adds. */
+/**
+ * A problem document: the members RFC 9457 defines, plus the extensions this
+ * library adds.
+ */
 export type ProblemDetails = {
     type: string;
     title: string;
@@ -33,20 +42,31 @@ export type ProblemOptions = {
     code?: string;
     /** Defaults to the reason phrase of the status. */
     title?: string;
-    /** A URI reference naming the kind of problem. Defaults to `about:blank`. */
+    /**
+     * A URI reference naming the kind of problem. Defaults to `about:blank`.
+     */
     type?: string;
     /** A URI reference for this occurrence of the problem. */
     instance?: string;
     errors?: FieldError[];
-    /** Further members to add to the document. The members RFC 9457 defines cannot be overridden. */
+    /**
+     * Further members to add to the document. The members RFC 9457 defines
+     * cannot be overridden.
+     */
     extensions?: Record<string, unknown>;
-    /** Headers to send with the response, such as `WWW-Authenticate` on a 401. */
+    /**
+     * Headers to send with the response, such as `WWW-Authenticate` on a 401.
+     */
     headers?: HeadersInit;
-    /** What went wrong underneath. It is kept for logging and is never part of the response. */
+    /**
+     * What went wrong underneath. It is kept for logging and is never part of
+     * the response.
+     */
     cause?: unknown;
 };
 
-// The reason phrases of RFC 9110 section 15, for the statuses an error is likely to use.
+// The reason phrases of RFC 9110 section 15, for the statuses an error is
+// likely to use.
 const TITLES: Record<number, string> = {
     400: 'Bad Request',
     401: 'Unauthorized',
@@ -83,7 +103,10 @@ const TITLES: Record<number, string> = {
     505: 'HTTP Version Not Supported',
 };
 
-/** The title for a status: its reason phrase, or a generic one for a status without a phrase here. */
+/**
+ * The title for a status: its reason phrase, or a generic one for a status
+ * without a phrase here.
+ */
 export const statusTitle = (status: number): string =>
     TITLES[status] ?? (status >= 500 ? 'Server Error' : 'Client Error');
 
@@ -94,8 +117,10 @@ const snakeCase = (text: string) =>
         .replace(/^_|_$/g, '');
 
 /**
- * An error that becomes a problem document. It is an `HTTPException`, so anything that already catches those handles
- * it, and `getResponse()` returns the problem response even where the handler from this library is not installed.
+ * An error that becomes a problem document. It is an `HTTPException`, so
+ * anything that already catches those handles it, and `getResponse()` returns
+ * the problem response even where the handler from this library is not
+ * installed.
  *
  * ```ts
  * throw problem(404, 'Artist not found.');

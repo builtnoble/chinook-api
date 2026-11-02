@@ -134,7 +134,8 @@ mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validator('param'
     const { id } = c.req.valid('param');
 
     const data = await db.transaction(async (tx) => {
-        // Locked first, so a track that is being added to the media type finishes before the tracks are counted.
+        // Locked first, so a track that is being added to the media type
+        // finishes before the tracks are counted.
         const [mediaType] = await tx
             .select({ id: media_types.id })
             .from(media_types)

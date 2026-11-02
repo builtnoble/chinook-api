@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'bun:test';
 
-// The docs site is generated from this document, so every operation needs enough in it to render a page.
+// The docs site is generated from this document, so every operation needs
+// enough in it to render a page.
 type Operation = {
     operationId?: string;
     requestBody?: { required?: boolean; content?: Record<string, unknown> };
@@ -41,7 +42,8 @@ describe('openapi.json', () => {
 
     it('gives every operation an id, a tag, a summary and a description', () => {
         for (const [name, operation] of operations) {
-            // Pairing each value with the operation name makes a failure say which operation is incomplete.
+            // Pairing each value with the operation name makes a failure say
+            // which operation is incomplete.
             expect([name, typeof operation.operationId]).toEqual([name, 'string']);
             expect([name, operation.tags?.length]).toEqual([name, 1]);
             expect([name, typeof operation.summary]).toEqual([name, 'string']);
@@ -50,7 +52,8 @@ describe('openapi.json', () => {
     });
 
     it('does not expose the soft-delete column', () => {
-        // deleted_at is how the API remembers a deleted row. Reads leave those rows out, so clients never need it.
+        // deleted_at is how the API remembers a deleted row. Reads leave those
+        // rows out, so clients never need it.
         expect(JSON.stringify(spec)).not.toContain('deleted_at');
     });
 
@@ -89,7 +92,8 @@ describe('openapi.json', () => {
         }
     });
 
-    // Statuses every operation of a kind documents. An operation may document more, such as a 409 on a delete.
+    // Statuses every operation of a kind documents. An operation may document
+    // more, such as a 409 on a delete.
     const required: Record<string, string[]> = {
         GET: ['200', '400', '401'],
         POST: ['201', '400', '401', '403'],

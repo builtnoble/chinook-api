@@ -6,7 +6,8 @@ type Kind = 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | '
 
 export type Property = { name: string; node: Node; required: boolean };
 
-// A schema with `$ref`, `allOf` and nullable `anyOf` already resolved, so rendering never meets them.
+// A schema with `$ref`, `allOf` and nullable `anyOf` already resolved, so
+// rendering never meets them.
 export type Node = {
     kind: Kind;
     nullable: boolean;
@@ -22,7 +23,8 @@ export type Node = {
 
 export type Row = { name: string; type: string; description: string; required: boolean };
 
-// Keywords that change what a value may be in ways the property tables cannot express.
+// Keywords that change what a value may be in ways the property tables cannot
+// express.
 const UNSUPPORTED = ['not', 'if', 'then', 'else', 'patternProperties', 'dependentSchemas', 'prefixItems'];
 
 const KINDS = new Set(['object', 'array', 'string', 'number', 'integer', 'boolean', 'null']);
@@ -206,12 +208,14 @@ export const sample = (node: Node): unknown => {
 };
 
 type RowOptions = {
-    // Property names whose children are left out because they are documented elsewhere on the page.
+    // Property names whose children are left out because they are documented
+    // elsewhere on the page.
     collapse?: Map<string, string>;
     maxDepth?: number;
 };
 
-// One row per property, with nested objects and arrays of objects flattened into dotted names.
+// One row per property, with nested objects and arrays of objects flattened
+// into dotted names.
 export const rows = (node: Node, options: RowOptions = {}, prefix = '', depth = 1): Row[] => {
     const { collapse = new Map(), maxDepth = 4 } = options;
     const out: Row[] = [];

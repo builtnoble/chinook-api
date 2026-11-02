@@ -4,9 +4,11 @@ import { UnsupportedError } from './schema';
 export type MarkdownOptions = {
     // Repo-relative path of the file, so its relative links can be resolved.
     path: string;
-    // Repo-relative paths of the other published files, mapped to the site href of their page.
+    // Repo-relative paths of the other published files, mapped to the site href
+    // of their page.
     published: Map<string, string>;
-    // GitHub URL of the repository, which links to files that are not published point at.
+    // GitHub URL of the repository, which links to files that are not published
+    // point at.
     repository: string;
     title: string;
     description?: string;
@@ -16,7 +18,8 @@ export type MarkdownOptions = {
 
 const ESCAPED = /[{}<]/g;
 
-// Splits a line into code spans, which MDX reads literally, and the text between them.
+// Splits a line into code spans, which MDX reads literally, and the text
+// between them.
 const splitCodeSpans = (line: string): { text: string; code: boolean }[] => {
     const parts: { text: string; code: boolean }[] = [];
     let start = 0;
@@ -120,9 +123,10 @@ const firstParagraph = (lines: string[]): string => {
     return found.join(' ');
 };
 
-// Converts a repository Markdown file into an MDX page for the Protocol theme, so the Markdown stays the only
-// copy: `{`, `}` and `<` are escaped outside code, relative links are resolved, and the first paragraph after
-// the heading becomes the page's lead.
+// Converts a repository Markdown file into an MDX page for the Protocol theme,
+// so the Markdown stays the only copy: `{`, `}` and `<` are escaped outside
+// code, relative links are resolved, and the first paragraph after the heading
+// becomes the page's lead.
 export const markdownToMdx = (source: string, options: MarkdownOptions): string => {
     const lines = source.replace(/\r\n/g, '\n').split('\n');
     const body: string[] = [];
@@ -178,7 +182,8 @@ export const markdownToMdx = (source: string, options: MarkdownOptions): string 
     }
 
     if (options.home) {
-        // The source ends with a newline, which would leave two blank lines before the cards.
+        // The source ends with a newline, which would leave two blank lines
+        // before the cards.
         while (body.at(-1) === '') body.pop();
         body.push('', '<Guides />', '', '<Resources />');
     }

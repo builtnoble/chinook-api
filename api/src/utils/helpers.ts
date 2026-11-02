@@ -21,19 +21,22 @@ export const getPageUrls = (
     return { prevPageUrl, nextPageUrl };
 };
 
-// Browser origins allowed to call the API: a comma-separated list in CORS_ORIGINS.
+// Browser origins allowed to call the API: a comma-separated list in
+// CORS_ORIGINS.
 export const getAllowedOrigins = (): string[] =>
     (process.env.CORS_ORIGINS ?? '')
         .split(',')
         .map((origin) => origin.trim())
         .filter(Boolean);
 
-// The address clients use for the API, which Better Auth and the Origin guard both trust.
+// The address clients use for the API, which Better Auth and the Origin guard
+// both trust.
 export const getBaseUrl = (): string => process.env.BETTER_AUTH_URL || 'http://localhost:3000';
 
 export type PgError = { code: string; table?: string; constraint?: string };
 
-// Drizzle wraps the driver error, so the Postgres error with its SQLSTATE `code` sits somewhere down the `cause` chain.
+// Drizzle wraps the driver error, so the Postgres error with its SQLSTATE
+// `code` sits somewhere down the `cause` chain.
 export const findPgError = (error: unknown): PgError | undefined => {
     const seen = new Set<unknown>();
     let current = error;
@@ -43,7 +46,8 @@ export const findPgError = (error: unknown): PgError | undefined => {
 
         const { code, table, constraint, cause } = current as Record<string, unknown>;
 
-        // A SQLSTATE is five characters starting with a digit, which tells it from Node codes such as ECONNREFUSED.
+        // A SQLSTATE is five characters starting with a digit, which tells it
+        // from Node codes such as ECONNREFUSED.
         if (typeof code === 'string' && /^[0-9][0-9A-Z]{4}$/.test(code)) {
             return {
                 code,
@@ -58,8 +62,9 @@ export const findPgError = (error: unknown): PgError | undefined => {
     return undefined;
 };
 
-// Better Auth attaches the raw error as `details` to some failures, which for a database error is the
-// failing SQL, its values and the underlying cause. Drop it from error responses before they leave the API.
+// Better Auth attaches the raw error as `details` to some failures, which for a
+// database error is the failing SQL, its values and the underlying cause. Drop
+// it from error responses before they leave the API.
 export const stripErrorDetails = async (res: Response): Promise<Response> => {
     if (res.status < 400 || !res.headers.get('Content-Type')?.includes('application/json')) {
         return res;

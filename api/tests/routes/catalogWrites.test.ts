@@ -5,7 +5,8 @@ import mediaTypeRoutes from '@/routes/mediaTypes';
 import { appFor, send } from '../support/app';
 import { stubDb } from '../support/stubDb';
 
-// Genres and media types are the same shape: a name, soft-deleted, and blocked from deletion while tracks use them.
+// Genres and media types are the same shape: a name, soft-deleted, and blocked
+// from deletion while tracks use them.
 const resources: { name: string; routes: Hono; notFound: string; used: string }[] = [
     { name: 'genre', routes: genreRoutes, notFound: 'Genre not found.', used: 'The genre is used by' },
     {

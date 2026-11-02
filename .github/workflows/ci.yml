@@ -43,8 +43,9 @@ jobs:
         working-directory: docs-site
       - run: bun test
         working-directory: docs-site
-      # The real spec and the real documents must render and compile. This needs no secrets and no private theme, so
-      # it runs for pull requests from forks too.
+      # The real spec and the real documents must render and compile. This needs
+      # no secrets and no private theme, so it runs for pull requests from forks
+      # too.
       - run: bun run openapi:export "$RUNNER_TEMP/openapi.json"
         working-directory: api
       - run: bun run check "$RUNNER_TEMP/openapi.json"

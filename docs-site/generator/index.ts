@@ -11,7 +11,8 @@ export type Content = {
     guides?: Guide[];
 };
 
-// Maps each output path (relative to the theme root) to its contents. Pure, so tests can call it directly.
+// Maps each output path (relative to the theme root) to its contents. Pure, so
+// tests can call it directly.
 export const generate = (spec: Spec, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
@@ -51,8 +52,9 @@ export const generate = (spec: Spec, { introduction, guides = [] }: Content = {}
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
-// Writes the generated files under `out`, leaving untouched any file whose contents already match, so a dev server
-// watching `out` only recompiles the pages that changed. Returns the paths it wrote.
+// Writes the generated files under `out`, leaving untouched any file whose
+// contents already match, so a dev server watching `out` only recompiles the
+// pages that changed. Returns the paths it wrote.
 export const writeChanged = async (out: string, files: Record<string, string>): Promise<string[]> => {
     const written: string[] = [];
 
@@ -71,8 +73,9 @@ export const writeChanged = async (out: string, files: Record<string, string>): 
 
 type PageEntry = { file: string; title: string; description?: string };
 
-// Where the published Markdown lives. Paths are relative to this file, and `root` is the repository root, so that
-// relative links between the documents can be resolved.
+// Where the published Markdown lives. Paths are relative to this file, and
+// `root` is the repository root, so that relative links between the documents
+// can be resolved.
 type Manifest = {
     root: string;
     repository: string;
@@ -80,7 +83,8 @@ type Manifest = {
     guides: (PageEntry & { href: string })[];
 };
 
-// Reads the Markdown files a manifest lists and converts them to MDX. The Markdown files stay the only copy.
+// Reads the Markdown files a manifest lists and converts them to MDX. The
+// Markdown files stay the only copy.
 export const loadPages = async (manifestPath: string): Promise<Content> => {
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Manifest;
     const base = dirname(manifestPath);
