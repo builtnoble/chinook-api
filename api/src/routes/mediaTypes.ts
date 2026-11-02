@@ -1,7 +1,6 @@
-import { and, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
-import omit from 'lodash-es/omit';
 import db from '@/db';
 import { media_types, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
@@ -12,16 +11,10 @@ import {
     mediaTypeSchema,
     mediaTypeUpdateSchema,
 } from '@/utils/schema/resources/mediaTypeSchema';
+import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 import { countOf, httpError } from '@/utils/write';
 
 const mediaTypeRoutes = new Hono();
-
-// Deleting a media type sets deleted_at, so every read leaves those rows out and never returns the column.
-const notDeleted = isNull(media_types.deleted_at);
-const withoutDeletedAt = { deleted_at: false } as const;
-
-// What a write returns: the row as a read returns it.
-const columns = omit(getTableColumns(media_types), 'deleted_at');
 
 const getMediaTypes = describeList({
     operationId: 'getMediaTypes',
@@ -40,15 +33,15 @@ mediaTypeRoutes.get(
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
-        const mediaTypes = await db.query.media_types.findMany({
+        const rows = await db.query.media_types.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted,
+            where: notDeleted(media_types),
             limit: pagination.perPage,
             offset,
         });
 
         return c.json({
-            data: mediaTypes,
+            data: rows,
             pagination,
         });
     },
@@ -67,7 +60,7 @@ mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', 
 
     const data = await db.query.media_types.findFirst({
         columns: withoutDeletedAt,
-        where: and(eq(media_types.id, id), notDeleted),
+        where: and(eq(media_types.id, id), notDeleted(media_types)),
     });
 
     if (!data) {
@@ -87,7 +80,10 @@ const createMediaType = describeCreate({
 });
 
 mediaTypeRoutes.post('/', describeRoute(createMediaType), validator('json', mediaTypeCreateSchema), async (c) => {
-    const [data] = await db.insert(media_types).values(c.req.valid('json')).returning(columns);
+    const [data] = await db
+        .insert(media_types)
+        .values(c.req.valid('json'))
+        .returning(columnsWithoutDeletedAt(media_types));
 
     return c.json({ data }, 201);
 });
@@ -113,8 +109,8 @@ mediaTypeRoutes.patch(
         const [data] = await db
             .update(media_types)
             .set(c.req.valid('json'))
-            .where(and(eq(media_types.id, id), notDeleted))
-            .returning(columns);
+            .where(and(eq(media_types.id, id), notDeleted(media_types)))
+            .returning(columnsWithoutDeletedAt(media_types));
 
         if (!data) {
             return c.json({ error: 'Media type not found.' }, 404);
@@ -142,7 +138,7 @@ mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validator('param'
         const [mediaType] = await tx
             .select({ id: media_types.id })
             .from(media_types)
-            .where(and(eq(media_types.id, id), notDeleted))
+            .where(and(eq(media_types.id, id), notDeleted(media_types)))
             .for('update');
 
         if (!mediaType) {
@@ -159,7 +155,7 @@ mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validator('param'
             .update(media_types)
             .set({ deleted_at: sql`now()` })
             .where(eq(media_types.id, id))
-            .returning(columns);
+            .returning(columnsWithoutDeletedAt(media_types));
 
         return deleted;
     });

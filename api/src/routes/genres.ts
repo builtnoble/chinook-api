@@ -1,23 +1,16 @@
-import { and, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
-import omit from 'lodash-es/omit';
 import db from '@/db';
 import { genres, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { genreCreateSchema, genreSchema, genreUpdateSchema } from '@/utils/schema/resources/genreSchema';
+import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 import { countOf, httpError } from '@/utils/write';
 
 const genreRoutes = new Hono();
-
-// Deleting a genre sets deleted_at, so every read leaves those rows out and never returns the column.
-const notDeleted = isNull(genres.deleted_at);
-const withoutDeletedAt = { deleted_at: false } as const;
-
-// What a write returns: the row as a read returns it.
-const columns = omit(getTableColumns(genres), 'deleted_at');
 
 const getGenres = describeList({
     operationId: 'getGenres',
@@ -36,15 +29,15 @@ genreRoutes.get(
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
-        const genres = await db.query.genres.findMany({
+        const rows = await db.query.genres.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted,
+            where: notDeleted(genres),
             limit: pagination.perPage,
             offset,
         });
 
         return c.json({
-            data: genres,
+            data: rows,
             pagination,
         });
     },
@@ -63,7 +56,7 @@ genreRoutes.get('/:id', describeRoute(getGenreByID), validator('param', paramSch
 
     const data = await db.query.genres.findFirst({
         columns: withoutDeletedAt,
-        where: and(eq(genres.id, id), notDeleted),
+        where: and(eq(genres.id, id), notDeleted(genres)),
     });
 
     if (!data) {
@@ -83,7 +76,7 @@ const createGenre = describeCreate({
 });
 
 genreRoutes.post('/', describeRoute(createGenre), validator('json', genreCreateSchema), async (c) => {
-    const [data] = await db.insert(genres).values(c.req.valid('json')).returning(columns);
+    const [data] = await db.insert(genres).values(c.req.valid('json')).returning(columnsWithoutDeletedAt(genres));
 
     return c.json({ data }, 201);
 });
@@ -109,8 +102,8 @@ genreRoutes.patch(
         const [data] = await db
             .update(genres)
             .set(c.req.valid('json'))
-            .where(and(eq(genres.id, id), notDeleted))
-            .returning(columns);
+            .where(and(eq(genres.id, id), notDeleted(genres)))
+            .returning(columnsWithoutDeletedAt(genres));
 
         if (!data) {
             return c.json({ error: 'Genre not found.' }, 404);
@@ -138,7 +131,7 @@ genreRoutes.delete('/:id', describeRoute(deleteGenre), validator('param', paramS
         const [genre] = await tx
             .select({ id: genres.id })
             .from(genres)
-            .where(and(eq(genres.id, id), notDeleted))
+            .where(and(eq(genres.id, id), notDeleted(genres)))
             .for('update');
 
         if (!genre) {
@@ -155,7 +148,7 @@ genreRoutes.delete('/:id', describeRoute(deleteGenre), validator('param', paramS
             .update(genres)
             .set({ deleted_at: sql`now()` })
             .where(eq(genres.id, id))
-            .returning(columns);
+            .returning(columnsWithoutDeletedAt(genres));
 
         return deleted;
     });

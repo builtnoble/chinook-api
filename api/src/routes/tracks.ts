@@ -1,4 +1,4 @@
-import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
@@ -7,13 +7,10 @@ import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
+import { notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 import { httpError, requireLiveParent, type Transaction } from '@/utils/write';
 
 const trackRoutes = new Hono();
-
-// Deleting a track sets deleted_at, so every read leaves those rows out and never returns the column.
-const notDeleted = isNull(tracks.deleted_at);
-const withoutDeletedAt = { deleted_at: false } as const;
 
 // A track as every read and write returns it, with its album (and the album's artist), genre and media type.
 const findTrack = (executor: Pick<typeof db, 'query'>, where: SQL) =>
@@ -68,9 +65,9 @@ trackRoutes.get(
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
-        const tracks = await db.query.tracks.findMany({
+        const rows = await db.query.tracks.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted,
+            where: notDeleted(tracks),
             orderBy: (albums, { asc }) => asc(albums.id),
             with: {
                 album: {
@@ -87,7 +84,7 @@ trackRoutes.get(
         });
 
         return c.json({
-            data: tracks,
+            data: rows,
             pagination,
         });
     },
@@ -105,7 +102,7 @@ const getTrackByID = describeByID({
 trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
-    const data = await findTrack(db, and(eq(tracks.id, id), notDeleted) as SQL);
+    const data = await findTrack(db, and(eq(tracks.id, id), notDeleted(tracks)) as SQL);
 
     if (!data) {
         return c.json({ error: 'Track not found.' }, 404);
@@ -158,7 +155,7 @@ trackRoutes.patch(
         const body = c.req.valid('json');
 
         const data = await db.transaction(async (tx) => {
-            const live = and(eq(tracks.id, id), notDeleted) as SQL;
+            const live = and(eq(tracks.id, id), notDeleted(tracks)) as SQL;
 
             if (!(await findTrack(tx, live))) {
                 throw httpError(404, 'Track not found.');
@@ -195,7 +192,7 @@ trackRoutes.delete('/:id', describeRoute(deleteTrack), validator('param', paramS
         const deleted = await tx
             .update(tracks)
             .set({ deleted_at: sql`now()` })
-            .where(and(eq(tracks.id, id), notDeleted))
+            .where(and(eq(tracks.id, id), notDeleted(tracks)))
             .returning({ id: tracks.id });
 
         if (!deleted.length) {

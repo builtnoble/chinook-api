@@ -7,13 +7,10 @@ import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
+import { notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 import { countOf, httpError, requireLiveParent } from '@/utils/write';
 
 const albumRoutes = new Hono();
-
-// Deleting an album sets deleted_at, so every read leaves those rows out and never returns the column.
-const notDeleted = isNull(albums.deleted_at);
-const withoutDeletedAt = { deleted_at: false } as const;
 
 // An album as every read and write returns it, with its artist.
 const findAlbum = (executor: Pick<typeof db, 'query'>, where: SQL) =>
@@ -40,9 +37,9 @@ albumRoutes.get(
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
-        const albums = await db.query.albums.findMany({
+        const rows = await db.query.albums.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted,
+            where: notDeleted(albums),
             with: {
                 artist: { columns: withoutDeletedAt },
             },
@@ -51,7 +48,7 @@ albumRoutes.get(
         });
 
         return c.json({
-            data: albums,
+            data: rows,
             pagination,
         });
     },
@@ -69,7 +66,7 @@ const getAlbumByID = describeByID({
 albumRoutes.get('/:id', describeRoute(getAlbumByID), validator('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
-    const data = await findAlbum(db, and(eq(albums.id, id), notDeleted) as SQL);
+    const data = await findAlbum(db, and(eq(albums.id, id), notDeleted(albums)) as SQL);
 
     if (!data) {
         return c.json({ error: 'Album not found.' }, 404);
@@ -122,7 +119,7 @@ albumRoutes.patch(
         const body = c.req.valid('json');
 
         const data = await db.transaction(async (tx) => {
-            const live = and(eq(albums.id, id), notDeleted) as SQL;
+            const live = and(eq(albums.id, id), notDeleted(albums)) as SQL;
 
             if (!(await findAlbum(tx, live))) {
                 throw httpError(404, 'Album not found.');
@@ -170,7 +167,7 @@ albumRoutes.delete(
             const [album] = await tx
                 .select({ id: albums.id })
                 .from(albums)
-                .where(and(eq(albums.id, id), notDeleted))
+                .where(and(eq(albums.id, id), notDeleted(albums)))
                 .for('update');
 
             if (!album) {

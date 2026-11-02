@@ -1,23 +1,16 @@
-import { and, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
-import omit from 'lodash-es/omit';
 import db from '@/db';
 import { albums, artists, tracks } from '@/db/schema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { artistCreateSchema, artistSchema, artistUpdateSchema } from '@/utils/schema/resources/artistSchema';
+import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 import { countOf, httpError } from '@/utils/write';
 
 const artistRoutes = new Hono();
-
-// Deleting an artist sets deleted_at, so every read leaves those rows out and never returns the column.
-const notDeleted = isNull(artists.deleted_at);
-const withoutDeletedAt = { deleted_at: false } as const;
-
-// What a write returns: the row as a read returns it.
-const columns = omit(getTableColumns(artists), 'deleted_at');
 
 const getArtists = describeList({
     operationId: 'getArtists',
@@ -36,15 +29,15 @@ artistRoutes.get(
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
-        const artists = await db.query.artists.findMany({
+        const rows = await db.query.artists.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted,
+            where: notDeleted(artists),
             limit: pagination.perPage,
             offset,
         });
 
         return c.json({
-            data: artists,
+            data: rows,
             pagination,
         });
     },
@@ -63,7 +56,7 @@ artistRoutes.get('/:id', describeRoute(getArtistByID), validator('param', paramS
 
     const data = await db.query.artists.findFirst({
         columns: withoutDeletedAt,
-        where: and(eq(artists.id, id), notDeleted),
+        where: and(eq(artists.id, id), notDeleted(artists)),
     });
 
     if (!data) {
@@ -83,7 +76,7 @@ const createArtist = describeCreate({
 });
 
 artistRoutes.post('/', describeRoute(createArtist), validator('json', artistCreateSchema), async (c) => {
-    const [data] = await db.insert(artists).values(c.req.valid('json')).returning(columns);
+    const [data] = await db.insert(artists).values(c.req.valid('json')).returning(columnsWithoutDeletedAt(artists));
 
     return c.json({ data }, 201);
 });
@@ -109,8 +102,8 @@ artistRoutes.patch(
         const [data] = await db
             .update(artists)
             .set(c.req.valid('json'))
-            .where(and(eq(artists.id, id), notDeleted))
-            .returning(columns);
+            .where(and(eq(artists.id, id), notDeleted(artists)))
+            .returning(columnsWithoutDeletedAt(artists));
 
         if (!data) {
             return c.json({ error: 'Artist not found.' }, 404);
@@ -145,7 +138,7 @@ artistRoutes.delete(
             const [artist] = await tx
                 .select({ id: artists.id })
                 .from(artists)
-                .where(and(eq(artists.id, id), notDeleted))
+                .where(and(eq(artists.id, id), notDeleted(artists)))
                 .for('update');
 
             if (!artist) {
@@ -179,7 +172,7 @@ artistRoutes.delete(
                 .update(artists)
                 .set({ deleted_at: sql`now()` })
                 .where(eq(artists.id, id))
-                .returning(columns);
+                .returning(columnsWithoutDeletedAt(artists));
 
             return deleted;
         });
