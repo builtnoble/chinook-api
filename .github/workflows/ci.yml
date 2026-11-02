@@ -16,9 +16,6 @@ jobs:
   api:
     name: API
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: api
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -28,6 +25,7 @@ jobs:
       # Biome checks the whole repository, so this also covers docs-site.
       - run: bun run lint
       - run: bun run test
+        working-directory: api
 
   docs:
     name: Docs generator
@@ -38,9 +36,6 @@ jobs:
         with:
           bun-version: 1.2.x
       - run: bun install --frozen-lockfile
-        working-directory: api
-      - run: bun install --frozen-lockfile
-        working-directory: docs-site
       - run: bun test
         working-directory: docs-site
       # The real spec and the real documents must render and compile. This needs

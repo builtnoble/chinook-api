@@ -30,11 +30,12 @@ Make sure Bun is installed before proceeding:
 curl -fsSL https://bun.sh/install | bash
 ```
 
-Clone the repository and install the API's dependencies:
+Clone the repository and install the dependencies of the API and the docs generator, which are Bun workspaces sharing
+one lockfile:
 
 ```bash
 git clone https://github.com/builtnoble/chinook-api.git
-cd chinook-api/api
+cd chinook-api
 bun install
 ```
 
@@ -74,18 +75,17 @@ the same port.
 
 ## Code Quality
 
-This project uses **[Biome](https://biomejs.dev)** for both linting and formatting. Biome is installed in `api/` and
-`docs-site/` and its config is at the root, so run it from either directory; it checks the whole repository.
-Before opening a pull request, ensure your code is clean and consistent:
+This project uses **[Biome](https://biomejs.dev)** for both linting and formatting. Biome and its config are at the
+repository root, and it checks the whole repository. Before opening a pull request, ensure your code is clean and
+consistent:
 
 ```bash
-cd api
 bun run lint            # check
 bun run lint --write    # fix what it can
 ```
 
-Run it through `bun run` and not `bunx biome` from the root: there is no Biome installed at the root, so `bunx` would
-fetch whatever version is latest and report errors the pinned version does not.
+Run it after `bun install`, so that you get the pinned version. Without it, `bunx biome` fetches whatever version is
+latest and reports errors the pinned version does not.
 
 PRs that don’t pass Biome checks will be requested to fix before merging.
 
@@ -139,8 +139,9 @@ Following this format helps with automated changelogs, semantic versioning, and 
 Tests use Bun’s native test runner and live next to the code they cover.
 
 ```bash
-cd api && bun run test           # the API
-cd docs-site && bun test         # the docs generator
+bun run test                     # the API and the docs generator
+cd api && bun run test           # the API only
+cd docs-site && bun test         # the docs generator only
 ```
 
 Contributors are encouraged to add test cases for new endpoints or features, especially around authentication, route
@@ -196,11 +197,10 @@ of them change, so a saved edit shows up in the open browser tab without restart
     ```
 2. Make your changes and ensure lint/test checks pass:
     ```bash
-    cd api
     bun run lint
     bun run test
     ```
-    If you changed `docs-site/` or `docs/`, also run `bun test` in `docs-site/`.
+    The tests cover the API and the docs generator, which also compiles the Markdown in `docs/`.
 3. Commit your changes following conventional commit style.
 4. Push to your fork and open a Pull Request describing your change.
 

@@ -7,7 +7,7 @@ Insomnia 13.x; menu names move around a little between versions.
 
 ```sh
 docker compose up -d --build   # the Chinook database, the API, the docs site and the proxy
-cd api && bun install && bunx drizzle-kit migrate   # first run only: creates the auth tables
+bun install && (cd api && bunx drizzle-kit migrate)   # first run only: installs and creates the auth tables
 ```
 
 The API is then at `http://api.chinook.localhost` (through the proxy) and at `http://localhost:3000` (directly). The

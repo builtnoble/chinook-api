@@ -168,8 +168,8 @@ proxy listens on port 80; set `PROXY_PORT` if that is taken and add the port to 
 The first time, create the Better Auth tables (this needs [Bun](https://bun.sh)):
 
 ```sh
-cd api
 bun install
+cd api
 bunx drizzle-kit migrate
 ```
 

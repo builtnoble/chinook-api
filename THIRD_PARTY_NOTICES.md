@@ -37,8 +37,8 @@ package has a license that is not permissive or cannot be identified. See `docs-
 
 ## Dependencies installed from npm
 
-This repository does not contain its npm dependencies; they are installed from the lockfiles (`api/bun.lock`,
-`docs-site/bun.lock`). Their licenses were checked when these notices were written:
+This repository does not contain its npm dependencies; they are installed from the lockfile (`bun.lock`).
+Their licenses were checked when these notices were written:
 
 -   **`api/`**: all 63 production packages are under permissive licenses (MIT, Apache-2.0, ISC, BSD-2-Clause,
     BSD-3-Clause, 0BSD, or MIT OR CC0-1.0). Four packages from the Better Auth family omit the `license` field in

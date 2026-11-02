@@ -17,10 +17,13 @@
 
 # 1. Export /openapi.json without a database or a running server.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS spec
+WORKDIR /repo
+COPY package.json bun.lock bunfig.toml ./
+COPY api/package.json api/
+COPY docs-site/package.json docs-site/
+RUN bun install --frozen-lockfile --filter bun-chinook-api
+COPY api/ api/
 WORKDIR /repo/api
-COPY api/package.json api/bun.lock ./
-RUN bun install --frozen-lockfile
-COPY api/ ./
 RUN bun run openapi:export /out/openapi.json
 
 # 2. Turn the spec and the Markdown in docs/ into the theme's pages. The
