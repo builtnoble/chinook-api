@@ -200,6 +200,15 @@ Run the migrations and `create-admin` again after it.
 
 ---
 
+## Upgrading from 1.0
+
+Version 1.1 changes some responses. A `GET` of an unknown or deleted id now answers `404` instead of `200`
+with no `data`. Every error is now a problem document with a `code`, in place of the old `error` and `message`
+bodies. Run `bun install` at the root, `bunx drizzle-kit migrate` in `api/`, and create an admin if you need to
+write. The full list is in [CHANGELOG.md](CHANGELOG.md).
+
+---
+
 ## Example Endpoints
 
 Authenticated endpoints need a valid token or session. The
