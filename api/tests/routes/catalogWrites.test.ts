@@ -35,7 +35,7 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             expect(stub.methods()).toEqual(['insert', 'values', 'returning']);
         });
 
-        it.each([
+        it.each<[string, Record<string, unknown>]>([
             ['an empty body', {}],
             ['an empty name', { name: '' }],
             ['an id', { id: 3, name: 'Metal' }],
@@ -87,7 +87,7 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             expect(await res.json()).toEqual({ error: notFound });
         });
 
-        it.each([
+        it.each<[string, Record<string, unknown>]>([
             ['an empty body', {}],
             ['an unknown key', { colour: 'red' }],
         ])('answers 400 for %s', async (_, body) => {

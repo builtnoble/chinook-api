@@ -61,7 +61,7 @@ describe('POST /', () => {
         },
     );
 
-    it.each([
+    it.each<[string, Record<string, unknown>]>([
         ['a missing name', { ...body, name: undefined }],
         ['a price the column cannot hold', { ...body, unit_price: 'free' }],
         ['a length of zero', { ...body, milliseconds: 0 }],

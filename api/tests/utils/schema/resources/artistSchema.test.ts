@@ -6,7 +6,7 @@ describe('artistCreateSchema', () => {
         expect(artistCreateSchema.safeParse({ name: 'AC/DC' }).success).toBe(true);
     });
 
-    it.each([
+    it.each<[string, Record<string, unknown>]>([
         ['id', { id: 5 }],
         ['deleted_at', { deleted_at: '2026-01-01T00:00:00Z' }],
         ['an unknown key', { colour: 'red' }],

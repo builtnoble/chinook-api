@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { PgDialect } from 'drizzle-orm/pg-core';
+import { type AnyPgColumn, PgDialect } from 'drizzle-orm/pg-core';
 import { artists, media_types, tracks } from '@/db/chinookSchema';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 
 const dialect = new PgDialect();
 
 describe('notDeleted', () => {
-    it.each([
+    it.each<[string, { deleted_at: AnyPgColumn }]>([
         ['artists', artists],
         ['media_types', media_types],
     ])('filters %s on its own deleted_at column', (name, table) => {

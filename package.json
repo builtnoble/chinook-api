@@ -11,6 +11,7 @@
         "test": "bun run --filter './api' --filter './docs-site' test"
     },
     "devDependencies": {
-        "@biomejs/biome": "2.2.2"
+        "@biomejs/biome": "2.2.2",
+        "@types/bun": "1.2.23"
     }
 }
