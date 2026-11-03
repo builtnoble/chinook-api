@@ -1,5 +1,6 @@
 import { type HarRequest, HTTPSnippet } from '@readme/httpsnippet';
 import slugify from '@sindresorhus/slugify';
+import type { RootContent } from 'mdast';
 import type {
     MediaTypeObject,
     OpenAPIObject,
@@ -9,7 +10,7 @@ import type {
     SchemaObject,
 } from 'openapi3-ts/oas31';
 import type { JsonObject, JsonValue } from 'type-fest';
-import { escapeMarkdown } from './markdown';
+import { type Block, directive, entity, esm, fence, heading, jsx, mdx, paragraph, phrasing, rule, text } from './mdx';
 import {
     isReference,
     type Node,
@@ -44,35 +45,16 @@ const singular = (tag: string) => tag.toLowerCase().replace(/s$/, '');
 // gives a heading the id that `slugify` makes of its text.
 const modelHeading = (tag: string) => `The ${singular(tag)} model`;
 
-// Descriptions come from the API's source and land inside MDX as a single line,
-// where `{`, `}` and `<` would start expressions and tags.
-export const escapeMdx = (text: string) => escapeMarkdown(text.replace(/\s+/g, ' ').trim());
-
-const indent = (text: string, spaces: number) =>
-    text
-        .split('\n')
-        .map((line) => (line === '' ? line : ' '.repeat(spaces) + line))
-        .join('\n');
-
-const fence = (language: string, title: string | undefined, body: string) =>
-    `\`\`\`${language}${title ? ` {{ title: '${title}' }}` : ''}\n${body}\n\`\`\``;
-
-// A JSX attribute has no escape sequences, so a value with a quote or backslash
-// goes in as an expression.
-const attribute = (value: string) => (/["\\]/.test(value) ? `{${JSON.stringify(value)}}` : `"${value}"`);
-
-const propertyRows = (items: Row[]) =>
-    [
-        '<Properties>',
-        ...items.map(({ name, type, description, required }) =>
-            [
-                `  <Property name=${attribute(name)} type=${attribute(required ? type : `${type}, optional`)}>`,
-                `    ${escapeMdx(description) || '&nbsp;'}`,
-                '  </Property>',
-            ].join('\n'),
+const propertyRows = (items: Row[], where: string) =>
+    jsx(
+        'Properties',
+        {},
+        items.map(({ name, type, description, required }) =>
+            jsx('Property', { name, type: required ? type : `${type}, optional` }, [
+                description ? paragraph(phrasing(description, `${where}.${name}`)) : entity('&nbsp;'),
+            ]),
         ),
-        '</Properties>',
-    ].join('\n');
+    );
 
 const label = (path: string) => path.replace(/\{(\w+)\}/g, ':$1');
 
@@ -179,7 +161,7 @@ const requestExamples = (
     { method, path, operation }: Endpoint,
     model: Node | undefined,
     baseUrl: string,
-): string => {
+): Block => {
     const where = `${method.toUpperCase()} ${path}`;
     const parameters = (operation.parameters ?? []).map((parameter, index) =>
         inline(parameter, `${where}.parameters[${index}]`),
@@ -220,17 +202,12 @@ const requestExamples = (
         return fence(language, title, code);
     };
 
-    return [
-        `<CodeGroup title="Request" tag="${method.toUpperCase()}" label="${concrete}">`,
-        ...languages.flatMap((language) => ['', example(language)]),
-        '',
-        '</CodeGroup>',
-    ].join('\n');
+    return jsx('CodeGroup', { title: 'Request', tag: method.toUpperCase(), label: concrete }, languages.map(example));
 };
 
-const responseExamples = (spec: OpenAPIObject, { method, path, operation }: Endpoint): string[] => {
+const responseExamples = (spec: OpenAPIObject, { method, path, operation }: Endpoint): Block[] => {
     const where = `${method.toUpperCase()} ${path}`;
-    const blocks: string[] = [];
+    const blocks: Block[] = [];
 
     for (const status of Object.keys(operation.responses ?? {}).sort()) {
         const node = responseNode(operation, status, where);
@@ -252,7 +229,7 @@ const section = (
     tag: string,
     model: Node | undefined,
     baseUrl: string,
-): string => {
+): Block[] => {
     const { method, path, operation } = endpoint;
     const where = `${method.toUpperCase()} ${path}`;
     const parameters = (operation.parameters ?? []).map((parameter, index) =>
@@ -261,10 +238,11 @@ const section = (
     const required = parameters.filter((row) => row.required);
     const optional = parameters.filter((row) => !row.required);
 
-    const left: string[] = [escapeMdx(operation.description ?? '')];
+    const description = phrasing(operation.description ?? '', where);
+    const left: Block[] = description.length ? [paragraph(description)] : [];
 
-    if (required.length) left.push('### Required parameters', propertyRows(required));
-    if (optional.length) left.push('### Optional parameters', propertyRows(optional));
+    if (required.length) left.push(heading(3, 'Required parameters'), propertyRows(required, where));
+    if (optional.length) left.push(heading(3, 'Optional parameters'), propertyRows(optional, where));
 
     const requestBody = requestNode(operation, where);
     if (requestBody) {
@@ -272,8 +250,12 @@ const section = (
         const requiredAttributes = attributes.filter((row) => row.required);
         const optionalAttributes = attributes.filter((row) => !row.required);
 
-        if (requiredAttributes.length) left.push('### Required attributes', propertyRows(requiredAttributes));
-        if (optionalAttributes.length) left.push('### Optional attributes', propertyRows(optionalAttributes));
+        if (requiredAttributes.length) {
+            left.push(heading(3, 'Required attributes'), propertyRows(requiredAttributes, where));
+        }
+        if (optionalAttributes.length) {
+            left.push(heading(3, 'Optional attributes'), propertyRows(optionalAttributes, where));
+        }
     }
 
     const status = successStatus(operation);
@@ -288,12 +270,15 @@ const section = (
         if (model && row && sameProperties(row, model)) {
             const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`;
 
-            left.push('### Response attributes', propertyRows(rows(ok, { collapse: new Map([['data', note]]) })));
+            left.push(
+                heading(3, 'Response attributes'),
+                propertyRows(rows(ok, { collapse: new Map([['data', note]]) }), where),
+            );
         } else {
-            left.push('### Response attributes', propertyRows(rows(ok)));
+            left.push(heading(3, 'Response attributes'), propertyRows(rows(ok), where));
         }
     } else if (model) {
-        left.push(`Returns [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`);
+        left.push(paragraph(phrasing(`Returns [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`, where)));
     }
 
     const errors = Object.entries(operation.responses ?? {})
@@ -307,26 +292,18 @@ const section = (
                 required: true,
             }),
         );
-    if (errors.length) left.push('### Errors', propertyRows(errors));
+    if (errors.length) left.push(heading(3, 'Errors'), propertyRows(errors, where));
 
     const right = [requestExamples(spec, endpoint, model, baseUrl), ...responseExamples(spec, endpoint)];
 
     return [
-        `## ${escapeMdx(operation.summary ?? '')} {{ tag: '${method.toUpperCase()}', label: '${label(path)}' }}`,
-        '',
-        '<Row>',
-        '  <Col>',
-        '',
-        indent(left.join('\n\n'), 4),
-        '',
-        '  </Col>',
-        '  <Col sticky>',
-        '',
-        indent(right.join('\n\n'), 4),
-        '',
-        '  </Col>',
-        '</Row>',
-    ].join('\n');
+        heading(2, [
+            ...phrasing(operation.summary ?? '', where),
+            text(' '),
+            directive({ tag: method.toUpperCase(), label: label(path) }),
+        ]),
+        jsx('Row', {}, [jsx('Col', {}, left), jsx('Col', { sticky: true }, right)]),
+    ];
 };
 
 export const endpointsByTag = (spec: OpenAPIObject): Map<string, Endpoint[]> => {
@@ -372,30 +349,34 @@ export const endpointsByTag = (spec: OpenAPIObject): Map<string, Endpoint[]> => 
 export const renderTagPage = (spec: OpenAPIObject, tag: string, endpoints: Endpoint[], baseUrl: string): string => {
     const description = spec.tags?.find((candidate) => candidate.name === tag)?.description ?? '';
     const model = modelOf(endpoints);
-    const name = singular(tag);
 
-    const parts = [
-        [
-            'export const metadata = {',
-            `  title: ${JSON.stringify(tag)},`,
-            `  description: ${JSON.stringify(description)},`,
-            '}',
-        ].join('\n'),
-        `# ${escapeMdx(tag)}`,
-        `${escapeMdx(description)} {{ className: 'lead' }}`,
+    const page: RootContent[] = [
+        esm(
+            [
+                'export const metadata = {',
+                `  title: ${JSON.stringify(tag)},`,
+                `  description: ${JSON.stringify(description)},`,
+                '}',
+            ].join('\n'),
+        ),
+        heading(1, phrasing(tag, tag)),
+        paragraph([...phrasing(description, tag), text(' '), directive({ className: 'lead' })]),
     ];
 
     if (model) {
-        parts.push(
-            `## ${modelHeading(tag)}`,
-            `The ${name} model contains the following properties.`,
-            '### Properties',
-            propertyRows(rows(model)),
-            '---',
+        page.push(
+            heading(2, modelHeading(tag)),
+            paragraph(`The ${singular(tag)} model contains the following properties.`),
+            heading(3, 'Properties'),
+            propertyRows(rows(model), tag),
+            rule,
         );
     }
 
-    parts.push(endpoints.map((endpoint) => section(spec, endpoint, tag, model, baseUrl)).join('\n\n---\n\n'));
+    endpoints.forEach((endpoint, index) => {
+        if (index) page.push(rule);
+        page.push(...section(spec, endpoint, tag, model, baseUrl));
+    });
 
-    return `${parts.join('\n\n')}\n`;
+    return mdx(page);
 };

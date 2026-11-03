@@ -4,7 +4,6 @@ import { compile } from '@mdx-js/mdx';
 import slugify from '@sindresorhus/slugify';
 import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
-import { escapeMdx } from './render';
 import { dereference, UnsupportedError } from './schema';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
@@ -202,9 +201,17 @@ describe('links within a page', () => {
 
 describe('MDX safety', () => {
     it('escapes braces and angle brackets outside code spans', () => {
-        expect(escapeMdx('Use {id} or <b>bold</b>, but `{code}` stays.')).toBe(
-            'Use \\{id\\} or \\<b>bold\\</b>, but `{code}` stays.',
+        const spec = specWith({ description: 'Use {id} or <b>bold</b>, but `{code}` stays.' });
+
+        expect(generate(spec)['src/app/things/page.mdx']).toContain(
+            'Use \\{id} or \\<b>bold\\</b>, but `{code}` stays.',
         );
+    });
+
+    it('refuses a description that is more than one paragraph', () => {
+        const spec = specWith({ description: '- one\n- two' });
+
+        expect(() => generate(spec)).toThrow('GET /things: a description must be a single paragraph');
     });
 
     it('compiles a page whose descriptions contain MDX syntax', async () => {
@@ -214,14 +221,13 @@ describe('MDX safety', () => {
         await expect(compile(generate(spec)['src/app/things/page.mdx'])).resolves.toBeDefined();
     });
 
-    it('puts a type with quotes in an expression attribute', async () => {
+    it('keeps a type with quotes in one attribute', async () => {
         const spec = specWith({
             responses: okResponse({ type: 'object', properties: { kind: { enum: ['a', 'b'] } }, required: ['kind'] }),
         });
         const page = generate(spec)['src/app/things/page.mdx'];
 
-        expect(page).toContain('type={"\\"a\\" | \\"b\\""}');
-        await expect(compile(page)).resolves.toBeDefined();
+        expect(String(await compile(page))).toContain('type: "\\"a\\" | \\"b\\""');
     });
 });
 

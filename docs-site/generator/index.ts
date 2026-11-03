@@ -21,7 +21,8 @@ export type Content = {
 };
 
 // Maps each output path (relative to the theme root) to its contents. Pure, so
-// tests can call it directly. The spec has its `$ref`s resolved, by `dereference`.
+// tests can call it directly. The spec has its `$ref`s resolved, by
+// `dereference`.
 export const generate = (spec: OpenAPIObject, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
