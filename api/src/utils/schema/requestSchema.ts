@@ -1,5 +1,5 @@
 import z from 'zod';
-import { snakeCaseSchema } from '@/utils/snakeCaseHelper';
+import { snakeCaseSchema } from '@/utils/helpers/snakeCaseHelper';
 
 export const querySchema = z.object({
     limit: z.coerce.number().optional().describe('Number of items per page. Defaults to 10, or the total if fewer.'),

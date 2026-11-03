@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { problem } from '@/lib/problem-details';
-import { getAllowedOrigins, getBaseUrl } from '@/utils/envHelper';
+import { getAllowedOrigins, getBaseUrl } from '@/utils/helpers/envHelper';
 
 const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
 

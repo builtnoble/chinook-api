@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory';
 import type { Bindings } from 'hono/types';
-import { snakeCaseKeys } from '@/utils/snakeCaseHelper';
+import { snakeCaseKeys } from '@/utils/helpers/snakeCaseHelper';
 
 const snakeCaseKeysMiddleware = createMiddleware<{ Bindings: Bindings }>(async (c, next) => {
     await next();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { findPgError } from '@/utils/pgErrorHelper';
+import { findPgError } from '@/utils/helpers/pgErrorHelper';
 
 describe('findPgError', () => {
     const pg = { code: '23503', table: 'albums', constraint: 'albums_artist_id_fkey' };

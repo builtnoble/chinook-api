@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { countOf } from '@/utils/countHelper';
+import { countOf } from '@/utils/helpers/countHelper';
 
 describe('countOf', () => {
     it.each([

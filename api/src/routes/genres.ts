@@ -5,12 +5,12 @@ import db from '@/db';
 import { genres, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { countOf } from '@/utils/countHelper';
+import { countOf } from '@/utils/helpers/countHelper';
+import { validate } from '@/utils/helpers/requestValidationHelper';
+import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
-import { validate } from '@/utils/requestValidationHelper';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { genreCreateSchema, genreSchema, genreUpdateSchema } from '@/utils/schema/resources/genreSchema';
-import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
 
 const genreRoutes = new Hono();
 

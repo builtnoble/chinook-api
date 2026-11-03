@@ -6,7 +6,7 @@ import { auth } from '@/auth';
 import errorHandler from '@/handlers/errorHandler';
 import { problemNotFound } from '@/lib/problem-details';
 import { problemFromAuthResponse } from '@/lib/problem-details/betterAuthProblem';
-import { getAllowedOrigins } from '@/utils/envHelper';
+import { getAllowedOrigins } from '@/utils/helpers/envHelper';
 
 const port = process.env.APP_PORT || 3000;
 

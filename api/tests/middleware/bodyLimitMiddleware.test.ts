@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import z from 'zod';
 import errorHandler from '@/handlers/errorHandler';
 import bodyLimitMiddleware, { maxBodyBytes } from '@/middleware/bodyLimitMiddleware';
-import { validate } from '@/utils/requestValidationHelper';
+import { validate } from '@/utils/helpers/requestValidationHelper';
 import { problemBody } from '../support/problem';
 
 const app = new Hono().use(bodyLimitMiddleware).post('/', async (c) => c.json({ length: (await c.req.text()).length }));

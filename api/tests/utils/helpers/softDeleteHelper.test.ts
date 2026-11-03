@@ -3,8 +3,13 @@ import { type AnyPgColumn, PgDialect } from 'drizzle-orm/pg-core';
 import db, { type Transaction } from '@/db';
 import { artists, media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import { columnsWithoutDeletedAt, notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
-import { stubDb } from '../support/stubDb';
+import {
+    columnsWithoutDeletedAt,
+    notDeleted,
+    requireLiveParent,
+    withoutDeletedAt,
+} from '@/utils/helpers/softDeleteHelper';
+import { stubDb } from '../../support/stubDb';
 
 const dialect = new PgDialect();
 

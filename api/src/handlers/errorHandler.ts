@@ -1,5 +1,5 @@
 import { problem, problemDetailsHandler } from '@/lib/problem-details';
-import { findPgError } from '@/utils/pgErrorHelper';
+import { findPgError } from '@/utils/helpers/pgErrorHelper';
 
 // The Postgres errors a caller can cause, by SQLSTATE. The messages are fixed:
 // the driver's own message holds the SQL.
