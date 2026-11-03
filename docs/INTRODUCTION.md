@@ -191,7 +191,7 @@ it is in (`body`, `path` or `query`):
 | `not_found` | `404` | No such route, or no item with that id, or it was deleted |
 | `duplicate_value` | `409` | A unique value collides with an existing row, or the track is already in the playlist |
 | `delete_blocked` | `409` | The item still has albums or tracks, and `cascade=true` was not passed |
-| `content_too_large` | `413` | The body is over 100 KB |
+| `content_too_large` | `413` | The body is over 100 KB, whether or not the request declares its length |
 | `invalid_reference` | `422` | A field refers to a parent that does not exist or is deleted |
 | `value_too_long` | `422` | A value is too long for its column |
 | `internal_server_error` | `500` | Something failed on the server |
