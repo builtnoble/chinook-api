@@ -155,7 +155,7 @@ The docs site is generated, so there is one place to edit each page. See [docs-s
 for how it is built.
 
 -   **A new route** needs a tag, a summary and a description on its `describeRoute` options, for example through
-    `describeList` and `describeByID` in `api/src/utils/openapi.ts`. A test fails without them, and its reference page
+    `describeList` and `describeByID` in `api/src/openapi/index.ts`. A test fails without them, and its reference page
     appears on the site by itself.
 -   **The Introduction and the Insomnia guide** are `docs/INTRODUCTION.md` and `docs/guides/INSOMNIA.md`. Edit the Markdown.
     Avoid HTML comments and GitHub-only alerts such as `> [!NOTE]`, which MDX cannot take; the generator names the

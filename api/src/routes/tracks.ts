@@ -5,9 +5,9 @@ import db, { type Transaction } from '@/db';
 import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 

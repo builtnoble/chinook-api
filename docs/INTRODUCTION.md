@@ -119,7 +119,7 @@ environment bindings.
 from the same `describeRoute` + Zod schema definitions attached to each route, so the docs cannot
 drift from the actual validators. The docs site is built from it: `bun run openapi:export` (in `api/`) writes the
 document without a database or a running server, and the generator in `docs-site/` turns it into one reference page per
-tag. Every route therefore needs a tag, a summary and a description, which `api/tests/openapi.test.ts` checks.
+tag. Every route therefore needs a tag, a summary and a description, which `api/tests/openapiDocument.test.ts` checks.
 
 **External dependency:** the Postgres image (`builtnoble/chinook-postgres`, pinned to the `1`
 release line in `docker-compose.yml`) is the one piece of infrastructure not defined in this repo.

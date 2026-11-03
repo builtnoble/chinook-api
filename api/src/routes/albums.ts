@@ -5,10 +5,10 @@ import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { countOf } from '@/utils/helpers/countHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
 

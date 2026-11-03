@@ -5,9 +5,9 @@ import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { requireLiveParent } from '@/utils/helpers/softDeleteHelper';
-import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
 import {

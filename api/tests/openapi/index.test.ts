@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import z from 'zod';
-import { describeCreate, describeDelete, describeUpdate } from '@/utils/openapi';
+import { describeCreate, describeDelete, describeUpdate } from '@/openapi';
 
 const schema = z.object({ id: z.number(), name: z.string() }).meta({ examples: [{ id: 1, name: 'Music' }] });
 const body = z.object({ name: z.string() }).strict();
