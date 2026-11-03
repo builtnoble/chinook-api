@@ -8,13 +8,13 @@ import { visit } from 'unist-util-visit';
 import { UnsupportedError } from './schema';
 
 export type MarkdownOptions = {
-    // Repo-relative path of the file, so its relative links can be resolved.
+    // Path of the file from the top of the repository, used to work out its
+    // relative links.
     path: string;
-    // Repo-relative paths of the other published files, mapped to the site href
-    // of their page.
+    // Paths of the other published files, each mapped to the page it becomes.
     published: Map<string, string>;
-    // GitHub URL of the repository, which links to files that are not published
-    // point at.
+    // GitHub address of the repository. Links to files that are not published
+    // point here.
     repository: string;
     title: string;
     description?: string;
@@ -22,13 +22,14 @@ export type MarkdownOptions = {
     home?: boolean;
 };
 
-// MDX reads Markdown without indented code, autolinks and HTML, so the
-// document is parsed the same way, with the GFM tables the theme enables.
+// Markdown is read the way MDX reads it (no indented code, automatic links or
+// HTML), plus the tables the theme supports.
 const processor = unified().use(remarkParse).use(remarkGfm).data('micromarkExtensions', [mdxMd()]);
 
 const parse = (source: string): Root => processor.parse(source);
 
-// A change to the source: remove some characters at an offset, and insert text.
+// A change to the text: remove some characters at a position, then insert new
+// text.
 type Edit = { at: number; remove: number; insert: string };
 
 const applyEdits = (source: string, edits: Edit[]): string =>
@@ -36,8 +37,8 @@ const applyEdits = (source: string, edits: Edit[]): string =>
         .sort((a, b) => b.at - a.at)
         .reduce((text, { at, remove, insert }) => text.slice(0, at) + insert + text.slice(at + remove), source);
 
-// Where a node starts and ends in the source. A tree parsed from a string
-// always knows.
+// Where a node starts and ends in the text. Nodes parsed from a string always
+// have this.
 const span = (node: Nodes): [number, number] => [node.position?.start.offset ?? 0, node.position?.end.offset ?? 0];
 
 const lineOf = (node: Nodes) => node.position?.start.line ?? 1;
@@ -53,8 +54,8 @@ const resolveLink = (destination: string, options: MarkdownOptions): string => {
     return `${options.repository}/blob/main/${resolved}${hash ? `#${hash}` : ''}`;
 };
 
-// A fenced block that reaches the end of the document without its closing
-// fence. The parser accepts one, but the page would swallow everything after it.
+// A code block that is never closed. The parser allows it, but it would swallow
+// the rest of the page.
 const isUnclosedFence = (raw: string): boolean => {
     const lines = raw.split('\n');
     const opening = lines[0].match(/^(`{3,}|~{3,})/);
@@ -71,8 +72,8 @@ const isUnclosedFence = (raw: string): boolean => {
     );
 };
 
-// The plain text of a node: what a reader sees, without the Markdown around it,
-// with the alt text of an image.
+// The text a reader sees, without the Markdown around it. An image counts as
+// its alt text.
 const textOf = (node: Nodes): string => {
     let text = '';
 
@@ -91,7 +92,8 @@ const sentenceStart = (text: string, limit = 200) => {
     return sentence ? sentence[0] : `${text.slice(0, limit - 1).trimEnd()}…`;
 };
 
-// What MDX cannot take, reported with the line in the Markdown.
+// An error for something MDX cannot handle, with the line number in the
+// Markdown.
 const check = (tree: Root, source: string, options: MarkdownOptions) => {
     visit(tree, 'text', (node) => {
         const index = node.value.indexOf('<!--');
@@ -112,9 +114,9 @@ const check = (tree: Root, source: string, options: MarkdownOptions) => {
     });
 };
 
-// Where the destination of an inline link or image, or of a definition, is in
-// the source. `null` when there is none to rewrite: an autolink the parser
-// found in plain text, or an empty destination.
+// Where the address of a link, image or definition sits in the text. `null`
+// when there is nothing to change: a link the parser found in plain text, or an
+// empty address.
 const destinationOf = (node: Link | Image | Definition, source: string): [number, number] | null | undefined => {
     const [start, end] = span(node);
     const raw = source.slice(start, end);
@@ -126,7 +128,7 @@ const destinationOf = (node: Link | Image | Definition, source: string): [number
 
     if (!raw.startsWith('[') && !raw.startsWith('![')) return null;
 
-    // A link's label ends with its last child; an image has no children.
+    // A link's label ends where its last child ends. An image has no children.
     const lastChild = node.type === 'link' ? node.children.at(-1) : undefined;
     const close = raw.indexOf('](', lastChild ? span(lastChild)[1] - start : 1);
     if (close === -1) return undefined;
@@ -164,8 +166,8 @@ const rewriteLinks = (tree: Root, source: string, options: MarkdownOptions): str
     return applyEdits(source, edits);
 };
 
-// The offsets of `{`, `}` and `<` that MDX would read as syntax: all of them
-// outside fenced and inline code, unless a backslash already escapes them.
+// The positions of `{`, `}` and `<` that MDX would treat as code: every one
+// outside code blocks and inline code, unless a backslash is already in front.
 const escapes = (tree: Root, source: string): Edit[] => {
     const code: [number, number][] = [];
     const edits: Edit[] = [];
@@ -192,22 +194,22 @@ const escapes = (tree: Root, source: string): Edit[] => {
     return edits;
 };
 
-// A paragraph of prose, as opposed to one that starts with HTML.
+// A normal paragraph, as opposed to one that starts with HTML.
 const isProse = (node: Nodes | undefined, source: string): node is Paragraph =>
     node?.type === 'paragraph' && source[span(node)[0]] !== '<';
 
-// The paragraph straight after the title is the page's lead, and the first one
-// anywhere after it describes the page.
+// The paragraph right after the title is the page's lead. The first paragraph
+// anywhere after it is used as the page description.
 const afterTitle = (tree: Root): Nodes[] => {
     const title = tree.children.findIndex((node) => node.type === 'heading' && node.depth === 1);
 
     return tree.children.slice(title + 1);
 };
 
-// Converts a repository Markdown file into an MDX page for the Protocol theme,
-// so the Markdown stays the only copy: `{`, `}` and `<` are escaped outside
-// code, relative links are resolved, and the first paragraph after the heading
-// becomes the page's lead.
+// Turns a Markdown file from the repository into an MDX page for the theme. The
+// Markdown stays the only copy: `{`, `}` and `<` are escaped outside code,
+// relative links are fixed, and the first paragraph after the heading becomes
+// the page's lead.
 export const markdownToMdx = (source: string, options: MarkdownOptions): string => {
     const text = source.replace(/\r\n/g, '\n');
     const original = parse(text);

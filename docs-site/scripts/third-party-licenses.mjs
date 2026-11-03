@@ -1,27 +1,26 @@
-// Writes the notices for the open-source packages bundled into the built site's
-// JavaScript.
+// Writes the license notices for the open-source packages bundled into the
+// built site's JavaScript.
 //
-// The minified bundles carry no license comments, and MIT and Apache-2.0 both
-// require the notice to travel with a copy, so the published image ships this
-// file next to the site. Which packages are bundled is read from the source
-// maps of a build made with them enabled, instead of guessed from package.json:
-// build tools and libraries that only run during the build (the CSS compiler,
-// image libraries) are not in the output and are not listed.
+// The minified files carry no license comments, and licenses like MIT and
+// Apache-2.0 require the notice to be included with every copy, so the
+// published image includes this file next to the site. The list of packages is
+// read from the source maps of a build made with them turned on, rather than
+// taken from package.json. Packages used only while building (the CSS
+// compiler, image libraries) are not in the output, so they are not listed.
 //
 //   bun third-party-licenses.mjs <project dir> <output file>
 //     [--also name,name]
 //
-// <project dir> holds the built `out/` (with .map files) and `node_modules/`.
-// --also adds packages whose code is in the output without appearing in a
-// source map, such as the CSS framework.
+// <project dir> holds the built `out/` folder (with .map files) and
+// `node_modules/`. --also adds packages whose code is in the output but not in
+// any source map, such as the CSS framework.
 //
-// Fails if a bundled package has no recognized permissive license, or no
-// license text and no declared license, so a new dependency that needs a
-// decision cannot slip into the image unnoticed.
+// Stops with an error if a bundled package has no permissive license, or has
+// no license text and no declared license, so a new dependency that needs a
+// decision does not get into the image unnoticed.
 //
-// The image build bundles this file with the one package it imports, because
-// the stage that runs it holds only the theme's packages, and gives that stage
-// Bun to run it with.
+// In the image build, this file is bundled with the one package it imports and
+// run with Bun.
 import { join } from 'node:path';
 import parse from 'spdx-expression-parse';
 
@@ -32,14 +31,14 @@ if (!projectDir || !outputFile) {
 }
 const also = flags[0] === '--also' ? (flags[1] ?? '').split(',').filter(Boolean) : [];
 
-// The licenses that allow redistribution with only a notice. Anything else is a
-// decision for a person.
+// Licenses that only require a notice to be kept. Anything else needs a person
+// to decide.
 const PERMISSIVE = /^(MIT|MIT-0|ISC|BSD-2-Clause|BSD-3-Clause|Apache-2\.0|0BSD|CC0-1\.0|Unlicense|BlueOak-1\.0\.0)$/;
 const LICENSE_FILE = /^(licen[cs]e|copying|notice)(\.|$)/i;
 
-// Whether permissive licenses alone satisfy an SPDX expression: one side of an
-// OR is enough and both sides of an AND are needed. An exception (WITH) changes
-// the terms, so it is left to a person, as is anything that does not parse.
+// Whether permissive licenses alone satisfy a license expression. One side of
+// an OR is enough; both sides of an AND are needed. A WITH exception, or text
+// that is not a valid expression, is left for a person to decide.
 const accepted = (node) => {
     if ('license' in node) return PERMISSIVE.test(node.license) && !node.exception;
 
@@ -56,7 +55,7 @@ const acceptable = (license) => {
     }
 };
 
-// "webpack://_N_E/./node_modules/a/node_modules/@s/b/dist/x.js" ->
+// "webpack://_N_E/./node_modules/a/node_modules/@s/b/dist/x.js" becomes
 // "node_modules/a/node_modules/@s/b"
 const packageDirOf = (source) => {
     const first = source.indexOf('node_modules/');
@@ -96,7 +95,7 @@ const repositoryOf = ({ repository, homepage }) => {
         .replace(/^git\+/, '')
         .replace(/\.git$/, '')
         .replace(/^git:\/\//, 'https://');
-    // npm's shorthand: "owner/repo" means GitHub.
+    // npm shorthand: "owner/repo" means GitHub.
     return /^[\w.-]+\/[\w.-]+$/.test(cleaned) ? `https://github.com/${cleaned}` : cleaned;
 };
 
@@ -135,7 +134,7 @@ if (problems.length > 0) {
     process.exit(1);
 }
 
-// Packages whose license text is identical share one copy of it.
+// Packages with identical license text share one copy of it.
 const groups = new Map();
 for (const entry of [...packages.values()].sort((a, b) => a.id.localeCompare(b.id))) {
     const text = entry.files.length

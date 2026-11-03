@@ -14,14 +14,14 @@ export type Guide = {
 };
 
 export type Content = {
-    // The home page, shown in the sidebar outside Guides and Resources.
+    // The home page. It sits above Guides and Resources in the sidebar.
     introduction?: string;
     guides?: Guide[];
 };
 
-// Maps each output path (relative to the theme root) to its contents. Pure, so
-// tests can call it directly. The spec has its `$ref`s resolved, by
-// `dereference`.
+// Builds every page and returns them as text, keyed by where each one goes in
+// the theme. The spec must already have its `$ref`s filled in (see
+// `dereference` in schema.ts).
 export const generate = (spec: OpenAPIObject, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
@@ -61,9 +61,9 @@ export const generate = (spec: OpenAPIObject, { introduction, guides = [] }: Con
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
-// Writes the generated files under `out`, leaving untouched any file whose
-// contents already match, so a dev server watching `out` only recompiles the
-// pages that changed. Returns the paths it wrote.
+// Writes the pages to `out`, skipping any file that is already up to date, so
+// the dev server only reloads the pages that changed. Returns the paths it
+// wrote.
 export const writeChanged = async (out: string, files: Record<string, string>): Promise<string[]> => {
     const written: string[] = [];
 
@@ -78,8 +78,7 @@ export const writeChanged = async (out: string, files: Record<string, string>): 
     return written;
 };
 
-// The inputs are imported and not read, so that `bun --watch` follows them and
-// runs the generator again when one changes.
+// Loads a file with import, so `bun --watch` reruns when the file changes.
 const importJson = async <T>(path: string): Promise<T> =>
     (await import(resolve(path), { with: { type: 'json' } })).default;
 
@@ -88,9 +87,9 @@ const importText = async (path: string): Promise<string> =>
 
 type PageEntry = { file: string; title: string; description?: string };
 
-// Where the published Markdown lives. Paths are relative to this file, and
-// `root` is the repository root, so that relative links between the documents
-// can be resolved.
+// The list of published Markdown files. File paths are relative to this file.
+// `root` is the top of the repository, used to turn links between the documents
+// into links between pages.
 type Manifest = {
     root: string;
     repository: string;
@@ -98,8 +97,8 @@ type Manifest = {
     guides: (PageEntry & { href: string })[];
 };
 
-// Reads the Markdown files a manifest lists and converts them to MDX. The
-// Markdown files stay the only copy.
+// Reads the Markdown files listed in a manifest and turns them into MDX pages.
+// The Markdown files themselves are never changed.
 export const loadPages = async (manifestPath: string): Promise<Content> => {
     const manifest = await importJson<Manifest>(manifestPath);
     const base = dirname(manifestPath);
@@ -151,8 +150,7 @@ if (import.meta.main) {
 
         console.log(`Wrote ${written.length} of ${Object.keys(files).length} files to ${values.out}`);
     } catch (error) {
-        // Not process.exit: that would also end `bun --watch`, which should keep
-        // watching and try again when the source is fixed.
+        // Sets the exit code without exiting, so `bun --watch` keeps running.
         console.error(error instanceof Error ? error.message : error);
         process.exitCode = 1;
     }

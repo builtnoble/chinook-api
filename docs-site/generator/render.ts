@@ -27,8 +27,8 @@ const METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
 export type Endpoint = { method: (typeof METHODS)[number]; path: string; operation: OperationObject };
 
-// The generator reads parameters, request bodies and responses where they are
-// written, so a `$ref` to one of them is refused.
+// Parameters, request bodies and responses must be written out in full. A
+// `$ref` in their place is rejected.
 const inline = <T extends object>(value: T | ReferenceObject, where: string): T => {
     if (isReference(value)) {
         throw new UnsupportedError(`${where}: a $ref to ${value.$ref} is not supported here`);
@@ -37,12 +37,12 @@ const inline = <T extends object>(value: T | ReferenceObject, where: string): T 
     return value;
 };
 
-// "Media Types" -> "media type". Tag names are plural nouns, so dropping the
-// final "s" is enough.
+// "Media Types" becomes "media type". Dropping the final "s" is enough for the
+// tag names used here.
 const singular = (tag: string) => tag.toLowerCase().replace(/s$/, '');
 
-// The heading of a tag's model section, which its operations link to. The theme
-// gives a heading the id that `slugify` makes of its text.
+// The heading of a tag's model section, which the operations link to. The theme
+// builds a heading's anchor from its text with `slugify`.
 const modelHeading = (tag: string) => `The ${singular(tag)} model`;
 
 const propertyRows = (items: Row[], where: string) =>
@@ -68,8 +68,8 @@ const parameterRow = (parameter: ParameterObject, where: string): Row => {
     };
 };
 
-// A response body is `application/json`, or a `+json` type such as the
-// `application/problem+json` of an error.
+// Picks the JSON schema of a response: `application/json`, or a `+json` type
+// such as the `application/problem+json` used for errors.
 const jsonSchemaOf = (content?: Record<string, MediaTypeObject>): SchemaObject | ReferenceObject | undefined => {
     const types = Object.keys(content ?? {});
     const type = types.find((name) => name === 'application/json') ?? types.find((name) => name.endsWith('+json'));
@@ -83,8 +83,8 @@ const responseNode = (operation: OperationObject, status: string, where: string)
     return schema ? normalize(schema, `${where}.responses.${status}`) : undefined;
 };
 
-// A read answers 200 and a create 201, so the page documents whichever 2xx the
-// operation declares.
+// The success status of an operation: 200 for a read, 201 for a create, or
+// whichever 2xx it declares.
 const successStatus = (operation: OperationObject): string | undefined =>
     Object.keys(operation.responses ?? {})
         .sort()
@@ -101,7 +101,8 @@ const requestNode = (operation: OperationObject, where: string): Node | undefine
     return normalize(schema, `${where}.requestBody`);
 };
 
-// The model comes from a read, since a write may answer with a different shape.
+// The model is read from a GET route, because a write can answer with something
+// else.
 const modelOf = (endpoints: Endpoint[]): Node | undefined => {
     const reads = endpoints.filter((endpoint) => endpoint.method === 'get');
     const byID = reads.find((endpoint) => endpoint.path.includes('{'));
@@ -134,9 +135,9 @@ const exampleValue = (spec: OpenAPIObject, node: Node) => JSON.stringify(sample(
 const isObject = (value: JsonValue | undefined): value is JsonObject =>
     typeof value === 'object' && value !== null && !Array.isArray(value);
 
-// A body example in the model's own words ("AC/DC", not "string"), falling back
-// to a synthesized value for a field the model does not have, such as the id of
-// a playlist track.
+// An example request body. Values come from the model where it has them
+// ("AC/DC" rather than "string"), and are made up for fields it does not have,
+// such as the id of a playlist track.
 const bodyExample = (spec: OpenAPIObject, body: Node, model: Node | undefined): JsonValue => {
     const known = model ? sample(spec, model) : undefined;
     const values = isObject(known) ? known : {};
@@ -148,8 +149,8 @@ const bodyExample = (spec: OpenAPIObject, body: Node, model: Node | undefined): 
     );
 };
 
-// The request examples, in tab order. httpsnippet has no TypeScript target, but
-// its Node `fetch` snippet is valid TypeScript.
+// The request examples, in the order of the tabs. The TypeScript tab uses the
+// Node `fetch` example, which is valid TypeScript.
 const languages = [
     { language: 'bash', title: 'cURL', target: 'shell', client: 'curl' },
     { language: 'ts', title: 'TypeScript', target: 'node', client: 'fetch' },
@@ -179,7 +180,8 @@ const requestExamples = (
     const requestBody = requestNode(operation, where);
     const body = requestBody && bodyExample(spec, requestBody, model);
 
-    // HAR types ask for a body even on a GET, so the object is cast once.
+    // The snippet library wants a body on every request, even a GET, so the
+    // type is cast here.
     const snippet = new HTTPSnippet({
         method: method.toUpperCase(),
         url,
@@ -265,8 +267,9 @@ const section = (
         const isList = data.node.kind === 'array';
         const row = isList ? data.node.items : data.node;
 
-        // Link to the model only when `data` is the model. A response of
-        // another shape, such as a playlist entry, lists its own attributes.
+        // Link to the model only when `data` is the model. A response with a
+        // different shape, such as a playlist entry, lists its own attributes
+        // instead.
         if (model && row && sameProperties(row, model)) {
             const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`;
 
@@ -331,8 +334,8 @@ export const endpointsByTag = (spec: OpenAPIObject): Map<string, Endpoint[]> => 
         }
     }
 
-    // A collection comes before the operations on one item, and the operations
-    // on one path run in METHODS order.
+    // Routes for a whole collection come first, then routes for a single item.
+    // Routes on the same path go in method order: get, post, put, patch, delete.
     const params = (path: string) => (path.match(/\{/g) ?? []).length;
     for (const endpoints of byTag.values()) {
         endpoints.sort(

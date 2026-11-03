@@ -1,21 +1,21 @@
-# The docs site: the spec exported from the API, turned into pages by the
-# generator, built into a static site with the private theme, and served by
-# nginx.
+# The docs site: the API's spec is turned into pages by the generator, built
+# into a static site with the private theme, and served by nginx.
 #
-# Build from the repository root. The theme is private and is passed as a named
-# build context:
+# Build from the repository root. The theme is private, so it is passed in as a
+# named build context:
 #
 #   docker buildx build -f docs-site/Dockerfile \
 #     --build-context theme=../chinook-docs-theme \
 #     -t builtnoble/chinook-docs .
 #
-# Only the last stage ends up in the image: static files and nginx. The theme's
-# source stays in the earlier stages. The first three stages run on the build
-# machine's own architecture, since the site they produce is the same for every
-# platform; only the nginx stage differs, and it only copies files, so a
-# multi-platform build needs no emulation.
+# Only the last stage ends up in the image: the static files and nginx. The
+# theme's source stays in the earlier stages. The first three stages run on the
+# machine doing the build, whatever its architecture, because the site they
+# produce is the same everywhere. Only the nginx stage differs by platform, and
+# it just copies files, so building for several platforms needs no emulation.
 
-# 1. Export /openapi.json without a database or a running server.
+# 1. Export openapi.json from the API. It needs no database and no running
+# server.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS spec
 WORKDIR /repo
 COPY package.json bun.lock bunfig.toml ./
@@ -27,9 +27,9 @@ WORKDIR /repo/api
 RUN bun run openapi:export /out/openapi.json
 
 # 2. Turn the spec and the Markdown in docs/ into the theme's pages. The
-# generator needs only its own production dependencies, so the install is
-# filtered to this package and skips the development ones. The license script
-# is bundled here with its one dependency, for the stage that runs it.
+# generator only needs its own packages, so only those are installed. The
+# license script is also bundled here, together with the one package it uses,
+# for the stage that runs it.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS content
 WORKDIR /repo
 COPY package.json bun.lock bunfig.toml ./
@@ -44,8 +44,7 @@ COPY --from=spec /out/openapi.json /out/openapi.json
 RUN bun docs-site/generator/index.ts --spec /out/openapi.json --pages docs-site/content/pages.json --out /out/content
 RUN bun build docs-site/scripts/third-party-licenses.mjs --target bun --outfile /out/third-party-licenses.mjs
 
-# 3. The theme with the generated pages written into it, installed and ready to
-# build.
+# 3. The theme with the generated pages added, installed and ready to build.
 FROM --platform=$BUILDPLATFORM node:22-alpine AS site-src
 ENV NEXT_TELEMETRY_DISABLED=1
 WORKDIR /site
@@ -56,28 +55,28 @@ COPY --from=content /out/content/ ./
 ARG GIT_SHA=
 ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
 
-# 3a. Build the static site that is served.
+# 3a. Build the static site that gets served.
 FROM site-src AS site
 RUN npm run build
 
-# Bun's binary, for the license script. The next stage is Node on Alpine, so it
-# comes from Bun's Alpine image.
+# Bun, for the license script. The next stage runs Node on Alpine, so Bun is
+# taken from its Alpine image.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-alpine AS bun
 
-# 3b. Build it again with source maps, only to learn which packages are bundled
-# into its JavaScript, and write their license notices. The maps and this build
-# are not part of the image. The CSS framework's code is in the output too, so
-# it is listed by name.
+# 3b. Build the site a second time with source maps, only to find out which
+# packages end up in its JavaScript, and write their license notices. The maps
+# and this build are not part of the image. The CSS framework's code is in the
+# output too, so it is listed by name.
 FROM site-src AS licenses
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=content /out/third-party-licenses.mjs /tools/third-party-licenses.mjs
 RUN SOURCEMAPS=true npm run build \
     && bun /tools/third-party-licenses.mjs /site /third-party-licenses.txt --also tailwindcss,@tailwindcss/typography
 
-# 4. Serve it. Only static files and the license notices are copied in.
+# 4. Serve it. Only the static files and the license notices are copied in.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
-# The nginx base image sets `maintainer` to the nginx maintainers, so it is
-# emptied. The licenses label asserts nothing because the site's design is the
+# The nginx image sets `maintainer` to the nginx maintainers, so it is cleared.
+# The licenses label makes no claim, because the site's design comes from the
 # Tailwind Plus Protocol template, which is not under the repository's MIT
 # license.
 LABEL org.opencontainers.image.title="chinook-docs" \

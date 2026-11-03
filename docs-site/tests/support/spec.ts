@@ -1,7 +1,7 @@
 import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
 import { generate } from '@/index';
 
-// A one-operation spec, so each test states only what it changes.
+// A spec with one operation, so a test only has to say what it changes.
 export const specWith = (operation: Partial<Operation>, extra: Partial<Spec> = {}): Spec => ({
     openapi: '3.1.0',
     info: { title: 'Test', version: '1.0.0' },
@@ -26,8 +26,8 @@ export const okResponse = (schema: Schema) => ({
     200: { description: 'OK', content: { 'application/json': { schema } } },
 });
 
-// A resource with the reads and the writes the API offers, so each test can say
-// what it changes.
+// A made-up resource with the same reads and writes as the API, so a test only
+// has to say what it changes.
 export const model: Schema = {
     type: 'object',
     properties: { id: { type: 'integer' }, name: { type: 'string' } },
@@ -103,7 +103,7 @@ export const writeSpec = (overrides: Record<string, Record<string, Partial<Opera
 
 export const thingsPage = (spec = writeSpec()) => generate(spec)['src/app/things/page.mdx'];
 
-// The text of one operation's section, from its heading to the next.
+// The text of one operation's section, from its heading to the next one.
 export const sectionOf = (page: string, heading: string) => {
     const start = page.indexOf(`## ${heading} {{`);
     const end = page.indexOf('\n---\n', start);

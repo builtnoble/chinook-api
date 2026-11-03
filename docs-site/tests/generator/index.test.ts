@@ -19,7 +19,7 @@ describe('generate', () => {
             'src/generated/meta.json',
             'src/generated/navigation.json',
         ]);
-        // The introduction stands alone, outside Guides and Resources.
+        // The introduction is listed on its own, above Guides and Resources.
         expect(JSON.parse(files['src/generated/navigation.json'])).toEqual([
             { links: [{ title: 'Introduction', href: '/' }] },
             {

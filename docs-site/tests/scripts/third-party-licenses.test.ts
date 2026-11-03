@@ -8,7 +8,7 @@ const roots: string[] = [];
 
 type Fake = { dir: string; manifest: Record<string, unknown>; license?: string };
 
-// A built site with a source map listing `sources`, and the packages those
+// A built site whose source map lists `sources`, with the packages those
 // sources belong to.
 const project = (sources: string[], packages: Fake[]) => {
     const root = mkdtempSync(join(tmpdir(), 'licenses-'));

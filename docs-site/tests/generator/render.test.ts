@@ -87,8 +87,8 @@ describe('links within a page', () => {
 
         expect(pages.length).toBeGreaterThan(0);
         for (const [path, page] of pages) {
-            // The theme gives an h2 the id that slugify makes of its text, without
-            // the annotation after it.
+            // The theme builds an h2's anchor from its text with slugify,
+            // leaving out the {{ ... }} part.
             const ids = new Set([...page.matchAll(/^## (.+?)(?: \{\{.*\}\})?$/gm)].map((match) => slugify(match[1])));
 
             for (const [, target] of page.matchAll(/\]\(#([^)]+)\)/g)) {
@@ -228,7 +228,7 @@ describe('write operations', () => {
         });
         const create = sectionOf(thingsPage(spec), 'Create a thing');
 
-        // The shell example moves the body to a here-document, where a quote
+        // The shell example puts the body in a here-document, where a quote
         // needs no escaping.
         expect(create).toContain('--data @- <<EOF');
         expect(create).toContain(`"title": "Rock 'n' Roll"`);
@@ -243,8 +243,8 @@ describe('write operations', () => {
         expect(create).toContain('<Property name="name" type="string">\n        Name of the thing.');
         expect(create).toContain('### Optional attributes');
         expect(create).toContain('<Property name="note" type="string, optional">');
-        // Every field of an update is optional, so there is nothing required to
-        // list.
+        // Every field of an update is optional, so no required fields are
+        // listed.
         expect(update).not.toContain('### Required attributes');
         expect(update).toContain('### Optional attributes');
     });
@@ -294,7 +294,7 @@ describe('write operations', () => {
         expect(page.split('## The thing model')[1].split('---')[0]).not.toContain('part_id');
         expect(page.indexOf('## Add a part')).toBeGreaterThan(page.indexOf('## Delete a thing'));
 
-        // Its own response is not the model, so the page lists the attributes
+        // Its response is not the model, so the page lists the attributes
         // instead of linking to the model.
         const add = sectionOf(page, 'Add a part');
 

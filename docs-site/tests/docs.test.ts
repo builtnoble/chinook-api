@@ -2,9 +2,9 @@ import { describe, expect, it } from 'bun:test';
 import { compile } from '@mdx-js/mdx';
 import { loadPages } from '@/index';
 
-// The published pages are generated from the Markdown in docs/, so a Markdown
-// change that MDX cannot compile has to fail here and not when the site is
-// built.
+// The published pages come from the Markdown in docs/. If a change to that
+// Markdown cannot be compiled as MDX, it should fail here and not when the site
+// is built.
 describe('the published documents', () => {
     it('convert to MDX that compiles', async () => {
         const pages = await loadPages(new URL('../content/pages.json', import.meta.url).pathname);
@@ -23,8 +23,8 @@ describe('the published documents', () => {
         for (const mdx of documents) {
             const targets = [...(mdx ?? '').matchAll(/\]\(([^)\s]+)\)/g)].map((match) => match[1]);
 
-            // Anchors, site paths and absolute URLs are fine; a relative path
-            // would 404 on the site.
+            // Anchors, site paths and full URLs are fine. A relative path would
+            // lead to a missing page on the site.
             expect(targets.filter((target) => !/^(https?:\/\/|#|\/)/.test(target))).toEqual([]);
         }
     });

@@ -1,6 +1,6 @@
-// Renders every page from an exported spec and the published documents, and
-// compiles each as MDX, so a change to the API or to docs/ that the site could
-// not build fails in CI without needing the private theme.
+// Builds every page from an exported spec and the published documents, then
+// compiles each one as MDX. This catches a change to the API or to docs/ that
+// would break the site, without needing the private theme.
 // Usage: bun generator/check.ts <openapi.json>
 import { compile } from '@mdx-js/mdx';
 import type { OpenAPIObject } from 'openapi3-ts/oas31';

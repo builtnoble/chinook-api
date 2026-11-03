@@ -11,9 +11,9 @@ type Kind = 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | '
 
 export type Property = { name: string; node: Node; required: boolean };
 
-// A schema with `$ref`, `allOf` and nullable `anyOf` already resolved, so
-// rendering never meets them. `schema` is the source it was read from, which
-// the sampler reads for an example.
+// A schema simplified for the page: references, `allOf` and "or null" variants
+// are already worked out. `schema` keeps the original, which is used to make
+// example values.
 export type Node = {
     kind: Kind;
     nullable: boolean;
@@ -29,15 +29,15 @@ export type Node = {
 
 export type Row = { name: string; type: string; description: string; required: boolean };
 
-// Keywords that change what a value may be in ways the property tables cannot
-// express.
+// Keywords the property tables cannot show. The generator stops with an error
+// when it meets one.
 const UNSUPPORTED = ['not', 'if', 'then', 'else', 'patternProperties', 'dependentSchemas', 'prefixItems'];
 
 const KINDS = new Set(['object', 'array', 'string', 'number', 'integer', 'boolean', 'null']);
 
-// Resolves every `$ref` that points inside the document. One that loops back on
-// itself, or points outside the document, is left in place for `normalize` to
-// refuse, so nothing is read from disk or fetched.
+// Fills in every `$ref` that points inside the document. A `$ref` that loops
+// back on itself, or points outside the document, is left as it is and rejected
+// later.
 export const dereference = async (spec: OpenAPIObject): Promise<OpenAPIObject> => {
     try {
         return await $RefParser.dereference(spec, {
@@ -166,7 +166,7 @@ const mergeAll = (parts: Node[], where: string, schema: Node['schema'], common: 
     };
 };
 
-// The `data` of a `{ data }` envelope, or the node itself.
+// The `data` part of a `{ data }` response, or the response itself.
 export const unwrapData = (node: Node): Node => {
     const data = node.kind === 'object' && node.properties?.length === 1 ? node.properties[0] : undefined;
     return data?.name === 'data' ? data.node : node;
@@ -197,20 +197,20 @@ const baseLabel = (node: Node): string => {
     }
 };
 
-// An example value for the node, from its schema's own examples where it has
-// them.
+// An example value for a schema, taken from the examples in the spec when it
+// has any.
 export const sample = (spec: OpenAPIObject, node: Node) =>
     sampleSchema(node.schema as Parameters<typeof sampleSchema>[0], {}, spec) as JsonValue;
 
 type RowOptions = {
-    // Property names whose children are left out because they are documented
+    // Properties whose contents are left out because they are described
     // elsewhere on the page.
     collapse?: Map<string, string>;
     maxDepth?: number;
 };
 
-// One row per property, with nested objects and arrays of objects flattened
-// into dotted names.
+// One row per property. Objects inside objects, and arrays of objects, get
+// their own rows with dotted names.
 export const rows = (node: Node, options: RowOptions = {}, prefix = '', depth = 1): Row[] => {
     const { collapse = new Map(), maxDepth = 4 } = options;
     const out: Row[] = [];
