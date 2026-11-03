@@ -62,7 +62,7 @@ docker run --rm -p 3001:8080 builtnoble/chinook-docs:dev
 The Dockerfile has four stages. Only the last one is in the image, so the theme's source is not:
 
 1. `spec` exports `openapi.json` from the API, with no database and no running server.
-2. `content` runs the generator over the spec and `docs/`.
+2. `content` installs the generator's few production dependencies and runs it over the spec and `docs/`.
 3. `site` copies the theme in, writes the generated pages over it, and runs `next build` for a static export.
 4. `runtime` is `nginx-unprivileged` with the exported files. It runs as a non-root user and has a healthcheck.
 

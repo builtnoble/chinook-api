@@ -90,4 +90,79 @@ describe('markdownToMdx', () => {
         expect(() => convert('text only\n')).toThrow('expected a level 1 heading');
         expect(() => convert('# Guide\n\n```sh\nnever closed\n')).toThrow('never closed');
     });
+
+    it('does not escape a brace that is already escaped', () => {
+        expect(convert('# Guide\n\nKeep \\{this\\} and escape {that}.\n')).toContain(
+            'Keep \\{this\\} and escape \\{that\\}.',
+        );
+    });
+
+    it('leaves a code span that runs over two lines untouched', async () => {
+        const mdx = convert('# Guide\n\nA `code {x}\nacross lines` here {y}.\n');
+
+        expect(mdx).toContain('A `code {x}\nacross lines` here \\{y\\}.');
+        await expect(compile(mdx)).resolves.toBeDefined();
+    });
+
+    it('escapes indented text, because MDX has no indented code', async () => {
+        const mdx = convert('# Guide\n\nText:\n\n    {indented} <b>\n');
+
+        expect(mdx).toContain('    \\{indented\\} \\<b>');
+        await expect(compile(mdx)).resolves.toBeDefined();
+    });
+
+    it('keeps a fence that contains another fence, and a fence inside a list item', async () => {
+        const mdx = convert(
+            '# Guide\n\n~~~\n```\n{x}\n```\n~~~\n\n1. Run:\n\n    ```sh\n    echo {a} <b>\n    ```\n\n2. Next {c}\n',
+        );
+
+        expect(mdx).toContain('~~~\n```\n{x}\n```\n~~~');
+        expect(mdx).toContain('    echo {a} <b>');
+        expect(mdx).toContain('2. Next \\{c\\}');
+        await expect(compile(mdx)).resolves.toBeDefined();
+    });
+
+    it('resolves the destination of a reference-style link', () => {
+        const mdx = convert('# Guide\n\nSee [the other][o].\n\n[o]: OTHER.md#part\n');
+
+        expect(mdx).toContain('[o]: /other#part');
+    });
+
+    it('resolves a link with a title, and an image', () => {
+        const mdx = convert('# Guide\n\n[a](OTHER.md "the title") and ![img](./pic.png)\n');
+
+        expect(mdx).toContain('[a](/other "the title")');
+        expect(mdx).toContain('![img](https://github.com/example/repo/blob/main/docs/pic.png)');
+    });
+
+    it('makes no lead of a table, a quote, or a paragraph that starts with HTML', () => {
+        expect(convert('# Guide\n\n| a | b |\n| - | - |\n| 1 | 2 |\n')).not.toContain('lead');
+        expect(convert('# Guide\n\n> quote\n')).not.toContain('lead');
+        expect(convert('# Guide\n\n<div>\ntext\n</div>\n')).not.toContain('lead');
+    });
+
+    it('describes the page from the first paragraph of prose, with the alt text of an image', () => {
+        const mdx = convert('# Guide\n\n![One](a.svg) ![Two](b.svg)\n\nText.\n');
+
+        expect(mdx).toContain('description: "One Two"');
+        expect(convert('# Guide\n\n<div>\nhtml\n</div>\n\nProse.\n')).toContain('description: "Prose."');
+    });
+
+    it('takes a title underlined with =', () => {
+        expect(convert('Guide\n=====\n\nLead.\n')).toContain("Lead. {{ className: 'lead' }}");
+    });
+
+    it('converts CRLF line endings and a file with no final newline', () => {
+        expect(convert('# Guide\r\n\r\nLead {x}.')).toContain("Lead \\{x\\}. {{ className: 'lead' }}\n");
+    });
+
+    it('reports an HTML comment in a heading or in link text, but not in a code span', () => {
+        expect(() => convert('# Guide\n\n## Part <!-- x -->\n')).toThrow('docs/GUIDE.md:3');
+        expect(() => convert('# Guide\n\n[a <!-- x --> b](OTHER.md)\n')).toThrow('docs/GUIDE.md:3');
+        expect(() => convert('# Guide\n\nWrite `<!-- x -->` literally.\n')).not.toThrow();
+    });
+
+    it('rejects a fence that is never closed inside a list item', () => {
+        expect(() => convert('# Guide\n\n- item\n\n  ```sh\n  never closed\n')).toThrow('never closed');
+    });
 });

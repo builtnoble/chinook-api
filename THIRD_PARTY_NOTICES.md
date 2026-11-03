@@ -44,8 +44,11 @@ Their licenses were checked when these notices were written:
     BSD-3-Clause, 0BSD, or MIT OR CC0-1.0). Four packages from the Better Auth family omit the `license` field in
     their package.json: `@better-auth/core`, `@better-auth/telemetry` and `@better-fetch/fetch` ship an MIT license
     file, and `better-call` ships none but is MIT-licensed in [its repository](https://github.com/Bekacru/better-call).
--   **`docs-site/`**: the generator has no runtime dependencies. Its 120 development packages (Biome, the MDX compiler,
-    the Bun types and their dependencies) are MIT, ISC, BSD-3-Clause or MIT OR Apache-2.0.
+-   **`docs-site/`**: all 70 production packages (`unified`, `remark-parse`, `remark-gfm` and their dependencies, which
+    the generator uses to convert Markdown) are MIT. Its 60 further development packages (the MDX compiler and its
+    dependencies) are MIT, ISC or BSD-3-Clause.
+-   **The repository root**: its 13 development packages (Biome, the Bun types and their dependencies) are MIT or
+    MIT OR Apache-2.0.
 -   **The docs theme's build** (in the private repository) uses some tools under other licenses: `lightningcss`
     (MPL-2.0), `sharp`'s libvips (LGPL-3.0) and `caniuse-lite` (CC-BY-4.0). They run during the build and are not in the
     published image.

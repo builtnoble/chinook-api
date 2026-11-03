@@ -27,9 +27,14 @@ WORKDIR /repo/api
 RUN bun run openapi:export /out/openapi.json
 
 # 2. Turn the spec and the Markdown in docs/ into the theme's pages. The
-# generator has no dependencies.
+# generator needs only its own production dependencies, so the install is
+# filtered to this package and skips the development ones.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS content
 WORKDIR /repo
+COPY package.json bun.lock bunfig.toml ./
+COPY api/package.json api/
+COPY docs-site/package.json docs-site/
+RUN bun install --frozen-lockfile --production --filter @chinook-api/docs-site
 COPY docs/ docs/
 COPY docs-site/generator docs-site/generator
 COPY docs-site/content docs-site/content
