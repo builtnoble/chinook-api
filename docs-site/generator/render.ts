@@ -167,6 +167,14 @@ const bodyExample = (body: Node, model: Node | undefined): unknown => {
     );
 };
 
+// The request examples, in tab order. httpsnippet has no TypeScript target, but
+// its Node `fetch` snippet is valid TypeScript.
+const languages = [
+    { language: 'bash', title: 'cURL', target: 'shell', client: 'curl' },
+    { language: 'ts', title: 'TypeScript', target: 'node', client: 'fetch' },
+    { language: 'php', title: 'PHP', target: 'php', client: 'guzzle' },
+] as const;
+
 const requestExamples = (
     spec: OpenAPIObject,
     { method, path, operation }: Endpoint,
@@ -206,19 +214,16 @@ const requestExamples = (
         ...(requestBody ? { postData: { mimeType: 'application/json', text: JSON.stringify(body) } } : {}),
     } as HarRequest);
 
-    const example = (target: Parameters<HTTPSnippet['convert']>[0], client: string): string => {
+    const example = ({ language, title, target, client }: (typeof languages)[number]) => {
         const [code] = snippet.convert(target, client);
         if (!code) throw new UnsupportedError(`${where}: no ${client} snippet for ${target}`);
 
-        return code;
+        return fence(language, title, code);
     };
 
     return [
         `<CodeGroup title="Request" tag="${method.toUpperCase()}" label="${concrete}">`,
-        '',
-        fence('bash', 'cURL', example('shell', 'curl')),
-        '',
-        fence('js', undefined, example('javascript', 'fetch')),
+        ...languages.flatMap((language) => ['', example(language)]),
         '',
         '</CodeGroup>',
     ].join('\n');

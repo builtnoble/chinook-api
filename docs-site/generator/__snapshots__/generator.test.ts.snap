@@ -108,13 +108,29 @@ The album model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/albums';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/albums', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/albums', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -250,17 +266,35 @@ The album model contains the following properties.
     '
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/albums';
     const options = {
       method: 'POST',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({title: 'For Those About To Rock We Salute You', artist_id: 1})
     };
 
-    fetch('http://localhost:3000/api/albums', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('POST', 'http://localhost:3000/api/albums', [
+      'body' => '{"title":"For Those About To Rock We Salute You","artist_id":1}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -400,13 +434,29 @@ The album model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/albums/1';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/albums/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/albums/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -543,17 +593,35 @@ The album model contains the following properties.
     '
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/albums/1';
     const options = {
       method: 'PATCH',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({title: 'For Those About To Rock We Salute You', artist_id: 1})
     };
 
-    fetch('http://localhost:3000/api/albums/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('PATCH', 'http://localhost:3000/api/albums/1', [
+      'body' => '{"title":"For Those About To Rock We Salute You","artist_id":1}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -717,13 +785,29 @@ The album model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/albums/1';
     const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/albums/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('DELETE', 'http://localhost:3000/api/albums/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -901,13 +985,29 @@ The artist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/artists';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/artists', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/artists', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1030,17 +1130,35 @@ The artist model contains the following properties.
       --data '{"name":"AC/DC"}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/artists';
     const options = {
       method: 'POST',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({name: 'AC/DC'})
     };
 
-    fetch('http://localhost:3000/api/artists', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('POST', 'http://localhost:3000/api/artists', [
+      'body' => '{"name":"AC/DC"}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1175,13 +1293,29 @@ The artist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/artists/1';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/artists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/artists/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1305,17 +1439,35 @@ The artist model contains the following properties.
       --data '{"name":"AC/DC"}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/artists/1';
     const options = {
       method: 'PATCH',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({name: 'AC/DC'})
     };
 
-    fetch('http://localhost:3000/api/artists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('PATCH', 'http://localhost:3000/api/artists/1', [
+      'body' => '{"name":"AC/DC"}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1474,13 +1626,29 @@ The artist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/artists/1';
     const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/artists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('DELETE', 'http://localhost:3000/api/artists/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1653,13 +1821,29 @@ The playlist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/playlists', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/playlists', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1782,17 +1966,35 @@ The playlist model contains the following properties.
       --data '{"name":"Music"}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists';
     const options = {
       method: 'POST',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({name: 'Music'})
     };
 
-    fetch('http://localhost:3000/api/playlists', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('POST', 'http://localhost:3000/api/playlists', [
+      'body' => '{"name":"Music"}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -1927,13 +2129,29 @@ The playlist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists/1';
     const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/playlists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('GET', 'http://localhost:3000/api/playlists/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -2057,17 +2275,35 @@ The playlist model contains the following properties.
       --data '{"name":"Music"}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists/1';
     const options = {
       method: 'PATCH',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({name: 'Music'})
     };
 
-    fetch('http://localhost:3000/api/playlists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('PATCH', 'http://localhost:3000/api/playlists/1', [
+      'body' => '{"name":"Music"}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -2215,13 +2451,29 @@ The playlist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists/1';
     const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/playlists/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('DELETE', 'http://localhost:3000/api/playlists/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -2361,17 +2613,35 @@ The playlist model contains the following properties.
       --data '{"track_id":1}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists/1/tracks';
     const options = {
       method: 'POST',
       headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
       body: JSON.stringify({track_id: 1})
     };
 
-    fetch('http://localhost:3000/api/playlists/1/tracks', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('POST', 'http://localhost:3000/api/playlists/1/tracks', [
+      'body' => '{"track_id":1}',
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+        'Content-Type' => 'application/json',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
@@ -2528,13 +2798,29 @@ The playlist model contains the following properties.
       --header 'Authorization: Bearer {token}'
     \`\`\`
 
-    \`\`\`js
+    \`\`\`ts {{ title: 'TypeScript' }}
+    const url = 'http://localhost:3000/api/playlists/1/tracks/1';
     const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
 
-    fetch('http://localhost:3000/api/playlists/1/tracks/1', options)
+    fetch(url, options)
       .then(res => res.json())
-      .then(res => console.log(res))
+      .then(json => console.log(json))
       .catch(err => console.error(err));
+    \`\`\`
+
+    \`\`\`php {{ title: 'PHP' }}
+    <?php
+    require_once('vendor/autoload.php');
+
+    $client = new \\GuzzleHttp\\Client();
+
+    $response = $client->request('DELETE', 'http://localhost:3000/api/playlists/1/tracks/1', [
+      'headers' => [
+        'Authorization' => 'Bearer {token}',
+      ],
+    ]);
+
+    echo $response->getBody();
     \`\`\`
 
     </CodeGroup>
