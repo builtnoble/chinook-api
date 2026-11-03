@@ -160,6 +160,41 @@ import { problemDetailsSchema, validationProblemSchema } from './problem-details
 `toProblemDetails()` on a `ProblemError` returns the document, which makes it a ready-made example:
 `problem(404, 'Artist not found.').toProblemDetails()`.
 
+## Documenting errors with hono-openapi
+
+`problem-details/openapi` builds the response objects for a route's `describeRoute`, so an API documents its errors as
+problem documents. It is a separate entry point. It needs `hono-openapi` and Zod, which the core does not.
+
+```ts
+import { describeRoute } from 'hono-openapi';
+import {
+    problemExample,
+    problemResponse,
+    validationExample,
+    validationProblemResponse,
+} from './problem-details/openapi';
+
+describeRoute({
+    responses: {
+        400: validationProblemResponse(
+            'The body is not valid.',
+            validationExample('/name', 'body', 'Invalid input: expected string, received number'),
+            problemExample(400, 'Malformed JSON in request body'),
+        ),
+        404: problemResponse('No such artist.', problemExample(404, 'Artist not found.')),
+    },
+});
+```
+
+- `problemExample(status, detail, options?)` is a problem as it is sent: it is built from a real `problem(...)`, so the
+  example cannot drift from the response.
+- `problemResponse(description, ...examples)` is a response with the `application/problem+json` content type and the
+  schema from `problem-details/zod`.
+- `validationExample(field, in, message, code?)` is a request with one invalid value. It uses the code and detail of
+  `validationHook`, and a test compares it with what the hook sends.
+- `validationProblemResponse(description, invalid, ...others)` documents a validation failure, and adds the other
+  problems with that status as a second shape.
+
 ## Design notes
 
 - **No logging, no globals.** The library reports through `onUnhandledError` and nothing else.

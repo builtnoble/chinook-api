@@ -1,6 +1,10 @@
 import type { FieldError } from './problem';
 import { problem } from './problem';
 
+// What a validation failure says, shared with the OpenAPI examples.
+export const VALIDATION_CODE = 'validation_failed';
+export const VALIDATION_DETAIL = 'The request is not valid.';
+
 // The part of a Standard Schema issue this library reads. `code` and `keys` are
 // not in the standard; validators such as Zod add them, and they are used when
 // present.
@@ -63,11 +67,11 @@ const fieldErrors = (issues: readonly Issue[], location: FieldError['in']): Fiel
  * ```
  */
 export const validationHook =
-    ({ status = 400, detail = 'The request is not valid.' }: ValidationHookOptions = {}) =>
+    ({ status = 400, detail = VALIDATION_DETAIL }: ValidationHookOptions = {}) =>
     (result: Result) => {
         if (!result.success) {
             throw problem(status, detail, {
-                code: 'validation_failed',
+                code: VALIDATION_CODE,
                 errors: fieldErrors(result.error, LOCATIONS[result.target ?? '']),
             });
         }
