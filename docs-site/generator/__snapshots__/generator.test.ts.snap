@@ -103,15 +103,18 @@ The album model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/albums">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/albums \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/albums \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/albums', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/albums', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -235,28 +238,29 @@ The album model contains the following properties.
     <CodeGroup title="Request" tag="POST" label="/api/albums">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X POST http://localhost:3000/api/albums \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{
+    curl --request POST \\
+      --url http://localhost:3000/api/albums \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '
+    {
       "title": "For Those About To Rock We Salute You",
       "artist_id": 1
-    }'
+    }
+    '
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/albums', {
+    const options = {
       method: 'POST',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: 'For Those About To Rock We Salute You',
-        artist_id: 1,
-      }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({title: 'For Those About To Rock We Salute You', artist_id: 1})
+    };
+
+    fetch('http://localhost:3000/api/albums', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -391,15 +395,18 @@ The album model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/albums/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/albums/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/albums/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/albums/1', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/albums/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -524,28 +531,29 @@ The album model contains the following properties.
     <CodeGroup title="Request" tag="PATCH" label="/api/albums/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X PATCH http://localhost:3000/api/albums/1 \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{
+    curl --request PATCH \\
+      --url http://localhost:3000/api/albums/1 \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '
+    {
       "title": "For Those About To Rock We Salute You",
       "artist_id": 1
-    }'
+    }
+    '
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/albums/1', {
+    const options = {
       method: 'PATCH',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        title: 'For Those About To Rock We Salute You',
-        artist_id: 1,
-      }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({title: 'For Those About To Rock We Salute You', artist_id: 1})
+    };
+
+    fetch('http://localhost:3000/api/albums/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -704,16 +712,18 @@ The album model contains the following properties.
     <CodeGroup title="Request" tag="DELETE" label="/api/albums/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X DELETE http://localhost:3000/api/albums/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request DELETE \\
+      --url http://localhost:3000/api/albums/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/albums/1', {
-      method: 'DELETE',
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/albums/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -886,15 +896,18 @@ The artist model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/artists">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/artists \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/artists \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/artists', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/artists', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1010,22 +1023,24 @@ The artist model contains the following properties.
     <CodeGroup title="Request" tag="POST" label="/api/artists">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X POST http://localhost:3000/api/artists \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name":"AC/DC"}'
+    curl --request POST \\
+      --url http://localhost:3000/api/artists \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '{"name":"AC/DC"}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/artists', {
+    const options = {
       method: 'POST',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'AC/DC' }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({name: 'AC/DC'})
+    };
+
+    fetch('http://localhost:3000/api/artists', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1155,15 +1170,18 @@ The artist model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/artists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/artists/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/artists/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/artists/1', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/artists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1280,22 +1298,24 @@ The artist model contains the following properties.
     <CodeGroup title="Request" tag="PATCH" label="/api/artists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X PATCH http://localhost:3000/api/artists/1 \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name":"AC/DC"}'
+    curl --request PATCH \\
+      --url http://localhost:3000/api/artists/1 \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '{"name":"AC/DC"}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/artists/1', {
+    const options = {
       method: 'PATCH',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'AC/DC' }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({name: 'AC/DC'})
+    };
+
+    fetch('http://localhost:3000/api/artists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1449,16 +1469,18 @@ The artist model contains the following properties.
     <CodeGroup title="Request" tag="DELETE" label="/api/artists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X DELETE http://localhost:3000/api/artists/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request DELETE \\
+      --url http://localhost:3000/api/artists/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/artists/1', {
-      method: 'DELETE',
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/artists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1626,15 +1648,18 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/playlists">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/playlists \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/playlists \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/playlists', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1750,22 +1775,24 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="POST" label="/api/playlists">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X POST http://localhost:3000/api/playlists \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name":"Music"}'
+    curl --request POST \\
+      --url http://localhost:3000/api/playlists \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '{"name":"Music"}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists', {
+    const options = {
       method: 'POST',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'Music' }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({name: 'Music'})
+    };
+
+    fetch('http://localhost:3000/api/playlists', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -1895,15 +1922,18 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="GET" label="/api/playlists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl http://localhost:3000/api/playlists/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request GET \\
+      --url http://localhost:3000/api/playlists/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists/1', {
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'GET', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/playlists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -2020,22 +2050,24 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="PATCH" label="/api/playlists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X PATCH http://localhost:3000/api/playlists/1 \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"name":"Music"}'
+    curl --request PATCH \\
+      --url http://localhost:3000/api/playlists/1 \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '{"name":"Music"}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists/1', {
+    const options = {
       method: 'PATCH',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'Music' }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({name: 'Music'})
+    };
+
+    fetch('http://localhost:3000/api/playlists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -2178,16 +2210,18 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="DELETE" label="/api/playlists/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X DELETE http://localhost:3000/api/playlists/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request DELETE \\
+      --url http://localhost:3000/api/playlists/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists/1', {
-      method: 'DELETE',
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/playlists/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -2320,22 +2354,24 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="POST" label="/api/playlists/1/tracks">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X POST http://localhost:3000/api/playlists/1/tracks \\
-      -H "Authorization: Bearer {token}" \\
-      -H "Content-Type: application/json" \\
-      -d '{"track_id":1}'
+    curl --request POST \\
+      --url http://localhost:3000/api/playlists/1/tracks \\
+      --header 'Authorization: Bearer {token}' \\
+      --header 'Content-Type: application/json' \\
+      --data '{"track_id":1}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists/1/tracks', {
+    const options = {
       method: 'POST',
-      headers: {
-        Authorization: \`Bearer \${token}\`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ track_id: 1 }),
-    })
-    const body = await response.json()
+      headers: {Authorization: 'Bearer {token}', 'Content-Type': 'application/json'},
+      body: JSON.stringify({track_id: 1})
+    };
+
+    fetch('http://localhost:3000/api/playlists/1/tracks', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>
@@ -2487,16 +2523,18 @@ The playlist model contains the following properties.
     <CodeGroup title="Request" tag="DELETE" label="/api/playlists/1/tracks/1">
 
     \`\`\`bash {{ title: 'cURL' }}
-    curl -X DELETE http://localhost:3000/api/playlists/1/tracks/1 \\
-      -H "Authorization: Bearer {token}"
+    curl --request DELETE \\
+      --url http://localhost:3000/api/playlists/1/tracks/1 \\
+      --header 'Authorization: Bearer {token}'
     \`\`\`
 
     \`\`\`js
-    const response = await fetch('http://localhost:3000/api/playlists/1/tracks/1', {
-      method: 'DELETE',
-      headers: { Authorization: \`Bearer \${token}\` },
-    })
-    const body = await response.json()
+    const options = {method: 'DELETE', headers: {Authorization: 'Bearer {token}'}};
+
+    fetch('http://localhost:3000/api/playlists/1/tracks/1', options)
+      .then(res => res.json())
+      .then(res => console.log(res))
+      .catch(err => console.error(err));
     \`\`\`
 
     </CodeGroup>

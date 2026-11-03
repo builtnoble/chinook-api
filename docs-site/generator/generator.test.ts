@@ -127,8 +127,8 @@ describe('the artist writes in the fixture', () => {
     });
 
     it('sends the body of a create with the model value and the content type', () => {
-        expect(page()).toContain(`-d '{"name":"AC/DC"}'`);
-        expect(page()).toContain("body: JSON.stringify({ name: 'AC/DC' }),");
+        expect(page()).toMatch(/--data '\s*\{\s*"name":\s*"AC\/DC"\s*\}\s*'/);
+        expect(page()).toContain("body: JSON.stringify({name: 'AC/DC'})");
     });
 
     it('shows the 404 on a read, and a body error on a write that is not about the id', () => {
@@ -162,8 +162,9 @@ describe('the playlist membership routes in the fixture', () => {
     it('fills the path, the body and the 404 in with the entry, not the playlist', () => {
         const add = page().slice(page().indexOf('## Add a track to a playlist'));
 
-        expect(add).toContain('curl -X POST http://localhost:3000/api/playlists/1/tracks');
-        expect(add).toContain(`-d '{"track_id":1}'`);
+        expect(add).toContain('--request POST');
+        expect(add).toContain('--url http://localhost:3000/api/playlists/1/tracks');
+        expect(add).toMatch(/--data '\s*\{\s*"track_id":\s*1\s*\}\s*'/);
         expect(add).toContain('"detail": "Playlist not found."');
     });
 
@@ -425,18 +426,19 @@ describe('write operations', () => {
     it('sends the body of a create in the cURL example, with the JSON content type', () => {
         const create = sectionOf(thingsPage(), 'Create a thing');
 
-        expect(create).toContain('curl -X POST http://api.test/things \\');
-        expect(create).toContain('-H "Authorization: Bearer {token}" \\');
-        expect(create).toContain('-H "Content-Type: application/json" \\');
-        expect(create).toContain(`-d '{"name":"AC/DC","note":"string"}'`);
+        expect(create).toContain('--request POST');
+        expect(create).toContain('--url http://api.test/things');
+        expect(create).toContain("--header 'Authorization: Bearer {token}'");
+        expect(create).toContain("--header 'Content-Type: application/json'");
+        expect(create).toMatch(/--data '\s*\{\s*"name":\s*"AC\/DC",\s*"note":\s*"string"\s*\}\s*'/);
     });
 
     it('sets the method, headers and body in the JavaScript example', () => {
         const create = sectionOf(thingsPage(), 'Create a thing');
 
         expect(create).toContain("method: 'POST',");
-        expect(create).toContain("'Content-Type': 'application/json',");
-        expect(create).toContain("body: JSON.stringify({ name: 'AC/DC', note: 'string' }),");
+        expect(create).toContain("'Content-Type': 'application/json'");
+        expect(create).toContain("body: JSON.stringify({name: 'AC/DC', note: 'string'})");
     });
 
     it('takes body values from the model, and synthesizes a field the model lacks', () => {
@@ -454,28 +456,7 @@ describe('write operations', () => {
             },
         });
 
-        expect(sectionOf(thingsPage(spec), 'Create a thing')).toContain(`-d '{"name":"AC/DC","track_id":1}'`);
-    });
-
-    it('lays a long body out one property per line', () => {
-        const long = {
-            type: 'object',
-            properties: Object.fromEntries(
-                ['composer', 'milliseconds', 'unit_price'].map((name) => [
-                    name,
-                    { type: 'string', examples: ['x'.repeat(16)] },
-                ]),
-            ),
-        } satisfies Schema;
-        const spec = writeSpec({
-            '/things': { post: { ...writeSpec().paths?.['/things']?.post, requestBody: { content: json(long) } } },
-        });
-        const create = sectionOf(thingsPage(spec), 'Create a thing');
-
-        expect(create).toContain('body: JSON.stringify({\n        composer: ');
-        // The page indents its code blocks by four spaces, and the JSON adds
-        // two more.
-        expect(create).toContain(`-d '{\n      "composer": `);
+        expect(sectionOf(thingsPage(spec), 'Create a thing')).toMatch(/"name":\s*"AC\/DC",\s*"track_id":\s*1/);
     });
 
     it('escapes a quote in the body for the shell and for JavaScript', () => {
@@ -488,8 +469,11 @@ describe('write operations', () => {
         });
         const create = sectionOf(thingsPage(spec), 'Create a thing');
 
-        expect(create).toContain(String.raw`-d '{"title":"Rock '\''n'\'' Roll"}'`);
-        expect(create).toContain(String.raw`body: JSON.stringify({ title: 'Rock \'n\' Roll' }),`);
+        // The shell example moves the body to a here-document, where a quote
+        // needs no escaping.
+        expect(create).toContain('--data @- <<EOF');
+        expect(create).toContain(`"title": "Rock 'n' Roll"`);
+        expect(create).toContain(String.raw`body: JSON.stringify({title: 'Rock \'n\' Roll'})`);
     });
 
     it('documents the body fields, required ones apart from optional ones', () => {
@@ -513,13 +497,12 @@ describe('write operations', () => {
             const section = sectionOf(page, heading);
 
             expect(section).not.toContain('Content-Type');
-            expect(section).not.toContain('-d ');
+            expect(section).not.toContain('--data');
             expect(section).not.toContain('Required attributes');
             expect(section).not.toContain('Optional attributes');
         }
-        expect(sectionOf(page, 'Delete a thing')).toContain("method: 'DELETE',");
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
-        expect(sectionOf(page, 'Delete a thing')).toContain('headers: { Authorization: `Bearer ${token}` },');
+        expect(sectionOf(page, 'Delete a thing')).toContain("method: 'DELETE'");
+        expect(sectionOf(page, 'Delete a thing')).toContain("headers: {Authorization: 'Bearer {token}'}");
     });
 
     it('documents a 201 response, its attributes and its example, and keeps it out of the errors', () => {

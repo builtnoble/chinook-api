@@ -1,3 +1,4 @@
+import { type HarRequest, HTTPSnippet } from '@readme/httpsnippet';
 import slugify from '@sindresorhus/slugify';
 import type {
     MediaTypeObject,
@@ -166,31 +167,6 @@ const bodyExample = (body: Node, model: Node | undefined): unknown => {
     );
 };
 
-const jsString = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
-
-const jsKey = (key: string) => (/^[A-Za-z_$][\w$]*$/.test(key) ? key : jsString(key));
-
-// A JSON value as a JavaScript literal: one line when short, one property per
-// line otherwise.
-const jsLiteral = (value: unknown, depth = 0): string => {
-    if (typeof value === 'string') return jsString(value);
-    if (Array.isArray(value)) return `[${value.map((item) => jsLiteral(item, depth + 1)).join(', ')}]`;
-    if (value === null || typeof value !== 'object') return JSON.stringify(value);
-
-    const entries = Object.entries(value).map(([key, item]) => `${jsKey(key)}: ${jsLiteral(item, depth + 1)}`);
-    if (!entries.length) return '{}';
-
-    const inline = `{ ${entries.join(', ')} }`;
-    if (!inline.includes('\n') && inline.length + depth * 2 <= 60) return inline;
-
-    const pad = '  '.repeat(depth + 1);
-    return `{\n${entries.map((entry) => `${pad}${entry}`).join(',\n')},\n${'  '.repeat(depth)}}`;
-};
-
-// A shell single-quoted string: a quote inside it closes the string, adds an
-// escaped quote and reopens it.
-const shellQuote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
-
 const requestExamples = (
     spec: OpenAPIObject,
     { method, path, operation }: Endpoint,
@@ -214,44 +190,35 @@ const requestExamples = (
     const requestBody = requestNode(spec, operation, where);
     const body = requestBody && bodyExample(requestBody, model);
 
-    const compact = JSON.stringify(body);
-    const prettyBody = JSON.stringify(body, null, 2);
+    // HAR types ask for a body even on a GET, so the object is cast once.
+    const snippet = new HTTPSnippet({
+        method: method.toUpperCase(),
+        url,
+        httpVersion: 'HTTP/1.1',
+        cookies: [],
+        headers: [
+            ...(secured ? [{ name: 'Authorization', value: 'Bearer {token}' }] : []),
+            ...(requestBody ? [{ name: 'Content-Type', value: 'application/json' }] : []),
+        ],
+        queryString: [],
+        headersSize: -1,
+        bodySize: -1,
+        ...(requestBody ? { postData: { mimeType: 'application/json', text: JSON.stringify(body) } } : {}),
+    } as HarRequest);
 
-    const curl = [
-        `curl ${method === 'get' ? '' : `-X ${method.toUpperCase()} `}${url}`,
-        ...(secured ? ['-H "Authorization: Bearer {token}"'] : []),
-        ...(requestBody ? ['-H "Content-Type: application/json"'] : []),
-        ...(requestBody ? [`-d ${shellQuote(compact.length <= 60 ? compact : prettyBody)}`] : []),
-    ].join(' \\\n  ');
+    const example = (target: Parameters<HTTPSnippet['convert']>[0], client: string): string => {
+        const [code] = snippet.convert(target, client);
+        if (!code) throw new UnsupportedError(`${where}: no ${client} snippet for ${target}`);
 
-    const options = [
-        ...(method === 'get' ? [] : [`  method: '${method.toUpperCase()}',`]),
-        // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
-        ...(secured && !requestBody ? ['  headers: { Authorization: `Bearer ${token}` },'] : []),
-        ...(requestBody
-            ? [
-                  '  headers: {',
-                  // biome-ignore lint/suspicious/noTemplateCurlyInString: `${token}` belongs to the generated example
-                  ...(secured ? ['    Authorization: `Bearer ${token}`,'] : []),
-                  "    'Content-Type': 'application/json',",
-                  '  },',
-                  `  body: JSON.stringify(${jsLiteral(body, 1)}),`,
-              ]
-            : []),
-    ];
-
-    const js = [
-        `const response = await fetch('${url}'${options.length ? ', {' : ')'}`,
-        ...(options.length ? [...options, '})'] : []),
-        'const body = await response.json()',
-    ].join('\n');
+        return code;
+    };
 
     return [
         `<CodeGroup title="Request" tag="${method.toUpperCase()}" label="${concrete}">`,
         '',
-        fence('bash', 'cURL', curl),
+        fence('bash', 'cURL', example('shell', 'curl')),
         '',
-        fence('js', undefined, js),
+        fence('js', undefined, example('javascript', 'fetch')),
         '',
         '</CodeGroup>',
     ].join('\n');
