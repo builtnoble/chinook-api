@@ -15,4 +15,7 @@ const db = drizzle({
     casing: 'snake_case',
 });
 
+// What `db.transaction` hands its callback.
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export default db;

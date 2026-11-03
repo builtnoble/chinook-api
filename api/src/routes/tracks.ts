@@ -1,14 +1,14 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute, validator } from 'hono-openapi';
-import db from '@/db';
+import db, { type Transaction } from '@/db';
 import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
-import { notDeleted, withoutDeletedAt } from '@/utils/softDelete';
-import { httpError, requireLiveParent, type Transaction } from '@/utils/write';
+import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
 
 const trackRoutes = new Hono();
 

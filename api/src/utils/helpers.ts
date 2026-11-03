@@ -33,6 +33,9 @@ export const getAllowedOrigins = (): string[] =>
 // both trust.
 export const getBaseUrl = (): string => process.env.BETTER_AUTH_URL || 'http://localhost:3000';
 
+// "1 track", "3 tracks".
+export const countOf = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
 export type PgError = { code: string; table?: string; constraint?: string };
 
 // Drizzle wraps the driver error, so the Postgres error with its SQLSTATE

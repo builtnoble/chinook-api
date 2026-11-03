@@ -4,6 +4,7 @@ import { describeRoute, validator } from 'hono-openapi';
 import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
@@ -12,7 +13,7 @@ import {
     playlistTrackParamSchema,
     playlistTrackSchema,
 } from '@/utils/schema/resources/playlistTrackSchema';
-import { httpError, requireLiveParent } from '@/utils/write';
+import { requireLiveParent } from '@/utils/softDelete';
 
 const playlistRoutes = new Hono();
 
