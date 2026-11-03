@@ -142,17 +142,17 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/page",
+          "in": "query",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -160,13 +160,21 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Page cannot exceed 35."
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Page cannot exceed 35.",
+      "code": "page_out_of_range"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
@@ -269,17 +277,17 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -287,31 +295,51 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -392,17 +420,17 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -410,13 +438,21 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Album not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Album not found.",
+      "code": "not_found"
     }
     \`\`\`
 
@@ -530,17 +566,17 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -548,37 +584,61 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Album not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Album not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -674,17 +734,17 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -692,25 +752,41 @@ The album model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Album not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Album not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "The album has 12 tracks. Delete them first, or pass cascade=true.",
+      "code": "delete_blocked"
     }
     \`\`\`
 
@@ -844,17 +920,17 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/page",
+          "in": "query",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -862,13 +938,21 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Page cannot exceed 35."
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Page cannot exceed 35.",
+      "code": "page_out_of_range"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
@@ -957,17 +1041,17 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -975,31 +1059,51 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -1075,17 +1179,17 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1093,13 +1197,21 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Artist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Artist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
@@ -1199,17 +1311,17 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1217,37 +1329,61 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Artist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Artist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -1338,17 +1474,17 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1356,25 +1492,41 @@ The artist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Artist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Artist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "The artist has 2 albums. Delete them first, or pass cascade=true.",
+      "code": "delete_blocked"
     }
     \`\`\`
 
@@ -1508,17 +1660,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/page",
+          "in": "query",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1526,13 +1678,21 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Page cannot exceed 35."
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Page cannot exceed 35.",
+      "code": "page_out_of_range"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
@@ -1621,17 +1781,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1639,31 +1799,51 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -1739,17 +1919,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1757,13 +1937,21 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Playlist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Playlist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
@@ -1863,17 +2051,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -1881,37 +2069,61 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Playlist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Playlist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -1991,17 +2203,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -2009,19 +2221,31 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Playlist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Playlist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
@@ -2127,17 +2351,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "name": 42
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/name",
+          "in": "body",
           "message": "Invalid input: expected string, received number",
-          "path": [
-            "name"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -2145,37 +2369,61 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "error": "Malformed JSON in request body"
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "Malformed JSON in request body",
+      "code": "bad_request"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "Playlist not found."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "Playlist not found.",
+      "code": "not_found"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (409)' }}
     {
-      "error": "A row with that value already exists."
+      "type": "about:blank",
+      "title": "Conflict",
+      "status": 409,
+      "detail": "A row with that value already exists.",
+      "code": "duplicate_value"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (422)' }}
     {
-      "error": "The row refers to a parent that does not exist."
+      "type": "about:blank",
+      "title": "Unprocessable Content",
+      "status": 422,
+      "detail": "The row refers to a parent that does not exist.",
+      "code": "invalid_reference"
     }
     \`\`\`
 
@@ -2264,17 +2512,17 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (400)' }}
     {
-      "success": false,
-      "data": {
-        "id": "abc"
-      },
-      "error": [
+      "type": "about:blank",
+      "title": "Bad Request",
+      "status": 400,
+      "detail": "The request is not valid.",
+      "code": "validation_failed",
+      "errors": [
         {
-          "code": "invalid_type",
+          "field": "/id",
+          "in": "path",
           "message": "Invalid input: expected number, received NaN",
-          "path": [
-            "id"
-          ]
+          "code": "invalid_type"
         }
       ]
     }
@@ -2282,19 +2530,31 @@ The playlist model contains the following properties.
 
     \`\`\`json {{ title: 'Error response (401)' }}
     {
-      "message": "Unauthorized"
+      "type": "about:blank",
+      "title": "Unauthorized",
+      "status": 401,
+      "detail": "Missing or invalid credentials.",
+      "code": "unauthorized"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (403)' }}
     {
-      "error": "This action requires the admin role."
+      "type": "about:blank",
+      "title": "Forbidden",
+      "status": 403,
+      "detail": "This action requires the admin role.",
+      "code": "forbidden"
     }
     \`\`\`
 
     \`\`\`json {{ title: 'Error response (404)' }}
     {
-      "error": "The playlist does not contain that track."
+      "type": "about:blank",
+      "title": "Not Found",
+      "status": 404,
+      "detail": "The playlist does not contain that track.",
+      "code": "not_found"
     }
     \`\`\`
 

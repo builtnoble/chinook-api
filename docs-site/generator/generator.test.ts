@@ -139,7 +139,7 @@ describe('the artist writes in the fixture', () => {
     });
 
     it('shows the artist in the 404 example, not another resource', () => {
-        expect(page()).toContain('"error": "Artist not found."');
+        expect(page()).toContain('"detail": "Artist not found."');
     });
 });
 
@@ -162,7 +162,7 @@ describe('the playlist membership routes in the fixture', () => {
 
         expect(add).toContain('curl -X POST http://localhost:3000/api/playlists/1/tracks');
         expect(add).toContain(`-d '{"track_id":1}'`);
-        expect(add).toContain('"error": "Playlist not found."');
+        expect(add).toContain('"detail": "Playlist not found."');
     });
 
     it('lists the attributes of the entry instead of linking to the playlist model', () => {
@@ -176,7 +176,7 @@ describe('the playlist membership routes in the fixture', () => {
         const remove = page().slice(page().indexOf('## Remove a track from a playlist'));
 
         expect(remove).toContain('/api/playlists/1/tracks/1');
-        expect(remove).toContain('"error": "The playlist does not contain that track."');
+        expect(remove).toContain('"detail": "The playlist does not contain that track."');
     });
 });
 
