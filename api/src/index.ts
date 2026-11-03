@@ -21,7 +21,7 @@ app.use('*', async (c: Context, next) => {
         origin: getAllowedOrigins(),
         allowHeaders: ['Content-Type', 'Authorization'],
         allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-        exposeHeaders: ['Content-Length'],
+        exposeHeaders: ['Content-Length', 'WWW-Authenticate'],
         maxAge: 600,
         credentials: true,
     });

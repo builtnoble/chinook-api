@@ -15,7 +15,12 @@ const authMiddleware = createMiddleware<{
         c.set('user', null);
         c.set('session', null);
 
-        throw problem(401, 'Missing or invalid credentials.');
+        // RFC 6750: a request that sent a bearer token which failed is told so,
+        // and one that sent none is told only the scheme.
+        const sentToken = c.req.header('Authorization')?.startsWith('Bearer ');
+        const challenge = sentToken ? 'Bearer error="invalid_token"' : 'Bearer';
+
+        throw problem(401, 'Missing or invalid credentials.', { headers: { 'WWW-Authenticate': challenge } });
     }
 
     c.set('user', session.user);

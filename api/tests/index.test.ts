@@ -109,6 +109,14 @@ describe('CORS_ORIGINS', () => {
         expect(res.headers.get('access-control-allow-origin')).toBeNull();
     });
 
+    it('exposes WWW-Authenticate to a listed origin, so a browser can read it', async () => {
+        process.env.CORS_ORIGINS = 'http://localhost:5173';
+
+        const res = await request('http://localhost:5173');
+
+        expect(res.headers.get('access-control-expose-headers')).toContain('WWW-Authenticate');
+    });
+
     it('answers a preflight request for a listed origin', async () => {
         process.env.CORS_ORIGINS = 'http://localhost:5173';
 

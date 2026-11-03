@@ -57,10 +57,16 @@ const validationProblem = (field: string, location: 'body' | 'path' | 'query', m
 
 const invalidId = validationProblem('/id', 'path', 'Invalid input: expected number, received NaN');
 
-const unauthorized = problemResponse(
-    'Missing or invalid credentials.',
-    example(401, 'Missing or invalid credentials.'),
-);
+const unauthorized = {
+    ...problemResponse('Missing or invalid credentials.', example(401, 'Missing or invalid credentials.')),
+    headers: {
+        'WWW-Authenticate': {
+            description:
+                'The scheme to authenticate with: `Bearer`, with `error="invalid_token"` when a bearer token was sent and failed.',
+            schema: { type: 'string' as const },
+        },
+    },
+};
 
 const forbidden = problemResponse(
     'The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.',

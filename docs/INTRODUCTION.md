@@ -196,6 +196,10 @@ it is in (`body`, `path` or `query`):
 | `value_too_long` | `422` | A value is too long for its column |
 | `internal_server_error` | `500` | Something failed on the server |
 
+A `401` also carries a `WWW-Authenticate` header, as HTTP requires. It names the scheme, `Bearer`, and adds
+`error="invalid_token"` when a bearer token was sent and failed. The header is exposed over CORS, so a browser frontend
+on a listed origin can read it.
+
 A `500` never says what failed. Its `detail` is always `An unexpected error occurred.`, and the cause is logged on the
 server.
 

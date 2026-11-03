@@ -126,6 +126,14 @@ describe('openapi.json', () => {
         }
     });
 
+    it('declares the WWW-Authenticate header on every 401', () => {
+        for (const [name, operation] of operations) {
+            const response = operation.responses?.[401] as { headers?: Record<string, unknown> };
+
+            expect([name, Object.keys(response.headers ?? {})]).toEqual([name, ['WWW-Authenticate']]);
+        }
+    });
+
     it('takes a JSON request body on every create and update, and none elsewhere', () => {
         for (const [name, operation] of operations) {
             const writes = name.startsWith('POST ') || name.startsWith('PATCH ');

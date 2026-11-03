@@ -388,6 +388,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
@@ -713,6 +721,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -1121,6 +1137,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     },
                     "404": {
@@ -1488,6 +1512,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -1953,6 +1985,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -2449,6 +2489,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
@@ -2727,6 +2775,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -3094,6 +3150,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     },
                     "404": {
@@ -3414,6 +3478,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -3838,6 +3910,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -4334,6 +4414,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     }
                 },
@@ -4612,6 +4700,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -4979,6 +5075,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     },
                     "404": {
@@ -5299,6 +5403,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -5725,6 +5837,14 @@
                                     "additionalProperties": {}
                                 }
                             }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
                         }
                     },
                     "403": {
@@ -6106,6 +6226,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
@@ -6533,6 +6661,14 @@
                                     },
                                     "required": ["type", "title", "status"],
                                     "additionalProperties": {}
+                                }
+                            }
+                        },
+                        "headers": {
+                            "WWW-Authenticate": {
+                                "description": "The scheme to authenticate with: `Bearer`, with `error=\"invalid_token\"` when a bearer token was sent and failed.",
+                                "schema": {
+                                    "type": "string"
                                 }
                             }
                         }
