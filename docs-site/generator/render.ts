@@ -76,8 +76,8 @@ const propertyRows = (items: Row[]) =>
 
 const label = (path: string) => path.replace(/\{(\w+)\}/g, ':$1');
 
-const parameterRow = (spec: OpenAPIObject, parameter: ParameterObject, where: string): Row => {
-    const node = normalize(spec, parameter.schema ?? {}, `${where}.${parameter.name}`);
+const parameterRow = (parameter: ParameterObject, where: string): Row => {
+    const node = normalize(parameter.schema ?? {}, `${where}.${parameter.name}`);
     return {
         name: parameter.name,
         type: typeLabel(node),
@@ -95,15 +95,10 @@ const jsonSchemaOf = (content?: Record<string, MediaTypeObject>): SchemaObject |
     return type ? content?.[type]?.schema : undefined;
 };
 
-const responseNode = (
-    spec: OpenAPIObject,
-    operation: OperationObject,
-    status: string,
-    where: string,
-): Node | undefined => {
+const responseNode = (operation: OperationObject, status: string, where: string): Node | undefined => {
     const response = operation.responses?.[status];
     const schema = response ? jsonSchemaOf(inline(response, `${where}.responses.${status}`).content) : undefined;
-    return schema ? normalize(spec, schema, `${where}.responses.${status}`) : undefined;
+    return schema ? normalize(schema, `${where}.responses.${status}`) : undefined;
 };
 
 // A read answers 200 and a create 201, so the page documents whichever 2xx the
@@ -113,7 +108,7 @@ const successStatus = (operation: OperationObject): string | undefined =>
         .sort()
         .find((status) => status.startsWith('2'));
 
-const requestNode = (spec: OpenAPIObject, operation: OperationObject, where: string): Node | undefined => {
+const requestNode = (operation: OperationObject, where: string): Node | undefined => {
     if (!operation.requestBody) return undefined;
 
     const schema = inline(operation.requestBody, `${where}.requestBody`).content?.['application/json']?.schema;
@@ -121,11 +116,11 @@ const requestNode = (spec: OpenAPIObject, operation: OperationObject, where: str
         throw new UnsupportedError(`${where}: only a JSON request body is supported`);
     }
 
-    return normalize(spec, schema, `${where}.requestBody`);
+    return normalize(schema, `${where}.requestBody`);
 };
 
 // The model comes from a read, since a write may answer with a different shape.
-const modelOf = (spec: OpenAPIObject, endpoints: Endpoint[]): Node | undefined => {
+const modelOf = (endpoints: Endpoint[]): Node | undefined => {
     const reads = endpoints.filter((endpoint) => endpoint.method === 'get');
     const byID = reads.find((endpoint) => endpoint.path.includes('{'));
     const list = reads.find((endpoint) => !endpoint.path.includes('{'));
@@ -135,7 +130,7 @@ const modelOf = (spec: OpenAPIObject, endpoints: Endpoint[]): Node | undefined =
         const node =
             endpoint &&
             status &&
-            responseNode(spec, endpoint.operation, status, `${endpoint.method.toUpperCase()} ${endpoint.path}`);
+            responseNode(endpoint.operation, status, `${endpoint.method.toUpperCase()} ${endpoint.path}`);
         if (!node) continue;
 
         const data = unwrapData(node);
@@ -191,15 +186,15 @@ const requestExamples = (
     );
     const concrete = path.replace(/\{(\w+)\}/g, (_, name: string) => {
         const parameter = parameters.find((candidate) => candidate.name === name);
-        return String(sample(spec, normalize(spec, parameter?.schema ?? {}, `${where}.${name}`)));
+        return String(sample(spec, normalize(parameter?.schema ?? {}, `${where}.${name}`)));
     });
     const required = parameters.filter((parameter) => parameter.in === 'query' && parameter.required);
     const query = required.length
-        ? `?${required.map((parameter) => `${parameter.name}=${sample(spec, normalize(spec, parameter.schema ?? {}, where))}`).join('&')}`
+        ? `?${required.map((parameter) => `${parameter.name}=${sample(spec, normalize(parameter.schema ?? {}, where))}`).join('&')}`
         : '';
     const url = `${baseUrl}${concrete}${query}`;
     const secured = (operation.security?.length ?? 0) > 0;
-    const requestBody = requestNode(spec, operation, where);
+    const requestBody = requestNode(operation, where);
     const body = requestBody && bodyExample(spec, requestBody, model);
 
     // HAR types ask for a body even on a GET, so the object is cast once.
@@ -238,7 +233,7 @@ const responseExamples = (spec: OpenAPIObject, { method, path, operation }: Endp
     const blocks: string[] = [];
 
     for (const status of Object.keys(operation.responses ?? {}).sort()) {
-        const node = responseNode(spec, operation, status, where);
+        const node = responseNode(operation, status, where);
         if (!node) continue;
 
         const variants = node.kind === 'union' && node.variants ? node.variants : [node];
@@ -261,7 +256,7 @@ const section = (
     const { method, path, operation } = endpoint;
     const where = `${method.toUpperCase()} ${path}`;
     const parameters = (operation.parameters ?? []).map((parameter, index) =>
-        parameterRow(spec, inline(parameter, `${where}.parameters[${index}]`), where),
+        parameterRow(inline(parameter, `${where}.parameters[${index}]`), where),
     );
     const required = parameters.filter((row) => row.required);
     const optional = parameters.filter((row) => !row.required);
@@ -271,7 +266,7 @@ const section = (
     if (required.length) left.push('### Required parameters', propertyRows(required));
     if (optional.length) left.push('### Optional parameters', propertyRows(optional));
 
-    const requestBody = requestNode(spec, operation, where);
+    const requestBody = requestNode(operation, where);
     if (requestBody) {
         const attributes = rows(requestBody);
         const requiredAttributes = attributes.filter((row) => row.required);
@@ -282,7 +277,7 @@ const section = (
     }
 
     const status = successStatus(operation);
-    const ok = status && responseNode(spec, operation, status, where);
+    const ok = status && responseNode(operation, status, where);
     const data = ok && ok.kind === 'object' ? ok.properties?.find((property) => property.name === 'data') : undefined;
     if (ok && data) {
         const isList = data.node.kind === 'array';
@@ -376,7 +371,7 @@ export const endpointsByTag = (spec: OpenAPIObject): Map<string, Endpoint[]> => 
 
 export const renderTagPage = (spec: OpenAPIObject, tag: string, endpoints: Endpoint[], baseUrl: string): string => {
     const description = spec.tags?.find((candidate) => candidate.name === tag)?.description ?? '';
-    const model = modelOf(spec, endpoints);
+    const model = modelOf(endpoints);
     const name = singular(tag);
 
     const parts = [

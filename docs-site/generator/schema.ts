@@ -1,3 +1,4 @@
+import $RefParser from '@apidevtools/json-schema-ref-parser';
 import { sample as sampleSchema } from 'openapi-sampler';
 import type { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
 import type { JsonValue } from 'type-fest';
@@ -34,24 +35,24 @@ const UNSUPPORTED = ['not', 'if', 'then', 'else', 'patternProperties', 'dependen
 
 const KINDS = new Set(['object', 'array', 'string', 'number', 'integer', 'boolean', 'null']);
 
-export const normalize = (
-    spec: OpenAPIObject,
-    schema: SchemaObject | ReferenceObject,
-    where: string,
-    stack: string[] = [],
-): Node => {
-    if (isReference(schema)) {
-        const match = /^#\/components\/schemas\/(.+)$/.exec(schema.$ref);
-        const target = match ? spec.components?.schemas?.[match[1]] : undefined;
-        if (!target) {
-            throw new UnsupportedError(`${where}: cannot resolve ${schema.$ref}`);
-        }
-        if (stack.includes(schema.$ref)) {
-            throw new UnsupportedError(`${where}: ${schema.$ref} refers to itself`);
-        }
+// Resolves every `$ref` that points inside the document. One that loops back on
+// itself, or points outside the document, is left in place for `normalize` to
+// refuse, so nothing is read from disk or fetched.
+export const dereference = async (spec: OpenAPIObject): Promise<OpenAPIObject> => {
+    try {
+        return await $RefParser.dereference(spec, {
+            mutateInputSchema: false,
+            resolve: { external: false },
+            dereference: { circular: 'ignore' },
+        });
+    } catch (error) {
+        throw new UnsupportedError(`cannot resolve a $ref: ${error instanceof Error ? error.message : error}`);
+    }
+};
 
-        const node = normalize(spec, target, where, [...stack, schema.$ref]);
-        return schema.description ? { ...node, description: schema.description } : node;
+export const normalize = (schema: SchemaObject | ReferenceObject, where: string): Node => {
+    if (isReference(schema)) {
+        throw new UnsupportedError(`${where}: ${schema.$ref} refers to itself or lies outside the document`);
     }
 
     for (const keyword of UNSUPPORTED) {
@@ -64,7 +65,7 @@ export const normalize = (
 
     if (schema.allOf) {
         return mergeAll(
-            schema.allOf.map((part, index) => normalize(spec, part, `${where}.allOf[${index}]`, stack)),
+            schema.allOf.map((part, index) => normalize(part, `${where}.allOf[${index}]`)),
             where,
             schema,
             common,
@@ -73,7 +74,7 @@ export const normalize = (
 
     const variants = schema.anyOf ?? schema.oneOf;
     if (variants) {
-        const nodes = variants.map((variant, index) => normalize(spec, variant, `${where}.anyOf[${index}]`, stack));
+        const nodes = variants.map((variant, index) => normalize(variant, `${where}.anyOf[${index}]`));
         const present = nodes.filter((node) => node.kind !== 'null');
         const nullable = present.length < nodes.length || present.some((node) => node.nullable);
 
@@ -104,7 +105,7 @@ export const normalize = (
             kind: 'union',
             nullable,
             schema,
-            variants: types.map((type) => normalize(spec, { ...schema, type }, where, stack)),
+            variants: types.map((type) => normalize({ ...schema, type }, where)),
             ...stripUndefined(common),
         };
     }
@@ -127,14 +128,14 @@ export const normalize = (
         const required = new Set(schema.required ?? []);
         node.properties = Object.entries(schema.properties ?? {}).map(([name, property]) => ({
             name,
-            node: normalize(spec, property, `${where}.${name}`, stack),
+            node: normalize(property, `${where}.${name}`),
             required: required.has(name),
         }));
     }
 
     if (node.kind === 'array') {
         node.items = schema.items
-            ? normalize(spec, schema.items, `${where}[]`, stack)
+            ? normalize(schema.items, `${where}[]`)
             : { kind: 'any', nullable: false, schema: {} };
     }
 

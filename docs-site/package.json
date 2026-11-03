@@ -10,6 +10,7 @@
         "check": "bun generator/check.ts"
     },
     "dependencies": {
+        "@apidevtools/json-schema-ref-parser": "^16.0.5",
         "@readme/httpsnippet": "^11.4.1",
         "@sindresorhus/slugify": "^2.2.1",
         "micromark-extension-mdx-md": "^2.0.0",

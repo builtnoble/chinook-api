@@ -5,7 +5,7 @@ import slugify from '@sindresorhus/slugify';
 import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
 import { escapeMdx } from './render';
-import { UnsupportedError } from './schema';
+import { dereference, UnsupportedError } from './schema';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
 const contentDir = new URL('./fixtures/content', import.meta.url).pathname;
@@ -226,7 +226,7 @@ describe('MDX safety', () => {
 });
 
 describe('schemas', () => {
-    it('resolves $ref and allOf', () => {
+    it('resolves $ref and allOf', async () => {
         const spec = specWith(
             {
                 responses: okResponse({
@@ -242,7 +242,7 @@ describe('schemas', () => {
                 },
             },
         );
-        const page = generate(spec)['src/app/things/page.mdx'];
+        const page = generate(await dereference(spec))['src/app/things/page.mdx'];
 
         expect(page).toContain('"id": 0');
         expect(page).toContain('"extra": "string"');
@@ -265,7 +265,7 @@ describe('schemas', () => {
         expect(() => generate(spec)).toThrow('GET /things.responses.200.value: the "not" keyword is not supported');
     });
 
-    it('fails on a $ref that loops or does not resolve', () => {
+    it('fails on a $ref that loops, does not resolve or points outside the document', async () => {
         const loop = specWith(
             { responses: okResponse({ $ref: '#/components/schemas/Node' }) },
             {
@@ -275,9 +275,14 @@ describe('schemas', () => {
             },
         );
         const missing = specWith({ responses: okResponse({ $ref: '#/components/schemas/Nope' }) });
+        const outside = specWith({ responses: okResponse({ $ref: 'https://example.com/thing.json' }) });
 
-        expect(() => generate(loop)).toThrow('refers to itself');
-        expect(() => generate(missing)).toThrow('cannot resolve');
+        const looped = await dereference(loop);
+        const external = await dereference(outside);
+
+        expect(() => generate(looped)).toThrow('refers to itself');
+        expect(() => generate(external)).toThrow('lies outside the document');
+        await expect(dereference(missing)).rejects.toThrow('cannot resolve a $ref');
     });
 });
 
@@ -294,6 +299,29 @@ describe('operations', () => {
         expect(() => generate(specWith({ parameters: [ref] }))).toThrow('GET /things.parameters[0]: a $ref to');
         expect(() => generate(specWith({ requestBody: ref }))).toThrow('GET /things.requestBody: a $ref to');
         expect(() => generate(specWith({ responses: { 200: ref } }))).toThrow('GET /things.responses.200: a $ref to');
+    });
+
+    it('follows a $ref to a shared parameter', async () => {
+        const spec = specWith(
+            { parameters: [{ $ref: '#/components/parameters/Limit' }] },
+            {
+                components: {
+                    parameters: {
+                        Limit: {
+                            name: 'limit',
+                            in: 'query',
+                            required: true,
+                            description: 'Page size.',
+                            schema: { type: 'integer' },
+                        },
+                    },
+                },
+            },
+        );
+        const page = generate(await dereference(spec))['src/app/things/page.mdx'];
+
+        expect(page).toContain('<Property name="limit" type="integer">');
+        expect(page).toContain("--url '/things?limit=0'");
     });
 });
 

@@ -5,6 +5,7 @@ import slugify from '@sindresorhus/slugify';
 import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { markdownToMdx } from './markdown';
 import { endpointsByTag, renderTagPage } from './render';
+import { dereference } from './schema';
 
 export type Guide = {
     title: string;
@@ -20,7 +21,7 @@ export type Content = {
 };
 
 // Maps each output path (relative to the theme root) to its contents. Pure, so
-// tests can call it directly.
+// tests can call it directly. The spec has its `$ref`s resolved, by `dereference`.
 export const generate = (spec: OpenAPIObject, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
@@ -146,7 +147,7 @@ if (import.meta.main) {
 
     try {
         const spec = await importJson<OpenAPIObject>(values.spec);
-        const files = generate(spec, values.pages ? await loadPages(values.pages) : {});
+        const files = generate(await dereference(spec), values.pages ? await loadPages(values.pages) : {});
 
         const written = await writeChanged(values.out, files);
 
