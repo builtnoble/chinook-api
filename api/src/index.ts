@@ -5,7 +5,8 @@ import api from '@/api';
 import errorHandler from '@/handlers/errorHandler';
 import { problemNotFound } from '@/lib/problem-details';
 import { auth } from '@/utils/auth';
-import { getAllowedOrigins, stripErrorDetails } from '@/utils/helpers';
+import { problemFromAuthResponse } from '@/utils/authProblem';
+import { getAllowedOrigins } from '@/utils/helpers';
 
 const port = process.env.APP_PORT || 3000;
 
@@ -29,7 +30,7 @@ app.use('*', async (c: Context, next) => {
 });
 
 app.on(['POST', 'GET'], '/api/auth/*', async (c) => {
-    return stripErrorDetails(await auth.handler(c.req.raw));
+    return problemFromAuthResponse(await auth.handler(c.req.raw));
 });
 
 app.get('/health', async (c) =>

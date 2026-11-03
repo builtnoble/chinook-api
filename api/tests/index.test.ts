@@ -53,7 +53,7 @@ describe('Better Auth trusted origins', () => {
 
         const res = await signIn('http://localhost:8000');
 
-        expect(await res.text()).not.toContain('INVALID_ORIGIN');
+        expect(await res.text()).not.toContain('invalid_origin');
     });
 
     it('rejects an origin that is not listed', async () => {
@@ -62,7 +62,8 @@ describe('Better Auth trusted origins', () => {
         const res = await signIn('http://evil.test');
 
         expect(res.status).toBe(403);
-        expect(await res.text()).toContain('INVALID_ORIGIN');
+        expect(res.headers.get('Content-Type')).toBe('application/problem+json');
+        expect(await res.json()).toMatchObject({ status: 403, code: 'invalid_origin' });
     });
 
     it('still trusts its own base URL when CORS_ORIGINS is unset', async () => {
@@ -70,7 +71,7 @@ describe('Better Auth trusted origins', () => {
 
         const res = await signIn(process.env.BETTER_AUTH_URL || 'http://localhost:3000');
 
-        expect(await res.text()).not.toContain('INVALID_ORIGIN');
+        expect(await res.text()).not.toContain('invalid_origin');
     });
 });
 

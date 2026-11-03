@@ -34,6 +34,14 @@ type Failure = [
 const failures: Failure[] = [
     ['a route that does not exist', 'admin', { method: 'GET', path: '/nope' }, 404, 'not_found'],
     ['a route under /api that does not exist', 'admin', { method: 'GET', path: '/api/nope' }, 404, 'not_found'],
+    ['a route under /api/auth that does not exist', null, { method: 'GET', path: '/api/auth/nope' }, 404, 'not_found'],
+    [
+        'a sign-in with no password',
+        null,
+        { method: 'POST', path: '/api/auth/sign-in/email', headers: json, body: '{"email":"a@example.test"}' },
+        400,
+        'validation_failed',
+    ],
     ['no session', null, { method: 'GET', path: '/api/artists' }, 401, 'unauthorized'],
     [
         'a write by a user who is not an admin',
@@ -103,7 +111,7 @@ describe('every failed request', () => {
             const document = await res.json();
 
             expect(document).toMatchObject({ type: 'about:blank', title: statusTitle(status), status, code });
-            // The detail is optional.
+            // The detail is optional, and Better Auth may send none.
             expect(['string', 'undefined']).toContain(typeof document.detail);
         },
     );
