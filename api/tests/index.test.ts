@@ -4,13 +4,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 // Hono's `c.env` is the server object and not the process environment.
 let server: ReturnType<typeof Bun.serve>;
 const originalOrigins = process.env.CORS_ORIGINS;
-const originalNodeEnv = process.env.NODE_ENV;
 
 beforeAll(async () => {
-    // `bun test` sets NODE_ENV=test, and Better Auth skips its origin check in
-    // that mode. Import the app under another value so the tests exercise the
-    // check that runs in development and production.
-    process.env.NODE_ENV = 'development';
     const { default: app } = await import('@/index');
 
     server = Bun.serve({ port: 0, fetch: app.fetch });
@@ -19,15 +14,10 @@ beforeAll(async () => {
 afterAll(() => {
     server.stop(true);
 
-    for (const [key, value] of [
-        ['CORS_ORIGINS', originalOrigins],
-        ['NODE_ENV', originalNodeEnv],
-    ] as const) {
-        if (value === undefined) {
-            delete process.env[key];
-        } else {
-            process.env[key] = value;
-        }
+    if (originalOrigins === undefined) {
+        delete process.env.CORS_ORIGINS;
+    } else {
+        process.env.CORS_ORIGINS = originalOrigins;
     }
 });
 

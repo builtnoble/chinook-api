@@ -10,6 +10,10 @@ export const auth = betterAuth({
     // The same origins the CORS middleware allows; the base URL is always
     // trusted.
     trustedOrigins: () => getAllowedOrigins(),
+    advanced: {
+        // Always check the Origin of a request, even when NODE_ENV is "test".
+        disableOriginCheck: false,
+    },
     plugins: [bearer(), admin()],
     emailAndPassword: {
         enabled: true,
