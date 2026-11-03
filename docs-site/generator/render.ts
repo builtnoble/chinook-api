@@ -7,6 +7,7 @@ import type {
     ReferenceObject,
     SchemaObject,
 } from 'openapi3-ts/oas31';
+import { escapeMarkdown } from './markdown';
 import {
     isReference,
     type Node,
@@ -41,16 +42,9 @@ const singular = (tag: string) => tag.toLowerCase().replace(/s$/, '');
 // gives a heading the id that `slugify` makes of its text.
 const modelHeading = (tag: string) => `The ${singular(tag)} model`;
 
-// Descriptions come from the API's source and land inside MDX, where `{`, `}`
-// and `<` start expressions and tags. Backslash-escape them outside code spans,
-// which MDX leaves alone.
-export const escapeMdx = (text: string) =>
-    text
-        .replace(/\s+/g, ' ')
-        .trim()
-        .split(/(`[^`]*`)/)
-        .map((part, index) => (index % 2 ? part : part.replace(/[{}<]/g, (char) => `\\${char}`)))
-        .join('');
+// Descriptions come from the API's source and land inside MDX as a single line,
+// where `{`, `}` and `<` would start expressions and tags.
+export const escapeMdx = (text: string) => escapeMarkdown(text.replace(/\s+/g, ' ').trim());
 
 const indent = (text: string, spaces: number) =>
     text

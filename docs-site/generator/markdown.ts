@@ -196,6 +196,9 @@ const escapes = (tree: Root, source: string): Edit[] => {
 const isProse = (node: Nodes | undefined, source: string): node is Paragraph =>
     node?.type === 'paragraph' && source[span(node)[0]] !== '<';
 
+// Markdown text with `{`, `}` and `<` escaped outside code, for placing in MDX.
+export const escapeMarkdown = (text: string): string => applyEdits(text, escapes(parse(text), text));
+
 // The paragraph straight after the title is the page's lead, and the first one
 // anywhere after it describes the page.
 const afterTitle = (tree: Root): Nodes[] => {
