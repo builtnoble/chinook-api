@@ -126,6 +126,28 @@ app.post('/artists', validator('json', schema, validationHook()), handler);
 - Zod's `unrecognized_keys` issues are reported once per key, at the key's own pointer, not at an empty field.
 - `status` defaults to `400`. Pass `{ status: 422 }` if you prefer it. `detail` can be changed too.
 
+## Better Auth
+
+`problem-details/betterAuthProblem` rewrites a failed [Better Auth](https://www.better-auth.com) response as a problem
+document, so its errors look like every other error. It is a separate entry point, and it imports nothing from Better
+Auth: it only reads the JSON that Better Auth sends, `{ "message", "code" }`.
+
+```ts
+import { problemFromAuthResponse } from './problem-details/betterAuthProblem';
+
+app.on(['GET', 'POST'], '/api/auth/*', async (c) => problemFromAuthResponse(await auth.handler(c.req.raw)));
+```
+
+- A response below 400 is returned as it is.
+- `message` becomes the `detail`. The `code` is lower-cased (`INVALID_EMAIL_OR_PASSWORD` becomes
+  `invalid_email_or_password`), and `VALIDATION_ERROR` becomes `validation_failed`, as `validationHook` names it.
+- Nothing else is copied. Better Auth attaches the raw error, such as the failing SQL with its values, as `details` to
+  some failures, and that cannot reach the client.
+- The other headers are kept, including every `Set-Cookie`. A response with no JSON body, such as an unknown path,
+  gets the status alone.
+- A server error is thrown as an `HTTPException` that carries the response, so `problemDetailsHandler` has to be
+  registered. It answers with its generic detail and reports the error through `onUnhandledError`.
+
 ## Describing the responses (OpenAPI)
 
 `problem-details/zod` exports Zod schemas for the documents, for use with a library that builds OpenAPI from Zod. It

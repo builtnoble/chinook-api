@@ -1,9 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import errorHandler from '@/handlers/errorHandler';
-import { problemFromAuthResponse } from '@/utils/authProblem';
-import { problemBody } from '../support/problem';
+import { problemDetailsHandler, statusTitle } from '@/lib/problem-details';
+import { problemFromAuthResponse } from '@/lib/problem-details/betterAuthProblem';
+
+// The problem document a failure should become. The code is the snake_case of
+// the title unless it is given.
+const problemBody = (status: number, detail: string, code?: string) => ({
+    type: 'about:blank',
+    title: statusTitle(status),
+    status,
+    detail,
+    code: code ?? statusTitle(status).toLowerCase().replace(/\W+/g, '_'),
+});
 
 const jsonResponse = (body: unknown, init: ResponseInit = {}) =>
     new Response(JSON.stringify(body), {
@@ -126,7 +135,9 @@ describe('problemFromAuthResponse for a server error', () => {
     });
 
     it('is answered with a generic detail that hides the cause, keeping the headers, and is logged', async () => {
-        const app = new Hono().onError(errorHandler).get('/', async () => problemFromAuthResponse(failure()));
+        const app = new Hono()
+            .onError(problemDetailsHandler({ onUnhandledError: (error) => console.error(error) }))
+            .get('/', async () => problemFromAuthResponse(failure()));
 
         const res = await app.request('/');
         const text = await res.text();

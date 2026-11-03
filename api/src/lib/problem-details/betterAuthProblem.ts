@@ -1,7 +1,9 @@
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import isPlainObject from 'lodash-es/isPlainObject';
-import { problem } from '@/lib/problem-details';
+import { problem } from './problem';
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // Better Auth writes its codes in UPPER_SNAKE_CASE and calls a request that
 // fails validation VALIDATION_ERROR. Ours are lower_snake_case, and the same
@@ -32,7 +34,7 @@ export const problemFromAuthResponse = async (res: Response): Promise<Response> 
         .clone()
         .json()
         .catch(() => undefined);
-    const { message, code } = isPlainObject(body) ? (body as Record<string, unknown>) : {};
+    const { message, code } = isRecord(body) ? body : {};
     const detail = typeof message === 'string' ? message : undefined;
     const status = res.status as ContentfulStatusCode;
 

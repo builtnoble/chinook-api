@@ -102,7 +102,7 @@ Postgres pool (`api/src/db/index.ts`). `/api/auth/*` is routed directly to Bette
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
 while everything under `/api/*` requires a valid bearer session. Because that route skips the `/api`
 middleware, its successful responses keep Better Auth's camelCase keys, and its failures are rewritten as problem
-documents by `problemFromAuthResponse()` (`api/src/utils/authProblem.ts`). Only the message and the code are copied:
+documents by `problemFromAuthResponse()` (`api/src/lib/problem-details/betterAuthProblem.ts`). Only the message and the code are copied:
 Better Auth attaches the raw error, such as a failing SQL statement with its values, as `details` to some failures,
 and that must not reach the client.
 
@@ -209,8 +209,9 @@ code, in lower case, is the `code`: `invalid_email_or_password`, `user_already_e
 `validation_failed`, as everywhere else, but without an `errors` list; the `detail` says what was wrong.
 
 The code is in `api/src/lib/problem-details/`, which knows nothing about this application and has its own README. The
-application connects it in three places: `api/src/handlers/errorHandler.ts` (which also maps Postgres errors),
-`validate()` in `api/src/utils/requestValidationHelper.ts`, and the middleware and routes that throw `problem(...)`.
+application connects it in four places: `api/src/handlers/errorHandler.ts` (which also maps Postgres errors),
+`validate()` in `api/src/utils/requestValidationHelper.ts`, the middleware and routes that throw `problem(...)`, and the
+`/api/auth/*` route in `api/src/index.ts`, which passes Better Auth's answers through `problemFromAuthResponse()`.
 
 ## Key decisions and trade-offs
 
