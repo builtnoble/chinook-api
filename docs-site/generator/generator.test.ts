@@ -349,6 +349,44 @@ const sectionOf = (page: string, heading: string) => {
     return page.slice(start, end === -1 ? undefined : end);
 };
 
+describe('error responses', () => {
+    const problem: Schema = {
+        type: 'object',
+        properties: { status: { type: 'integer' }, detail: { type: 'string' } },
+        required: ['status'],
+        examples: [{ status: 404, detail: 'Thing not found.' }],
+    };
+    const withProblem = (content: Record<string, { schema: Schema }>) =>
+        writeSpec({
+            '/things/{id}': {
+                get: {
+                    tags: ['Things'],
+                    summary: 'Retrieve a thing',
+                    description: 'Retrieve a thing.',
+                    parameters: [idParameter],
+                    responses: { 200: { content: json(dataOf(model)) }, 404: { description: 'Missing.', content } },
+                },
+            },
+        });
+
+    it('renders an application/problem+json response like an application/json one', () => {
+        const page = thingsPage(withProblem({ 'application/problem+json': { schema: problem } }));
+        const section = sectionOf(page, 'Retrieve a thing');
+
+        expect(section).toContain('Error response (404)');
+        expect(section).toContain('"detail": "Thing not found."');
+    });
+
+    it('prefers application/json when a response declares both', () => {
+        const other: Schema = { ...problem, examples: [{ status: 404, detail: 'From application/json.' }] };
+        const page = thingsPage(
+            withProblem({ 'application/problem+json': { schema: problem }, 'application/json': { schema: other } }),
+        );
+
+        expect(sectionOf(page, 'Retrieve a thing')).toContain('"detail": "From application/json."');
+    });
+});
+
 describe('write operations', () => {
     it('lists a collection first, then each item operation in method order', () => {
         const headings = [...thingsPage().matchAll(/^## (.+) \{\{ tag: '(\w+)'/gm)].map((match) => match[2]);

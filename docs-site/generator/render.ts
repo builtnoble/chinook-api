@@ -1,5 +1,5 @@
 import { type Node, normalize, type Row, rows, sample, typeLabel, UnsupportedError, unwrapData } from './schema';
-import type { Operation, Parameter, Spec } from './types';
+import type { Operation, Parameter, Schema, Spec } from './types';
 
 export type Endpoint = { method: string; path: string; operation: Operation };
 
@@ -64,8 +64,17 @@ const parameterRow = (spec: Spec, parameter: Parameter, where: string): Row => {
     };
 };
 
+// A response body is `application/json`, or a `+json` type such as the
+// `application/problem+json` of an error.
+const jsonSchemaOf = (content?: Record<string, { schema?: Schema }>): Schema | undefined => {
+    const types = Object.keys(content ?? {});
+    const type = types.find((name) => name === 'application/json') ?? types.find((name) => name.endsWith('+json'));
+
+    return type ? content?.[type]?.schema : undefined;
+};
+
 const responseNode = (spec: Spec, operation: Operation, status: string, where: string): Node | undefined => {
-    const schema = operation.responses?.[status]?.content?.['application/json']?.schema;
+    const schema = jsonSchemaOf(operation.responses?.[status]?.content);
     return schema ? normalize(spec, schema, `${where}.responses.${status}`) : undefined;
 };
 
