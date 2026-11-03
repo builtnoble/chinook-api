@@ -34,16 +34,17 @@ export const validationProblemResponse = (
     description: string,
     invalid: ProblemDetails,
     ...others: ProblemDetails[]
-) => ({
-    description,
-    content: {
-        [PROBLEM_CONTENT_TYPE]: {
-            schema: resolver(
-                z.union([
-                    validationProblemSchema.meta({ examples: [invalid] }),
-                    ...(others.length ? [problemDetailsSchema.meta({ examples: others })] : []),
-                ]),
-            ),
+) => {
+    const validation = validationProblemSchema.meta({ examples: [invalid] });
+
+    return {
+        description,
+        content: {
+            [PROBLEM_CONTENT_TYPE]: {
+                schema: resolver(
+                    others.length ? z.union([validation, problemDetailsSchema.meta({ examples: others })]) : validation,
+                ),
+            },
         },
-    },
-});
+    };
+};

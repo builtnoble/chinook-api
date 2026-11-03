@@ -73,6 +73,16 @@ describe('problemResponse', () => {
 });
 
 describe('validationProblemResponse', () => {
+    it('documents a validation failure that lists its issues', async () => {
+        const invalid = validationExample('/name', 'body', 'Invalid input: expected string, received number');
+        const responses = await documented({ 400: validationProblemResponse('Invalid.', invalid) });
+        const schema = responses[400].content['application/problem+json'].schema;
+
+        expect(schema.anyOf).toBeUndefined();
+        expect(schema.required).toContain('errors');
+        expect(schema.examples).toEqual([invalid]);
+    });
+
     it('adds the other problems with the same status as a second shape', async () => {
         const invalid = validationExample('/id', 'path', 'Invalid input: expected number, received NaN');
         const other = problemExample(400, 'Malformed JSON in request body');
