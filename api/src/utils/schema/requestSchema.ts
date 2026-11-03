@@ -18,7 +18,10 @@ export const paginationSchema = snakeCaseSchema(
 ).describe('Where the returned page sits among all pages.');
 
 export const paramSchema = z.object({
-    id: z.coerce.number().describe('Unique identifier of the item.'),
+    id: z.coerce
+        .number()
+        .describe('Unique identifier of the item.')
+        .meta({ examples: [1] }),
 });
 
 export const cascadeQuerySchema = z.object({
