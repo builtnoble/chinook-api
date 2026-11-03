@@ -38,11 +38,12 @@ Hono app (api/src/index.ts)
   ├─ /health                         → liveness check
   ├─ /openapi.json                   → generated from route schemas
   ├─ /api/auth/*                     → delegated to Better Auth
+  ├─ errors and unknown routes       → problem documents (api/src/handlers/errorHandler.ts)
   └─ /api/*  (api/src/api.ts)
         ├─ snakeCaseKeysMiddleware   → rewrites outgoing JSON keys to snake_case
         ├─ authMiddleware            → verifies session, 401s if absent
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
-              ├─ validator(query/param)   → Zod schemas (api/src/utils/schema/)
+              ├─ validate(query/param/json) → Zod schemas (api/src/utils/schema/)
               ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
               └─ Drizzle query            → api/src/db (chinook and auth schemas)
                                                 │
@@ -80,7 +81,8 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
    session → `401` before any route code runs. On success, `user`/`session` are set as Hono
    context variables for downstream handlers.
 4. The matched route (e.g. `api/src/routes/tracks.ts`) validates `query`/`param` input with a shared
-   Zod schema (`api/src/utils/schema/`), then, for list endpoints, runs `paginationMiddleware`.
+   Zod schema (`api/src/utils/schema/`), through `validate()`, which rejects a bad request with a problem
+   document that lists every issue. Then, for list endpoints, it runs `paginationMiddleware`.
 5. `paginationMiddleware` does a `db.$count()` against the target table, derives
    `currentPage` / `perPage` / `offset`, and rejects out-of-range pages with `400` before the
    main query runs. When the table has a `deleted_at` column the count leaves out soft-deleted rows,
@@ -99,16 +101,17 @@ as separate origins with no hosts-file changes. The API and the docs are also pu
 Postgres pool (`api/src/db/index.ts`). `/api/auth/*` is routed directly to Better Auth's handler,
 bypassing the `/api` sub-app entirely — so auth endpoints are unauthenticated by construction,
 while everything under `/api/*` requires a valid bearer session. Because that route skips the `/api`
-middleware, its responses keep Better Auth's camelCase keys, and its error responses pass through
-`stripErrorDetails()` (`api/src/utils/helpers.ts`): Better Auth attaches the raw error, such as a failing SQL
-statement with its values, as `details` to some failures, and that must not reach the client.
+middleware, its successful responses keep Better Auth's camelCase keys, and its failures are rewritten as problem
+documents by `problemFromAuthResponse()` (`api/src/utils/authProblem.ts`). Only the message and the code are copied:
+Better Auth attaches the raw error, such as a failing SQL statement with its values, as `details` to some failures,
+and that must not reach the client.
 
 **Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
 `CORS_ORIGINS`. `getAllowedOrigins()` (`api/src/utils/helpers.ts`) parses that variable from the process
 environment on every call, and two things consume it: the CORS middleware in `api/src/index.ts`, and Better
 Auth's `trustedOrigins` in `api/src/utils/auth.ts`. Better Auth also always trusts its own base URL
 (`BETTER_AUTH_URL`). An origin missing from both lists gets no CORS headers, and cookie-carrying requests
-to `/api/auth/*` from it get `403 INVALID_ORIGIN`. The environment is read through `process.env` and not
+to `/api/auth/*` from it get a `403` with the code `invalid_origin`. The environment is read through `process.env` and not
 Hono's `c.env`: under Bun, `c.env` is the server object, whereas on Cloudflare Workers it holds the
 environment bindings.
 
@@ -137,8 +140,81 @@ The `app` service waits for the image's healthcheck (`depends_on: condition: ser
 Data lives in the `chinook-data` named volume. The seed only loads into an empty volume, so pulling a
 newer image does not change existing data until `docker compose down -v`.
 
+## Errors
+
+Every error the API sends is a problem document ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)) with the content
+type `application/problem+json`, so a client can handle every failure the same way:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Artist not found.",
+  "code": "not_found"
+}
+```
+
+- `status` repeats the HTTP status, and `title` is its name.
+- `detail` explains this occurrence in words meant for a person. Do not match on it.
+- `code` is a stable, machine-readable name. Branch on `code`.
+- `type` is always `about:blank`. In RFC 9457 that means the problem has no meaning beyond its status. It is an
+  identifier and not a link, so nothing is fetched from it.
+
+A request that fails validation also has `errors`, with one entry for every issue found. `field` is a
+[JSON Pointer](https://www.rfc-editor.org/rfc/rfc6901) to the offending value, and `in` says which part of the request
+it is in (`body`, `path` or `query`):
+
+```json
+{
+  "type": "about:blank",
+  "title": "Bad Request",
+  "status": 400,
+  "detail": "The request is not valid.",
+  "code": "validation_failed",
+  "errors": [
+    { "field": "/name", "in": "body", "message": "Invalid input: expected string, received number", "code": "invalid_type" },
+    { "field": "/colour", "in": "body", "message": "Unrecognized key: \"colour\"", "code": "unrecognized_keys" }
+  ]
+}
+```
+
+| `code` | Status | When |
+| --- | --- | --- |
+| `validation_failed` | `400` | The query, the path or the body is not valid; `errors` lists every issue |
+| `bad_request` | `400` | The body is not valid JSON |
+| `page_out_of_range` | `400` | `page` is beyond the last page |
+| `limit_out_of_range` | `400` | `limit` is larger than the number of items |
+| `unauthorized` | `401` | There is no session, or it is not valid |
+| `forbidden` | `403` | A write by a signed-in user who is not an admin |
+| `origin_not_allowed` | `403` | A cookie write from an origin that is not allowed |
+| `not_found` | `404` | No such route, or no item with that id, or it was deleted |
+| `duplicate_value` | `409` | A unique value collides with an existing row, or the track is already in the playlist |
+| `delete_blocked` | `409` | The item still has albums or tracks, and `cascade=true` was not passed |
+| `content_too_large` | `413` | The body is over 100 KB |
+| `invalid_reference` | `422` | A field refers to a parent that does not exist or is deleted |
+| `value_too_long` | `422` | A value is too long for its column |
+| `internal_server_error` | `500` | Something failed on the server |
+
+A `500` never says what failed. Its `detail` is always `An unexpected error occurred.`, and the cause is logged on the
+server.
+
+Errors from `/api/auth/*` are Better Auth's, rewritten into the same document. Its `message` is the `detail`, and its
+code, in lower case, is the `code`: `invalid_email_or_password`, `user_already_exists_use_another_email`,
+`password_too_short`, `missing_or_null_origin`, `invalid_origin` and the like. Its `VALIDATION_ERROR` is
+`validation_failed`, as everywhere else, but without an `errors` list; the `detail` says what was wrong.
+
+The code is in `api/src/lib/problem-details/`, which knows nothing about this application and has its own README. The
+application connects it in three places: `api/src/handlers/errorHandler.ts` (which also maps Postgres errors),
+`validate()` in `api/src/utils/validate.ts`, and the middleware and routes that throw `problem(...)`.
+
 ## Key decisions and trade-offs
 
+- **Errors are one standard document, from a library that stays separate.** A single problem format, Better Auth's
+  failures included, means a client needs one error path, and RFC 9457 is the one that is already documented and understood. The library lives under
+  `api/src/lib/` and imports nothing from the application, so it could be published on its own; the application
+  depends on it and not the other way round. The cost is that error bodies are larger than a bare `{ "error" }`,
+  and that a client written against an earlier release has to read `detail` and `code` instead of `error`.
 - **Snake_case over the wire via middleware, not per-query mapping.** Centralizing the
   camelCase-to-snake_case conversion in one middleware keeps route handlers free of mapping code,
   but it does mean every JSON response is parsed and re-serialized once — acceptable for this

@@ -131,7 +131,7 @@ browser. Leave it empty to allow no cross-origin browser requests.
 
 Better Auth trusts the same list, so a listed frontend can also sign in and out when its requests carry
 cookies; Better Auth's own base URL (`BETTER_AUTH_URL`) is always trusted. An origin that is in neither place
-gets `403 INVALID_ORIGIN` on those requests.
+gets a `403` with the code `invalid_origin` on those requests.
 
 > **Upgrading an existing `.env`:** `BETTER_AUTH_URL` used to be `http://localhost:3000`. To call the API from a
 > browser at `http://api.chinook.localhost`, set it to that address (or list the origin in `CORS_ORIGINS`).
@@ -243,6 +243,27 @@ Example response:
 	}
 }
 ```
+
+---
+
+## Errors
+
+Every error is a problem document ([RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)) with the content type
+`application/problem+json`. Match on `code`, which is stable, and show `detail` to a person:
+
+```
+{
+	"type": "about:blank",
+	"title": "Not Found",
+	"status": 404,
+	"detail": "Artist not found.",
+	"code": "not_found"
+}
+```
+
+A request that fails validation also has an `errors` list with one entry for every issue. The format and every code are
+in [docs/INTRODUCTION.md](docs/INTRODUCTION.md#errors). Errors from `/api/auth/*` are rewritten into the same
+document, with Better Auth's code in lower case.
 
 ---
 

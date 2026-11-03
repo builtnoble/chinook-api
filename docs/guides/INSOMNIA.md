@@ -46,7 +46,7 @@ variables to pick from, which inserts the exact syntax for your version.
 ### Send an `Origin` header with the auth requests
 
 The auth routes reject any `POST` that carries a cookie but no `Origin` header, with `403`
-`{"code":"MISSING_OR_NULL_ORIGIN","message":"Missing or null Origin"}`. Insomnia keeps the session cookie from
+and the `code` `missing_or_null_origin`. Insomnia keeps the session cookie from
 sign-up and sends it on every later request, and it sends no `Origin` of its own, so sign-in and sign-out fail
 unless you add one. Create a folder for the auth requests (sign-up, sign-in, sign-out) and, in the folder's
 **Headers**, add:
@@ -109,16 +109,18 @@ The response headers include `set-auth-token` (the session token) and
 `set-cookie: better-auth.session_token=…; Max-Age=604800; Path=/; HttpOnly; SameSite=Lax`. Sessions last
 7 days.
 
-| Case | Status | Body |
-| --- | --- | --- |
-| Password shorter than 8 | `400` | `{"code":"PASSWORD_TOO_SHORT","message":"Password too short"}` |
-| Email already registered | `422` | `{"code":"USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL","message":"User already exists. Use another email."}` |
-| `name` missing | `400` | `{"message":"[body.name] Invalid input: expected string, received undefined","code":"VALIDATION_ERROR"}` |
+These failures are problem documents, like the errors of the data routes (see [Errors](../INTRODUCTION.md#errors)).
+
+| Case | Status | `code` | `detail` |
+| --- | --- | --- | --- |
+| Password shorter than 8 | `400` | `password_too_short` | Password too short |
+| Email already registered | `422` | `user_already_exists_use_another_email` | User already exists. Use another email. |
+| `name` missing | `400` | `validation_failed` | [body.name] Invalid input: expected string, received undefined |
 
 ### Create an admin account
 
 An account made with the request above is an ordinary user. It can read every route, but a write (`POST`, `PATCH` or
-`DELETE`) returns `403` with `{"error":"This action requires the admin role."}`. To send writes, create an admin
+`DELETE`) returns `403` with the `detail` `This action requires the admin role.`. To send writes, create an admin
 from the command line instead of signing up:
 
 ```sh
@@ -144,7 +146,13 @@ Returns `200` with `{"redirect":false,"token":"…","user":{…}}` and the same 
 cookie as sign-up. A wrong password and an unknown email both return `401`:
 
 ```json
-{ "code": "INVALID_EMAIL_OR_PASSWORD", "message": "Invalid email or password" }
+{
+  "type": "about:blank",
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "Invalid email or password",
+  "code": "invalid_email_or_password"
+}
 ```
 
 ## 5. Authenticate requests
@@ -204,16 +212,21 @@ Single records come back as `{ "data": { … } }`.
 
 ### Errors
 
-| Request | Status | Body |
-| --- | --- | --- |
-| Any data route without a session, or after signing out | `401` | `{"message":"Unauthorized"}` |
-| `?page=` beyond the last page | `400` | `{"error":"Page cannot exceed 28."}` |
-| `?limit=` larger than the table | `400` | `{"error":"Limit cannot exceed 25."}` |
-| Non-numeric id, e.g. `/api/artists/abc` | `400` | `{"data":{"id":"abc"},"error":[…],"success":false}` |
-| An id that does not exist, or a deleted row | `404` | `{"error":"Artist not found."}` |
-| A write by a signed-in user who is not an admin | `403` | `{"error":"This action requires the admin role."}` |
+Errors are problem documents with the content type `application/problem+json`: a `status`, a `title`, a `detail`
+that explains this occurrence, and a `code` to match on. See [Errors](../INTRODUCTION.md#errors) for the format and
+every code.
 
-A missing id is a `404`, not a `200` with an empty result. The message names the resource.
+| Request | Status | `code` | `detail` |
+| --- | --- | --- | --- |
+| Any data route without a session, or after signing out | `401` | `unauthorized` | Missing or invalid credentials. |
+| `?page=` beyond the last page | `400` | `page_out_of_range` | Page cannot exceed 28. |
+| `?limit=` larger than the table | `400` | `limit_out_of_range` | Limit cannot exceed 25. |
+| Non-numeric id, e.g. `/api/artists/abc` | `400` | `validation_failed` | The request is not valid. |
+| An id that does not exist, or a deleted row | `404` | `not_found` | Artist not found. |
+| A write by a signed-in user who is not an admin | `403` | `forbidden` | This action requires the admin role. |
+
+A missing id is a `404`, not a `200` with an empty result. The `detail` names the resource. For the non-numeric id, the
+`errors` list in the same document says which value was wrong: `"field": "/id", "in": "path"`.
 
 ## 7. Sign out
 
@@ -240,10 +253,10 @@ Bearer token), and the `Origin` header from step 2. Returns `200` `{"success":tr
 - **`api.chinook.localhost` does not resolve, or port 80 is in use.** Most systems resolve `*.localhost` to the local
   machine by themselves. If yours does not, or the proxy cannot bind port 80, use `http://localhost:3000` (set
   `base_url` accordingly), or set `PROXY_PORT` in `.env` and put that port in the address.
-- **`403` `MISSING_OR_NULL_ORIGIN` on sign-in or sign-out.** The request carried the session cookie but no `Origin`
+- **`403` `missing_or_null_origin` on sign-in or sign-out.** The request carried the session cookie but no `Origin`
   header. Add the header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests), or delete
   the saved cookies for the host in Insomnia's cookie manager and send the request again.
-- **`403` `INVALID_ORIGIN`.** The `Origin` is not one the API trusts. `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL`
+- **`403` `invalid_origin`.** The `Origin` is not one the API trusts. `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL`
   in `.env`) are the trusted origins. A browser request from `http://api.chinook.localhost` gets this unless
   `BETTER_AUTH_URL` is that address (older copies of `.env` have `http://localhost:3000`). See the README for
   configuring a frontend.
