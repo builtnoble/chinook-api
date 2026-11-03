@@ -46,7 +46,7 @@ app.get(
         documentation: {
             info: {
                 title: 'Chinook',
-                version: '1.0.0',
+                version: '1.1.0',
                 description: 'An API for Chinook sample database.',
             },
             tags: [
