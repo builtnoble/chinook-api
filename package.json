@@ -12,6 +12,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "2.2.2",
-        "@types/bun": "1.2.23"
+        "@types/bun": "1.2.23",
+        "type-fest": "5.10.0"
     }
 }

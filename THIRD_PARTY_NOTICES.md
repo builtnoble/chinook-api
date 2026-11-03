@@ -40,8 +40,8 @@ package has a license that is not permissive or cannot be identified. See `docs-
 This repository does not contain its npm dependencies; they are installed from the lockfile (`bun.lock`).
 Their licenses were checked when these notices were written:
 
--   **`api/`**: all 63 production packages are under permissive licenses (MIT, Apache-2.0, ISC, BSD-2-Clause,
-    BSD-3-Clause, 0BSD, or MIT OR CC0-1.0). Four packages from the Better Auth family omit the `license` field in
+-   **`api/`**: all 62 production packages are under permissive licenses (MIT, Apache-2.0, ISC, BSD-2-Clause,
+    BSD-3-Clause or 0BSD). Four packages from the Better Auth family omit the `license` field in
     their package.json: `@better-auth/core`, `@better-auth/telemetry` and `@better-fetch/fetch` ship an MIT license
     file, and `better-call` ships none but is MIT-licensed in [its repository](https://github.com/Bekacru/better-call).
 -   **`docs-site/`**: all 98 production packages (`unified`, `remark-parse`, `remark-gfm`, `@sindresorhus/slugify`,
@@ -49,8 +49,8 @@ Their licenses were checked when these notices were written:
     write the request examples) are under permissive licenses (MIT, BSD-2-Clause, BSD-3-Clause, ISC, or
     MIT OR CC0-1.0). Its 65 further development packages (the MDX compiler, the OpenAPI types and their dependencies)
     are MIT, ISC or BSD-3-Clause.
--   **The repository root**: its 13 development packages (Biome, the Bun types and their dependencies) are MIT or
-    MIT OR Apache-2.0.
+-   **The repository root**: its 15 development packages (Biome, the Bun types, `type-fest` and their dependencies) are
+    MIT, MIT OR Apache-2.0 or MIT OR CC0-1.0.
 -   **The docs theme's build** (in the private repository) uses some tools under other licenses: `lightningcss`
     (MPL-2.0), `sharp`'s libvips (LGPL-3.0) and `caniuse-lite` (CC-BY-4.0). They run during the build and are not in the
     published image.
