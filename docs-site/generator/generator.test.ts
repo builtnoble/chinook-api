@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { afterEach, describe, expect, it } from 'bun:test';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { compile } from '@mdx-js/mdx';
 import slugify from '@sindresorhus/slugify';
 import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
-import { generate, loadPages } from './index';
+import { generate, loadPages, writeChanged } from './index';
 import { dereference, UnsupportedError } from './schema';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
@@ -593,5 +595,40 @@ describe('write operations', () => {
         });
 
         expect(() => generate(spec)).toThrow('POST /things: only a JSON request body is supported');
+    });
+});
+
+describe('writeChanged', () => {
+    const folders: string[] = [];
+    const folder = () => {
+        const path = mkdtempSync(join(tmpdir(), 'pages-'));
+        folders.push(path);
+
+        return path;
+    };
+
+    afterEach(() => {
+        for (const path of folders.splice(0)) rmSync(path, { recursive: true, force: true });
+    });
+
+    it('writes new files, creating their folders', async () => {
+        const out = folder();
+
+        expect(await writeChanged(out, { 'a.mdx': 'one', 'src/app/b/page.mdx': 'two' })).toEqual([
+            'a.mdx',
+            'src/app/b/page.mdx',
+        ]);
+        expect(await Bun.file(join(out, 'src/app/b/page.mdx')).text()).toBe('two');
+    });
+
+    it('leaves a file whose contents match alone, and writes the one that changed', async () => {
+        const out = folder();
+        await writeChanged(out, { 'a.mdx': 'one', 'b.mdx': 'two' });
+        const before = Bun.file(join(out, 'a.mdx')).lastModified;
+        await Bun.sleep(20);
+
+        expect(await writeChanged(out, { 'a.mdx': 'one', 'b.mdx': 'changed' })).toEqual(['b.mdx']);
+        expect(Bun.file(join(out, 'a.mdx')).lastModified).toBe(before);
+        expect(await Bun.file(join(out, 'b.mdx')).text()).toBe('changed');
     });
 });

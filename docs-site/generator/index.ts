@@ -1,4 +1,3 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import slugify from '@sindresorhus/slugify';
@@ -69,12 +68,10 @@ export const writeChanged = async (out: string, files: Record<string, string>): 
     const written: string[] = [];
 
     for (const [path, contents] of Object.entries(files)) {
-        const target = join(out, path);
-        const current = await readFile(target, 'utf8').catch(() => undefined);
-        if (current === contents) continue;
+        const target = Bun.file(join(out, path));
+        if ((await target.text().catch(() => undefined)) === contents) continue;
 
-        await mkdir(dirname(target), { recursive: true });
-        await writeFile(target, contents);
+        await Bun.write(target, contents);
         written.push(path);
     }
 

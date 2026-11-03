@@ -2,20 +2,19 @@
 // compiles each as MDX, so a change to the API or to docs/ that the site could
 // not build fails in CI without needing the private theme.
 // Usage: bun generator/check.ts <openapi.json>
-import { readFile } from 'node:fs/promises';
 import { compile } from '@mdx-js/mdx';
 import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
 import { dereference } from './schema';
 
-const specPath = process.argv[2];
+const specPath = Bun.argv[2];
 if (!specPath) {
     console.error('Usage: bun generator/check.ts <openapi.json>');
     process.exit(2);
 }
 
 try {
-    const spec = JSON.parse(await readFile(specPath, 'utf8')) as OpenAPIObject;
+    const spec = (await Bun.file(specPath).json()) as OpenAPIObject;
     const files = generate(
         await dereference(spec),
         await loadPages(new URL('../content/pages.json', import.meta.url).pathname),
