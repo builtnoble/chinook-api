@@ -21,7 +21,7 @@ WORKDIR /repo
 COPY package.json bun.lock bunfig.toml ./
 COPY api/package.json api/
 COPY docs-site/package.json docs-site/
-RUN bun install --frozen-lockfile --filter bun-chinook-api
+RUN bun install --frozen-lockfile --filter @chinook-api/api
 COPY api/ api/
 WORKDIR /repo/api
 RUN bun run openapi:export /out/openapi.json

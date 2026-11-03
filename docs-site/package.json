@@ -1,5 +1,5 @@
 {
-    "name": "chinook-docs-site",
+    "name": "@chinook-api/docs-site",
     "license": "MIT",
     "private": true,
     "type": "module",

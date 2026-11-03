@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json bun.lock bunfig.toml ./
 COPY api/package.json api/
 COPY docs-site/package.json docs-site/
-RUN bun install --frozen-lockfile --production --filter bun-chinook-api --verbose
+RUN bun install --frozen-lockfile --production --filter @chinook-api/api --verbose
 
 COPY api api
 WORKDIR /app/api
