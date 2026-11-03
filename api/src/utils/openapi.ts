@@ -2,7 +2,7 @@ import { type DescribeRouteOptions, resolver } from 'hono-openapi';
 import z, { type ZodType } from 'zod';
 import { PROBLEM_CONTENT_TYPE, type ProblemDetails, type ProblemOptions, problem } from '@/lib/problem-details';
 import { problemDetailsSchema, validationProblemSchema } from '@/lib/problem-details/zod';
-import { paginationSchema } from '@/utils/schema/responseSchema';
+import { paginationSchema } from '@/utils/schema/requestSchema';
 
 type RouteDescription = {
     operationId: string;
