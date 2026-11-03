@@ -1199,6 +1199,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -1740,6 +1741,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -2152,6 +2154,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -3204,6 +3207,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -3698,6 +3702,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -4069,6 +4074,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -5121,6 +5127,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -5615,6 +5622,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -5936,6 +5944,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -5964,6 +5973,7 @@
                                 "properties": {
                                     "track_id": {
                                         "description": "Identifier of the track to add, which must exist.",
+                                        "examples": [1],
                                         "type": "integer",
                                         "minimum": -2147483648,
                                         "maximum": 2147483647
@@ -6434,6 +6444,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -6758,6 +6769,7 @@
                         "in": "path",
                         "name": "id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,
@@ -6767,6 +6779,7 @@
                         "in": "path",
                         "name": "track_id",
                         "schema": {
+                            "examples": [1],
                             "type": "number"
                         },
                         "required": true,

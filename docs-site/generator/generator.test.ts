@@ -244,7 +244,7 @@ describe('schemas', () => {
         );
         const page = generate(spec)['src/app/things/page.mdx'];
 
-        expect(page).toContain('"id": 1');
+        expect(page).toContain('"id": 0');
         expect(page).toContain('"extra": "string"');
     });
 
@@ -456,7 +456,7 @@ describe('write operations', () => {
             },
         });
 
-        expect(sectionOf(thingsPage(spec), 'Create a thing')).toMatch(/"name":\s*"AC\/DC",\s*"track_id":\s*1/);
+        expect(sectionOf(thingsPage(spec), 'Create a thing')).toMatch(/"name":\s*"AC\/DC",\s*"track_id":\s*0/);
     });
 
     it('escapes a quote in the body for the shell and for JavaScript', () => {

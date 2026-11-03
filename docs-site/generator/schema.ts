@@ -1,4 +1,6 @@
+import { sample as sampleSchema } from 'openapi-sampler';
 import type { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
+import type { JsonValue } from 'type-fest';
 
 export class UnsupportedError extends Error {}
 
@@ -9,15 +11,16 @@ type Kind = 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | '
 export type Property = { name: string; node: Node; required: boolean };
 
 // A schema with `$ref`, `allOf` and nullable `anyOf` already resolved, so
-// rendering never meets them.
+// rendering never meets them. `schema` is the source it was read from, which
+// the sampler reads for an example.
 export type Node = {
     kind: Kind;
     nullable: boolean;
+    schema: SchemaObject | ReferenceObject;
     description?: string;
     format?: string;
     const?: unknown;
     enum?: unknown[];
-    example?: { value: unknown };
     properties?: Property[];
     items?: Node;
     variants?: Node[];
@@ -57,17 +60,13 @@ export const normalize = (
         }
     }
 
-    const example = schema.examples?.length
-        ? { value: schema.examples[0] }
-        : 'example' in schema
-          ? { value: schema.example }
-          : undefined;
-    const common = { description: schema.description, ...(example ? { example } : {}) };
+    const common = { description: schema.description };
 
     if (schema.allOf) {
         return mergeAll(
             schema.allOf.map((part, index) => normalize(spec, part, `${where}.allOf[${index}]`, stack)),
             where,
+            schema,
             common,
         );
     }
@@ -88,11 +87,11 @@ export const normalize = (
             };
         }
 
-        return { kind: 'union', nullable, variants: present, ...stripUndefined(common) };
+        return { kind: 'union', nullable, schema, variants: present, ...stripUndefined(common) };
     }
 
     if (schema.type === 'null') {
-        return { kind: 'null', nullable: true };
+        return { kind: 'null', nullable: true, schema };
     }
 
     const types = (Array.isArray(schema.type) ? schema.type : schema.type ? [schema.type] : []).filter(
@@ -104,6 +103,7 @@ export const normalize = (
         return {
             kind: 'union',
             nullable,
+            schema,
             variants: types.map((type) => normalize(spec, { ...schema, type }, where, stack)),
             ...stripUndefined(common),
         };
@@ -117,6 +117,7 @@ export const normalize = (
     const node: Node = {
         kind: (type as Kind | undefined) ?? 'any',
         nullable,
+        schema,
         ...stripUndefined({ ...common, format: schema.format }),
     };
     if ('const' in schema) node.const = schema.const;
@@ -134,7 +135,7 @@ export const normalize = (
     if (node.kind === 'array') {
         node.items = schema.items
             ? normalize(spec, schema.items, `${where}[]`, stack)
-            : { kind: 'any', nullable: false };
+            : { kind: 'any', nullable: false, schema: {} };
     }
 
     return node;
@@ -143,7 +144,7 @@ export const normalize = (
 const stripUndefined = <T extends object>(value: T): Partial<T> =>
     Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
 
-const mergeAll = (parts: Node[], where: string, common: Partial<Node>): Node => {
+const mergeAll = (parts: Node[], where: string, schema: Node['schema'], common: Partial<Node>): Node => {
     if (parts.some((part) => part.kind !== 'object')) {
         throw new UnsupportedError(`${where}: allOf is only supported for objects`);
     }
@@ -155,7 +156,13 @@ const mergeAll = (parts: Node[], where: string, common: Partial<Node>): Node => 
         }
     }
 
-    return { kind: 'object', nullable: false, properties: [...properties.values()], ...stripUndefined(common) };
+    return {
+        kind: 'object',
+        nullable: false,
+        schema,
+        properties: [...properties.values()],
+        ...stripUndefined(common),
+    };
 };
 
 // The `data` of a `{ data }` envelope, or the node itself.
@@ -189,30 +196,10 @@ const baseLabel = (node: Node): string => {
     }
 };
 
-// A deterministic example value, used when the spec carries none.
-export const sample = (node: Node): unknown => {
-    if (node.example) return node.example.value;
-    if (node.const !== undefined) return node.const;
-    if (node.enum) return node.enum[0];
-
-    switch (node.kind) {
-        case 'object':
-            return Object.fromEntries((node.properties ?? []).map(({ name, node }) => [name, sample(node)]));
-        case 'array':
-            return node.items ? [sample(node.items)] : [];
-        case 'union':
-            return node.variants?.[0] ? sample(node.variants[0]) : null;
-        case 'string':
-            return 'string';
-        case 'number':
-        case 'integer':
-            return 1;
-        case 'boolean':
-            return true;
-        default:
-            return null;
-    }
-};
+// An example value for the node, from its schema's own examples where it has
+// them.
+export const sample = (spec: OpenAPIObject, node: Node) =>
+    sampleSchema(node.schema as Parameters<typeof sampleSchema>[0], {}, spec) as JsonValue;
 
 type RowOptions = {
     // Property names whose children are left out because they are documented

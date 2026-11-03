@@ -8,6 +8,7 @@ import type {
     ReferenceObject,
     SchemaObject,
 } from 'openapi3-ts/oas31';
+import type { JsonObject, JsonValue } from 'type-fest';
 import { escapeMarkdown } from './markdown';
 import {
     isReference,
@@ -151,19 +152,22 @@ const sameProperties = (a: Node, b: Node) => {
     return a.kind === 'object' && b.kind === 'object' && names(a).join() === names(b).join();
 };
 
-const exampleValue = (node: Node) => JSON.stringify(sample(node), null, 2);
+const exampleValue = (spec: OpenAPIObject, node: Node) => JSON.stringify(sample(spec, node), null, 2);
+
+const isObject = (value: JsonValue | undefined): value is JsonObject =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
 
 // A body example in the model's own words ("AC/DC", not "string"), falling back
 // to a synthesized value for a field the model does not have, such as the id of
 // a playlist track.
-const bodyExample = (body: Node, model: Node | undefined): unknown => {
-    const known = model ? sample(model) : undefined;
-    const values = known && typeof known === 'object' ? (known as Record<string, unknown>) : {};
+const bodyExample = (spec: OpenAPIObject, body: Node, model: Node | undefined): JsonValue => {
+    const known = model ? sample(spec, model) : undefined;
+    const values = isObject(known) ? known : {};
 
-    if (body.kind !== 'object') return sample(body);
+    if (body.kind !== 'object') return sample(spec, body);
 
     return Object.fromEntries(
-        (body.properties ?? []).map(({ name, node }) => [name, name in values ? values[name] : sample(node)]),
+        (body.properties ?? []).map(({ name, node }) => [name, name in values ? values[name] : sample(spec, node)]),
     );
 };
 
@@ -187,16 +191,16 @@ const requestExamples = (
     );
     const concrete = path.replace(/\{(\w+)\}/g, (_, name: string) => {
         const parameter = parameters.find((candidate) => candidate.name === name);
-        return String(sample(normalize(spec, parameter?.schema ?? {}, `${where}.${name}`)));
+        return String(sample(spec, normalize(spec, parameter?.schema ?? {}, `${where}.${name}`)));
     });
     const required = parameters.filter((parameter) => parameter.in === 'query' && parameter.required);
     const query = required.length
-        ? `?${required.map((parameter) => `${parameter.name}=${sample(normalize(spec, parameter.schema ?? {}, where))}`).join('&')}`
+        ? `?${required.map((parameter) => `${parameter.name}=${sample(spec, normalize(spec, parameter.schema ?? {}, where))}`).join('&')}`
         : '';
     const url = `${baseUrl}${concrete}${query}`;
     const secured = (operation.security?.length ?? 0) > 0;
     const requestBody = requestNode(spec, operation, where);
-    const body = requestBody && bodyExample(requestBody, model);
+    const body = requestBody && bodyExample(spec, requestBody, model);
 
     // HAR types ask for a body even on a GET, so the object is cast once.
     const snippet = new HTTPSnippet({
@@ -240,7 +244,7 @@ const responseExamples = (spec: OpenAPIObject, { method, path, operation }: Endp
         const variants = node.kind === 'union' && node.variants ? node.variants : [node];
         for (const variant of variants) {
             const title = status.startsWith('2') ? 'Response' : `Error response (${status})`;
-            blocks.push(fence('json', title, exampleValue(variant)));
+            blocks.push(fence('json', title, exampleValue(spec, variant)));
         }
     }
 
