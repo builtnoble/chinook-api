@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { compile } from '@mdx-js/mdx';
+import slugify from '@sindresorhus/slugify';
 import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
 import { escapeMdx } from './render';
@@ -178,6 +179,23 @@ describe('the playlist membership routes in the fixture', () => {
 
         expect(remove).toContain('/api/playlists/1/tracks/1');
         expect(remove).toContain('"detail": "The playlist does not contain that track."');
+    });
+});
+
+describe('links within a page', () => {
+    it('point at a heading that exists, under the id the theme gives it', () => {
+        const pages = Object.entries(generate(fixture)).filter(([path]) => path.endsWith('page.mdx'));
+
+        expect(pages.length).toBeGreaterThan(0);
+        for (const [path, page] of pages) {
+            // The theme gives an h2 the id that slugify makes of its text, without
+            // the annotation after it.
+            const ids = new Set([...page.matchAll(/^## (.+?)(?: \{\{.*\}\})?$/gm)].map((match) => slugify(match[1])));
+
+            for (const [, target] of page.matchAll(/\]\(#([^)]+)\)/g)) {
+                expect([path, target, ids.has(target)]).toEqual([path, target, true]);
+            }
+        }
     });
 });
 

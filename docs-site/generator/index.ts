@@ -1,9 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import slugify from '@sindresorhus/slugify';
 import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { markdownToMdx } from './markdown';
-import { endpointsByTag, renderTagPage, slugify } from './render';
+import { endpointsByTag, renderTagPage } from './render';
 
 export type Guide = {
     title: string;

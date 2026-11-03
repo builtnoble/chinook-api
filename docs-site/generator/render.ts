@@ -1,3 +1,4 @@
+import slugify from '@sindresorhus/slugify';
 import type {
     MediaTypeObject,
     OpenAPIObject,
@@ -32,15 +33,13 @@ const inline = <T extends object>(value: T | ReferenceObject, where: string): T 
     return value;
 };
 
-export const slugify = (text: string) =>
-    text
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
-
 // "Media Types" -> "media type". Tag names are plural nouns, so dropping the
 // final "s" is enough.
 const singular = (tag: string) => tag.toLowerCase().replace(/s$/, '');
+
+// The heading of a tag's model section, which its operations link to. The theme
+// gives a heading the id that `slugify` makes of its text.
+const modelHeading = (tag: string) => `The ${singular(tag)} model`;
 
 // Descriptions come from the API's source and land inside MDX, where `{`, `}`
 // and `<` start expressions and tags. Backslash-escape them outside code spans,
@@ -322,14 +321,14 @@ const section = (
         // Link to the model only when `data` is the model. A response of
         // another shape, such as a playlist entry, lists its own attributes.
         if (model && row && sameProperties(row, model)) {
-            const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`;
+            const note = `${isList ? `The ${tag.toLowerCase()} on this page` : `The ${singular(tag)}`}. See [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`;
 
             left.push('### Response attributes', propertyRows(rows(ok, { collapse: new Map([['data', note]]) })));
         } else {
             left.push('### Response attributes', propertyRows(rows(ok)));
         }
     } else if (model) {
-        left.push(`Returns [the ${singular(tag)} model](#the-${slugify(singular(tag))}-model).`);
+        left.push(`Returns [the ${singular(tag)} model](#${slugify(modelHeading(tag))}).`);
     }
 
     const errors = Object.entries(operation.responses ?? {})
@@ -423,7 +422,7 @@ export const renderTagPage = (spec: OpenAPIObject, tag: string, endpoints: Endpo
 
     if (model) {
         parts.push(
-            `## The ${name} model`,
+            `## ${modelHeading(tag)}`,
             `The ${name} model contains the following properties.`,
             '### Properties',
             propertyRows(rows(model)),
