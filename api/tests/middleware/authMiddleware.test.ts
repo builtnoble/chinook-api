@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
 import { Hono } from 'hono';
+import { auth } from '@/auth';
 import errorHandler from '@/handlers/errorHandler';
 import authMiddleware from '@/middleware/authMiddleware';
-import { auth } from '@/utils/auth';
 import { problemBody } from '../support/problem';
 
 const spies: { mockRestore: () => void }[] = [];

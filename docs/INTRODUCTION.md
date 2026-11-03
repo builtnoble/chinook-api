@@ -109,7 +109,7 @@ and that must not reach the client.
 **Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
 `CORS_ORIGINS`. `getAllowedOrigins()` (`api/src/utils/envHelper.ts`) parses that variable from the process
 environment on every call, and two things consume it: the CORS middleware in `api/src/index.ts`, and Better
-Auth's `trustedOrigins` in `api/src/utils/auth.ts`. Better Auth also always trusts its own base URL
+Auth's `trustedOrigins` in `api/src/auth/index.ts`. Better Auth also always trusts its own base URL
 (`BETTER_AUTH_URL`). An origin missing from both lists gets no CORS headers, and cookie-carrying requests
 to `/api/auth/*` from it get a `403` with the code `invalid_origin`. The environment is read through `process.env` and not
 Hono's `c.env`: under Bun, `c.env` is the server object, whereas on Cloudflare Workers it holds the

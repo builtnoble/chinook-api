@@ -212,7 +212,7 @@ email, so you can sign in with it straight away (see [docs/guides/INSOMNIA.md](d
 again for an email that already has an account fails with `User already exists`.
 
 The API does not need to be running. The script runs the [Better Auth CLI](https://www.better-auth.com/docs/concepts/cli)
-(`auth create-admin`) from the repository root with `--cwd api`, which is how the CLI finds `api/src/utils/auth.ts` and
+(`auth create-admin`) from the repository root with `--cwd api`, which is how the CLI finds `api/src/auth/index.ts` and
 the `@/` import alias; it reads the database from the `.env` in the repository root. Other `create-admin` options, such
 as `--role` and `--no-email-verified`, can be added to the command. The CLI version is pinned in the script, because
 `create-admin` only exists from version 1.7; change it there to upgrade.

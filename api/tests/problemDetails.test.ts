@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
+import { auth } from '@/auth';
 import app from '@/index';
 import { statusTitle } from '@/lib/problem-details';
 import { maxBodyBytes } from '@/middleware/bodyLimitMiddleware';
-import { auth } from '@/utils/auth';
 
 // Every way a request can fail, sent through the whole app, so a new error that
 // skips the problem format shows up here.

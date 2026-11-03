@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import type { auth } from '@/auth';
 import { problem } from '@/lib/problem-details';
-import type { auth } from '@/utils/auth';
 
 // Reads stay open to any signed-in user, so only methods that change data need
 // the admin role.

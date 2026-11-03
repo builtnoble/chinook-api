@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { auth } from '@/auth';
 import { problem } from '@/lib/problem-details';
-import { auth } from '@/utils/auth';
 
 const authMiddleware = createMiddleware<{
     Variables: {

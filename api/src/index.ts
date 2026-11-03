@@ -2,9 +2,9 @@ import { type Context, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import api from '@/api';
+import { auth } from '@/auth';
 import errorHandler from '@/handlers/errorHandler';
 import { problemNotFound } from '@/lib/problem-details';
-import { auth } from '@/utils/auth';
 import { problemFromAuthResponse } from '@/utils/authProblem';
 import { getAllowedOrigins } from '@/utils/envHelper';
 

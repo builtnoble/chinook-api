@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
 import api from '@/api';
-import { auth } from '@/utils/auth';
+import { auth } from '@/auth';
 import { problemBody } from './support/problem';
 
 const spies: { mockRestore: () => void }[] = [];
