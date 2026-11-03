@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
-import requireAdmin from '@/middleware/requireAdmin';
+import requireAdminMiddleware from '@/middleware/requireAdminMiddleware';
 
 const appFor = (user: { role?: string | null } | null) => {
     const app = new Hono();
@@ -9,7 +9,7 @@ const appFor = (user: { role?: string | null } | null) => {
         c.set('user' as never, user as never);
         await next();
     });
-    app.use(requireAdmin);
+    app.use(requireAdminMiddleware);
     app.all('/', (c) => c.json({ ok: true }));
 
     return app;
@@ -17,7 +17,7 @@ const appFor = (user: { role?: string | null } | null) => {
 
 const write = (app: Hono, method: string) => app.request('/', { method });
 
-describe('requireAdmin', () => {
+describe('requireAdminMiddleware', () => {
     it.each(['GET', 'HEAD'])('lets a non-admin %s through', async (method) => {
         const res = await write(appFor({ role: 'user' }), method);
 

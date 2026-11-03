@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
-import originGuard from '@/middleware/originGuard';
+import originGuardMiddleware from '@/middleware/originGuardMiddleware';
 
 const originalOrigins = process.env.CORS_ORIGINS;
 const originalBaseUrl = process.env.BETTER_AUTH_URL;
@@ -23,13 +23,13 @@ afterEach(() => {
     restore('BETTER_AUTH_URL', originalBaseUrl);
 });
 
-const app = new Hono().use(originGuard).all('/', (c) => c.json({ ok: true }));
+const app = new Hono().use(originGuardMiddleware).all('/', (c) => c.json({ ok: true }));
 
 const send = (method: string, headers: Record<string, string> = {}) => app.request('/', { method, headers });
 
 const cookie = { Cookie: 'better-auth.session_token=abc' };
 
-describe('originGuard', () => {
+describe('originGuardMiddleware', () => {
     it.each(['POST', 'PATCH', 'DELETE'])('rejects a cookie %s from an origin that is not listed', async (method) => {
         const res = await send(method, { ...cookie, Origin: 'http://evil.test' });
 

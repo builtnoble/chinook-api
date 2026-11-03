@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import errorHandler from '@/middleware/errorHandler';
+import errorHandler from '@/handlers/errorHandler';
 
 // Mounts a route module the way the app does, with its error handler, but
 // without authentication, so a test can send a request straight to the route.

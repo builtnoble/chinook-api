@@ -10,7 +10,7 @@ const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
 // csrf() only looks at form content types, so it would let JSON writes through.
 // A bearer token has to be set by the caller's own code, so those requests skip
 // the guard.
-const originGuard = createMiddleware(async (c: Context, next) => {
+const originGuardMiddleware = createMiddleware(async (c: Context, next) => {
     const usesCookie = c.req.header('Cookie') && !c.req.header('Authorization')?.startsWith('Bearer ');
 
     if (safeMethods.includes(c.req.method) || !usesCookie) {
@@ -26,4 +26,4 @@ const originGuard = createMiddleware(async (c: Context, next) => {
     await next();
 });
 
-export default originGuard;
+export default originGuardMiddleware;

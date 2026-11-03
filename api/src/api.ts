@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import authMiddleware from '@/middleware/authMiddleware';
-import bodyLimitMiddleware from '@/middleware/bodyLimit';
-import originGuard from '@/middleware/originGuard';
-import requireAdmin from '@/middleware/requireAdmin';
+import bodyLimitMiddleware from '@/middleware/bodyLimitMiddleware';
+import originGuardMiddleware from '@/middleware/originGuardMiddleware';
+import requireAdminMiddleware from '@/middleware/requireAdminMiddleware';
 import snakeCaseKeysMiddleware from '@/middleware/snakeCaseKeysMiddleware';
 import albumRoutes from '@/routes/albums';
 import artistRoutes from '@/routes/artists';
@@ -15,9 +15,9 @@ const api = new Hono().basePath('/api');
 
 api.use(snakeCaseKeysMiddleware);
 api.use(bodyLimitMiddleware);
-api.use(originGuard);
+api.use(originGuardMiddleware);
 api.use(authMiddleware);
-api.use(requireAdmin);
+api.use(requireAdminMiddleware);
 
 api.route('/albums', albumRoutes);
 api.route('/artists', artistRoutes);

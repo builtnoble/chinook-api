@@ -7,7 +7,7 @@ import type { auth } from '@/utils/auth';
 const readMethods = ['GET', 'HEAD'];
 
 // Runs after authMiddleware, which has already rejected a missing session.
-const requireAdmin = createMiddleware<{
+const requireAdminMiddleware = createMiddleware<{
     Variables: { user: typeof auth.$Infer.Session.user | null };
 }>(async (c: Context, next) => {
     if (readMethods.includes(c.req.method)) {
@@ -21,4 +21,4 @@ const requireAdmin = createMiddleware<{
     await next();
 });
 
-export default requireAdmin;
+export default requireAdminMiddleware;

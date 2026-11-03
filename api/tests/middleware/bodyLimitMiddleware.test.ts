@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
-import bodyLimitMiddleware, { maxBodyBytes } from '@/middleware/bodyLimit';
+import bodyLimitMiddleware, { maxBodyBytes } from '@/middleware/bodyLimitMiddleware';
 
 const app = new Hono().use(bodyLimitMiddleware).post('/', async (c) => c.json({ length: (await c.req.text()).length }));
 
