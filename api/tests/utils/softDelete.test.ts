@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { type AnyPgColumn, PgDialect } from 'drizzle-orm/pg-core';
 import db, { type Transaction } from '@/db';
 import { artists, media_types, tracks } from '@/db/chinookSchema';
-import { httpError } from '@/utils/httpError';
+import { problem } from '@/lib/problem-details';
 import { columnsWithoutDeletedAt, notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
 import { stubDb } from '../support/stubDb';
 
@@ -52,7 +52,11 @@ describe('requireLiveParent', () => {
             .transaction((tx: Transaction) => requireLiveParent(tx, artists, 7, 'artist_id', 'artist'))
             .catch((caught) => caught);
 
-        expect(error).toEqual(httpError(422, 'artist_id does not refer to an existing artist.'));
         expect(error.status).toBe(422);
+        expect(error.toProblemDetails()).toEqual(
+            problem(422, 'artist_id does not refer to an existing artist.', {
+                code: 'invalid_reference',
+            }).toProblemDetails(),
+        );
     });
 });

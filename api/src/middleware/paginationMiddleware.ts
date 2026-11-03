@@ -5,6 +5,7 @@ import { createMiddleware } from 'hono/factory';
 import type { Bindings } from 'hono/types';
 import type { ZodType, z } from 'zod';
 import db from '@/db';
+import { problem } from '@/lib/problem-details';
 import { getPageUrls } from '@/utils/helpers';
 import type { querySchema } from '@/utils/schema/requestSchema';
 
@@ -53,11 +54,11 @@ const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
             const totalPages = Math.ceil(totalItems / perPage);
 
             if (currentPage > totalPages) {
-                return c.json({ error: `Page cannot exceed ${totalPages}.` }, 400);
+                throw problem(400, `Page cannot exceed ${totalPages}.`, { code: 'page_out_of_range' });
             }
 
             if (perPage > totalItems) {
-                return c.json({ error: `Limit cannot exceed ${totalItems}.` }, 400);
+                throw problem(400, `Limit cannot exceed ${totalItems}.`, { code: 'limit_out_of_range' });
             }
 
             const { prevPageUrl, nextPageUrl } = getPageUrls(c.req.path, currentPage, totalPages);

@@ -1,16 +1,8 @@
 import { type DescribeRouteOptions, resolver } from 'hono-openapi';
 import z, { type ZodType } from 'zod';
-import {
-    conflictSchema,
-    forbiddenSchema,
-    malformedJsonSchema,
-    notFoundSchema,
-    paginationErrorSchema,
-    paginationSchema,
-    unauthorizedSchema,
-    unprocessableSchema,
-    validationErrorSchema,
-} from '@/utils/schema/responseSchema';
+import { PROBLEM_CONTENT_TYPE, type ProblemDetails, type ProblemOptions, problem } from '@/lib/problem-details';
+import { problemDetailsSchema, validationProblemSchema } from '@/lib/problem-details/zod';
+import { paginationSchema } from '@/utils/schema/responseSchema';
 
 type RouteDescription = {
     operationId: string;
@@ -32,11 +24,48 @@ const jsonResponse = (description: string, schema: ZodType) => ({
 // The sample row attached to a model schema with `.meta({ examples })`.
 const sampleOf = (schema: ZodType) => (schema.meta()?.examples as unknown[] | undefined)?.[0];
 
-const unauthorized = jsonResponse('Missing or invalid credentials.', unauthorizedSchema);
+// One occurrence of a problem, as the document the API sends for it.
+const example = (status: Parameters<typeof problem>[0], detail: string, options?: ProblemOptions): ProblemDetails =>
+    problem(status, detail, options).toProblemDetails();
 
-const forbidden = jsonResponse(
+// An error response: a problem document, shown with these occurrences.
+const problemResponse = (description: string, ...examples: ProblemDetails[]) => ({
+    description,
+    content: { [PROBLEM_CONTENT_TYPE]: { schema: resolver(problemDetailsSchema.meta({ examples })) } },
+});
+
+// A request that fails validation, or fails in another way that is also a 400.
+const badRequest = (description: string, invalid: ProblemDetails, ...others: ProblemDetails[]) => ({
+    description,
+    content: {
+        [PROBLEM_CONTENT_TYPE]: {
+            schema: resolver(
+                z.union([
+                    validationProblemSchema.meta({ examples: [invalid] }),
+                    ...(others.length ? [problemDetailsSchema.meta({ examples: others })] : []),
+                ]),
+            ),
+        },
+    },
+});
+
+const validationProblem = (field: string, location: 'body' | 'path' | 'query', message: string) =>
+    example(400, 'The request is not valid.', {
+        code: 'validation_failed',
+        errors: [{ field, in: location, message, code: 'invalid_type' }],
+    });
+
+const invalidId = validationProblem('/id', 'path', 'Invalid input: expected number, received NaN');
+
+const unauthorized = problemResponse(
+    'Missing or invalid credentials.',
+    example(401, 'Missing or invalid credentials.'),
+);
+
+const forbidden = problemResponse(
     'The caller is signed in but is not an admin, or the request is a cookie write from an origin that is not allowed.',
-    forbiddenSchema,
+    example(403, 'This action requires the admin role.'),
+    example(403, 'The request comes from an origin that is not allowed.', { code: 'origin_not_allowed' }),
 );
 
 // "Media Types" -> "Media type not found.", the message the routes return, so
@@ -48,10 +77,7 @@ const notFoundMessage = (tag: string) => {
 };
 
 const notFound = (tag: string, message = notFoundMessage(tag)) =>
-    jsonResponse(
-        'No item has the requested id, or it has been deleted.',
-        notFoundSchema.meta({ examples: [{ error: message }] }),
-    );
+    problemResponse('No item has the requested id, or it has been deleted.', example(404, message));
 
 export const describeList = ({
     operationId,
@@ -85,9 +111,11 @@ export const describeList = ({
                 ],
             }),
         ),
-        400: jsonResponse(
+        400: badRequest(
             'The query is invalid, or the requested page or limit is out of range.',
-            z.union([validationErrorSchema, paginationErrorSchema]),
+            validationProblem('/page', 'query', 'Invalid input: expected number, received NaN'),
+            example(400, 'Page cannot exceed 35.', { code: 'page_out_of_range' }),
+            example(400, 'Limit cannot exceed 347.', { code: 'limit_out_of_range' }),
         ),
         401: unauthorized,
     },
@@ -110,7 +138,7 @@ export const describeByID = ({
             'The requested item.',
             z.object({ data: schema }).meta({ examples: [{ data: sampleOf(schema) }] }),
         ),
-        400: jsonResponse('The id is not a number.', validationErrorSchema),
+        400: badRequest('The id is not a number.', invalidId),
         401: unauthorized,
         404: notFound(tag),
     },
@@ -130,31 +158,24 @@ const requestBody = (body: ZodType) =>
         content: { 'application/json': { schema: resolver(body) } },
     }) as DescribeRouteOptions['requestBody'];
 
-// The shared validation error shows a bad path parameter, so a body error gets
-// its own example.
-const invalidBodySchema = validationErrorSchema.meta({
-    examples: [
-        {
-            success: false,
-            data: { name: 42 },
-            error: [
-                { code: 'invalid_type', message: 'Invalid input: expected string, received number', path: ['name'] },
-            ],
-        },
-    ],
-});
-
-const invalidBody = jsonResponse(
+const invalidBody = badRequest(
     'The body is not valid JSON, or a field is missing, unknown or of the wrong type.',
-    z.union([invalidBodySchema, malformedJsonSchema]),
+    validationProblem('/name', 'body', 'Invalid input: expected string, received number'),
+    example(400, 'Malformed JSON in request body'),
 );
 
-const unprocessable = jsonResponse(
+const unprocessable = problemResponse(
     'A field refers to a parent that does not exist or is deleted, or a value is too long.',
-    unprocessableSchema,
+    example(422, 'The row refers to a parent that does not exist.', { code: 'invalid_reference' }),
+    example(422, 'A value is too long for its column.', { code: 'value_too_long' }),
 );
 
-const conflict = (description: string) => jsonResponse(description, conflictSchema);
+const conflict = (description: string, ...examples: ProblemDetails[]) => problemResponse(description, ...examples);
+
+const duplicate = conflict(
+    'A unique value collides with an existing row.',
+    example(409, 'A row with that value already exists.', { code: 'duplicate_value' }),
+);
 
 // Writes need the admin role, so every one documents the 403 beside the 401. A
 // create under another item, such as a track in a playlist, sets `parent` to
@@ -183,7 +204,7 @@ export const describeCreate = ({
         401: unauthorized,
         403: forbidden,
         ...(parent ? { 404: notFound(tag) } : {}),
-        409: conflict('A unique value collides with an existing row.'),
+        409: duplicate,
         422: unprocessable,
     },
 });
@@ -211,7 +232,7 @@ export const describeUpdate = ({
         401: unauthorized,
         403: forbidden,
         404: notFound(tag),
-        409: conflict('A unique value collides with an existing row.'),
+        409: duplicate,
         422: unprocessable,
     },
 });
@@ -225,9 +246,13 @@ export const describeDelete = ({
     description,
     schema,
     blockedBy,
+    blockedExample,
     notFoundError,
 }: RouteDescription & {
     blockedBy?: string;
+    // The 409 message, such as "The genre is used by 3 tracks. Reassign them
+    // first.".
+    blockedExample?: string;
     // The 404 message, when it is not "<Resource> not found.".
     notFoundError?: string;
 }): DescribeRouteOptions => ({
@@ -241,10 +266,17 @@ export const describeDelete = ({
             'The deleted item.',
             z.object({ data: schema }).meta({ examples: [{ data: sampleOf(schema) }] }),
         ),
-        400: jsonResponse('The id is not a number, or a query parameter is invalid.', validationErrorSchema),
+        400: badRequest('The id is not a number, or a query parameter is invalid.', invalidId),
         401: unauthorized,
         403: forbidden,
         404: notFound(tag, notFoundError),
-        ...(blockedBy ? { 409: conflict(blockedBy) } : {}),
+        ...(blockedBy
+            ? {
+                  409: conflict(
+                      blockedBy,
+                      example(409, blockedExample ?? 'The item is still in use.', { code: 'delete_blocked' }),
+                  ),
+              }
+            : {}),
     },
 });

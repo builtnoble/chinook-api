@@ -7,6 +7,7 @@ import genreRoutes from '@/routes/genres';
 import mediaTypeRoutes from '@/routes/mediaTypes';
 import playlistRoutes from '@/routes/playlists';
 import trackRoutes from '@/routes/tracks';
+import { problemBody } from '../support/problem';
 
 // The routes are mounted without the auth middleware and `db.query` is stubbed,
 // so no session or database is needed.
@@ -40,7 +41,7 @@ describe.each(resources)('GET /:id for $name', ({ table, routes, notFound }) => 
         const res = await routes.request('/1');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: notFound });
+        expect(await res.json()).toEqual(problemBody(404, notFound));
     });
 
     it('returns 200 with the row in data when one matches', async () => {

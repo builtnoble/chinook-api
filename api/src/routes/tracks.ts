@@ -1,14 +1,15 @@
 import { and, eq, type SQL, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { describeRoute, validator } from 'hono-openapi';
+import { describeRoute } from 'hono-openapi';
 import db, { type Transaction } from '@/db';
 import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
+import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
+import { validate } from '@/utils/validate';
 
 const trackRoutes = new Hono();
 
@@ -62,7 +63,7 @@ const getTracks = describeList({
 trackRoutes.get(
     '/',
     describeRoute(getTracks),
-    validator('query', querySchema),
+    validate('query', querySchema),
     paginationMiddleware(tracks),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
@@ -101,13 +102,13 @@ const getTrackByID = describeByID({
     schema: trackSchema,
 });
 
-trackRoutes.get('/:id', describeRoute(getTrackByID), validator('param', paramSchema), async (c) => {
+trackRoutes.get('/:id', describeRoute(getTrackByID), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await findTrack(db, and(eq(tracks.id, id), notDeleted(tracks)) as SQL);
 
     if (!data) {
-        return c.json({ error: 'Track not found.' }, 404);
+        throw problem(404, 'Track not found.');
     }
 
     return c.json({ data });
@@ -123,7 +124,7 @@ const createTrack = describeCreate({
     body: trackCreateSchema,
 });
 
-trackRoutes.post('/', describeRoute(createTrack), validator('json', trackCreateSchema), async (c) => {
+trackRoutes.post('/', describeRoute(createTrack), validate('json', trackCreateSchema), async (c) => {
     const body = c.req.valid('json');
 
     const data = await db.transaction(async (tx) => {
@@ -150,8 +151,8 @@ const updateTrack = describeUpdate({
 trackRoutes.patch(
     '/:id',
     describeRoute(updateTrack),
-    validator('param', paramSchema),
-    validator('json', trackUpdateSchema),
+    validate('param', paramSchema),
+    validate('json', trackUpdateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
         const body = c.req.valid('json');
@@ -160,7 +161,7 @@ trackRoutes.patch(
             const live = and(eq(tracks.id, id), notDeleted(tracks)) as SQL;
 
             if (!(await findTrack(tx, live))) {
-                throw httpError(404, 'Track not found.');
+                throw problem(404, 'Track not found.');
             }
 
             await requireLiveReferences(tx, body);
@@ -168,7 +169,7 @@ trackRoutes.patch(
             const updated = await tx.update(tracks).set(body).where(live).returning({ id: tracks.id });
 
             if (!updated.length) {
-                throw httpError(404, 'Track not found.');
+                throw problem(404, 'Track not found.');
             }
 
             return findTrack(tx, eq(tracks.id, id));
@@ -187,7 +188,7 @@ const deleteTrack = describeDelete({
     schema: trackSchema,
 });
 
-trackRoutes.delete('/:id', describeRoute(deleteTrack), validator('param', paramSchema), async (c) => {
+trackRoutes.delete('/:id', describeRoute(deleteTrack), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await db.transaction(async (tx) => {
@@ -198,7 +199,7 @@ trackRoutes.delete('/:id', describeRoute(deleteTrack), validator('param', paramS
             .returning({ id: tracks.id });
 
         if (!deleted.length) {
-            throw httpError(404, 'Track not found.');
+            throw problem(404, 'Track not found.');
         }
 
         return findTrack(tx, eq(tracks.id, id));

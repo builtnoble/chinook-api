@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, spyOn } from 'bun:test';
 import api from '@/api';
 import { auth } from '@/utils/auth';
+import { problemBody } from './support/problem';
 
 const spies: { mockRestore: () => void }[] = [];
 
@@ -50,6 +51,8 @@ describe('cross-site writes', () => {
         });
 
         expect(res.status).toBe(403);
-        expect(await res.json()).toEqual({ error: 'The request comes from an origin that is not allowed.' });
+        expect(await res.json()).toEqual(
+            problemBody(403, 'The request comes from an origin that is not allowed.', 'origin_not_allowed'),
+        );
     });
 });

@@ -1,15 +1,16 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { describeRoute, validator } from 'hono-openapi';
+import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
+import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { countOf } from '@/utils/helpers';
-import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { artistCreateSchema, artistSchema, artistUpdateSchema } from '@/utils/schema/resources/artistSchema';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
+import { validate } from '@/utils/validate';
 
 const artistRoutes = new Hono();
 
@@ -25,7 +26,7 @@ const getArtists = describeList({
 artistRoutes.get(
     '/',
     describeRoute(getArtists),
-    validator('query', querySchema),
+    validate('query', querySchema),
     paginationMiddleware(artists),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
@@ -52,7 +53,7 @@ const getArtistByID = describeByID({
     schema: artistSchema,
 });
 
-artistRoutes.get('/:id', describeRoute(getArtistByID), validator('param', paramSchema), async (c) => {
+artistRoutes.get('/:id', describeRoute(getArtistByID), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await db.query.artists.findFirst({
@@ -61,7 +62,7 @@ artistRoutes.get('/:id', describeRoute(getArtistByID), validator('param', paramS
     });
 
     if (!data) {
-        return c.json({ error: 'Artist not found.' }, 404);
+        throw problem(404, 'Artist not found.');
     }
 
     return c.json({ data });
@@ -76,7 +77,7 @@ const createArtist = describeCreate({
     body: artistCreateSchema,
 });
 
-artistRoutes.post('/', describeRoute(createArtist), validator('json', artistCreateSchema), async (c) => {
+artistRoutes.post('/', describeRoute(createArtist), validate('json', artistCreateSchema), async (c) => {
     const [data] = await db.insert(artists).values(c.req.valid('json')).returning(columnsWithoutDeletedAt(artists));
 
     return c.json({ data }, 201);
@@ -95,8 +96,8 @@ const updateArtist = describeUpdate({
 artistRoutes.patch(
     '/:id',
     describeRoute(updateArtist),
-    validator('param', paramSchema),
-    validator('json', artistUpdateSchema),
+    validate('param', paramSchema),
+    validate('json', artistUpdateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
 
@@ -107,7 +108,7 @@ artistRoutes.patch(
             .returning(columnsWithoutDeletedAt(artists));
 
         if (!data) {
-            return c.json({ error: 'Artist not found.' }, 404);
+            throw problem(404, 'Artist not found.');
         }
 
         return c.json({ data });
@@ -122,13 +123,14 @@ const deleteArtist = describeDelete({
         'Deletes the artist with the given id and returns it. The artist is kept but no longer listed. While the artist has albums the delete is refused with 409, unless `cascade=true`, which deletes their albums and the tracks on them too, all or nothing. An unknown or deleted id returns 404. Requires the admin role.',
     schema: artistSchema,
     blockedBy: 'The artist still has albums, and `cascade=true` was not passed.',
+    blockedExample: 'The artist has 2 albums. Delete them first, or pass cascade=true.',
 });
 
 artistRoutes.delete(
     '/:id',
     describeRoute(deleteArtist),
-    validator('param', paramSchema),
-    validator('query', cascadeQuerySchema),
+    validate('param', paramSchema),
+    validate('query', cascadeQuerySchema),
     async (c) => {
         const { id } = c.req.valid('param');
         const cascade = c.req.valid('query').cascade === 'true';
@@ -144,7 +146,7 @@ artistRoutes.delete(
                 .for('update');
 
             if (!artist) {
-                throw httpError(404, 'Artist not found.');
+                throw problem(404, 'Artist not found.');
             }
 
             const liveAlbums = await tx
@@ -154,9 +156,10 @@ artistRoutes.delete(
                 .for('update');
 
             if (liveAlbums.length && !cascade) {
-                throw httpError(
+                throw problem(
                     409,
                     `The artist has ${countOf(liveAlbums.length, 'album')}. Delete them first, or pass cascade=true.`,
+                    { code: 'delete_blocked' },
                 );
             }
 

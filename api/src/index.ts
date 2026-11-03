@@ -3,6 +3,7 @@ import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import api from '@/api';
 import errorHandler from '@/handlers/errorHandler';
+import { problemNotFound } from '@/lib/problem-details';
 import { auth } from '@/utils/auth';
 import { getAllowedOrigins, stripErrorDetails } from '@/utils/helpers';
 
@@ -11,6 +12,7 @@ const port = process.env.APP_PORT || 3000;
 const app = new Hono();
 
 app.onError(errorHandler);
+app.notFound(problemNotFound);
 
 app.use('*', async (c: Context, next) => {
     const corsMiddlewareHandler = cors({

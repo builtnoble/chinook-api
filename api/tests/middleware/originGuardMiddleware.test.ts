@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import originGuardMiddleware from '@/middleware/originGuardMiddleware';
+import { problemBody } from '../support/problem';
 
 const originalOrigins = process.env.CORS_ORIGINS;
 const originalBaseUrl = process.env.BETTER_AUTH_URL;
@@ -34,7 +35,9 @@ describe('originGuardMiddleware', () => {
         const res = await send(method, { ...cookie, Origin: 'http://evil.test' });
 
         expect(res.status).toBe(403);
-        expect(await res.json()).toEqual({ error: 'The request comes from an origin that is not allowed.' });
+        expect(await res.json()).toEqual(
+            problemBody(403, 'The request comes from an origin that is not allowed.', 'origin_not_allowed'),
+        );
     });
 
     it('rejects a cookie write that has no Origin header', async () => {

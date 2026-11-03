@@ -1,11 +1,11 @@
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { describeRoute, validator } from 'hono-openapi';
+import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { media_types, tracks } from '@/db/chinookSchema';
+import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { countOf } from '@/utils/helpers';
-import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import {
@@ -14,6 +14,7 @@ import {
     mediaTypeUpdateSchema,
 } from '@/utils/schema/resources/mediaTypeSchema';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
+import { validate } from '@/utils/validate';
 
 const mediaTypeRoutes = new Hono();
 
@@ -29,7 +30,7 @@ const getMediaTypes = describeList({
 mediaTypeRoutes.get(
     '/',
     describeRoute(getMediaTypes),
-    validator('query', querySchema),
+    validate('query', querySchema),
     paginationMiddleware(media_types),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
@@ -56,7 +57,7 @@ const getMediaTypeByID = describeByID({
     schema: mediaTypeSchema,
 });
 
-mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', paramSchema), async (c) => {
+mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await db.query.media_types.findFirst({
@@ -65,7 +66,7 @@ mediaTypeRoutes.get('/:id', describeRoute(getMediaTypeByID), validator('param', 
     });
 
     if (!data) {
-        return c.json({ error: 'Media type not found.' }, 404);
+        throw problem(404, 'Media type not found.');
     }
 
     return c.json({ data });
@@ -80,7 +81,7 @@ const createMediaType = describeCreate({
     body: mediaTypeCreateSchema,
 });
 
-mediaTypeRoutes.post('/', describeRoute(createMediaType), validator('json', mediaTypeCreateSchema), async (c) => {
+mediaTypeRoutes.post('/', describeRoute(createMediaType), validate('json', mediaTypeCreateSchema), async (c) => {
     const [data] = await db
         .insert(media_types)
         .values(c.req.valid('json'))
@@ -102,8 +103,8 @@ const updateMediaType = describeUpdate({
 mediaTypeRoutes.patch(
     '/:id',
     describeRoute(updateMediaType),
-    validator('param', paramSchema),
-    validator('json', mediaTypeUpdateSchema),
+    validate('param', paramSchema),
+    validate('json', mediaTypeUpdateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
 
@@ -114,7 +115,7 @@ mediaTypeRoutes.patch(
             .returning(columnsWithoutDeletedAt(media_types));
 
         if (!data) {
-            return c.json({ error: 'Media type not found.' }, 404);
+            throw problem(404, 'Media type not found.');
         }
 
         return c.json({ data });
@@ -129,9 +130,10 @@ const deleteMediaType = describeDelete({
         'Deletes the media type with the given id and returns it. The media type is kept but no longer listed, so it cannot be deleted while a track still uses it: reassign or delete those tracks first. An unknown or deleted id returns 404. Requires the admin role.',
     schema: mediaTypeSchema,
     blockedBy: 'A track still uses the media type.',
+    blockedExample: 'The media type is used by 3 tracks. Reassign them first.',
 });
 
-mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validator('param', paramSchema), async (c) => {
+mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await db.transaction(async (tx) => {
@@ -144,13 +146,15 @@ mediaTypeRoutes.delete('/:id', describeRoute(deleteMediaType), validator('param'
             .for('update');
 
         if (!mediaType) {
-            throw httpError(404, 'Media type not found.');
+            throw problem(404, 'Media type not found.');
         }
 
         const used = await tx.$count(tracks, and(eq(tracks.media_type_id, id), isNull(tracks.deleted_at)));
 
         if (used) {
-            throw httpError(409, `The media type is used by ${countOf(used, 'track')}. Reassign them first.`);
+            throw problem(409, `The media type is used by ${countOf(used, 'track')}. Reassign them first.`, {
+                code: 'delete_blocked',
+            });
         }
 
         const [deleted] = await tx

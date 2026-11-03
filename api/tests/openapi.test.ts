@@ -112,6 +112,20 @@ describe('openapi.json', () => {
         }
     });
 
+    it('documents every error as a problem document and every success as JSON', () => {
+        for (const [name, operation] of operations) {
+            for (const [status, response] of Object.entries(operation.responses ?? {})) {
+                const types = Object.keys((response as { content: object }).content);
+
+                expect([name, status, types]).toEqual([
+                    name,
+                    status,
+                    [status.startsWith('2') ? 'application/json' : 'application/problem+json'],
+                ]);
+            }
+        }
+    });
+
     it('takes a JSON request body on every create and update, and none elsewhere', () => {
         for (const [name, operation] of operations) {
             const writes = name.startsWith('POST ') || name.startsWith('PATCH ');

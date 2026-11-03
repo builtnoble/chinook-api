@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { describeRoute, validator } from 'hono-openapi';
+import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
+import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
@@ -14,6 +14,7 @@ import {
     playlistTrackSchema,
 } from '@/utils/schema/resources/playlistTrackSchema';
 import { requireLiveParent } from '@/utils/softDelete';
+import { validate } from '@/utils/validate';
 
 const playlistRoutes = new Hono();
 
@@ -29,7 +30,7 @@ const getPlaylists = describeList({
 playlistRoutes.get(
     '/',
     describeRoute(getPlaylists),
-    validator('query', querySchema),
+    validate('query', querySchema),
     paginationMiddleware(playlists),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
@@ -54,7 +55,7 @@ const getPlaylistByID = describeByID({
     schema: playlistSchema,
 });
 
-playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validator('param', paramSchema), async (c) => {
+playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await db.query.playlists.findFirst({
@@ -62,7 +63,7 @@ playlistRoutes.get('/:id', describeRoute(getPlaylistByID), validator('param', pa
     });
 
     if (!data) {
-        return c.json({ error: 'Playlist not found.' }, 404);
+        throw problem(404, 'Playlist not found.');
     }
 
     return c.json({ data });
@@ -77,7 +78,7 @@ const createPlaylist = describeCreate({
     body: playlistCreateSchema,
 });
 
-playlistRoutes.post('/', describeRoute(createPlaylist), validator('json', playlistCreateSchema), async (c) => {
+playlistRoutes.post('/', describeRoute(createPlaylist), validate('json', playlistCreateSchema), async (c) => {
     const [data] = await db.insert(playlists).values(c.req.valid('json')).returning();
 
     return c.json({ data }, 201);
@@ -96,15 +97,15 @@ const updatePlaylist = describeUpdate({
 playlistRoutes.patch(
     '/:id',
     describeRoute(updatePlaylist),
-    validator('param', paramSchema),
-    validator('json', playlistUpdateSchema),
+    validate('param', paramSchema),
+    validate('json', playlistUpdateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
 
         const [data] = await db.update(playlists).set(c.req.valid('json')).where(eq(playlists.id, id)).returning();
 
         if (!data) {
-            return c.json({ error: 'Playlist not found.' }, 404);
+            throw problem(404, 'Playlist not found.');
         }
 
         return c.json({ data });
@@ -120,14 +121,14 @@ const deletePlaylist = describeDelete({
     schema: playlistSchema,
 });
 
-playlistRoutes.delete('/:id', describeRoute(deletePlaylist), validator('param', paramSchema), async (c) => {
+playlistRoutes.delete('/:id', describeRoute(deletePlaylist), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     // The database removes the playlist's rows in playlist_tracks with it.
     const [data] = await db.delete(playlists).where(eq(playlists.id, id)).returning();
 
     if (!data) {
-        return c.json({ error: 'Playlist not found.' }, 404);
+        throw problem(404, 'Playlist not found.');
     }
 
     return c.json({ data });
@@ -147,8 +148,8 @@ const addPlaylistTrack = describeCreate({
 playlistRoutes.post(
     '/:id/tracks',
     describeRoute(addPlaylistTrack),
-    validator('param', paramSchema),
-    validator('json', playlistTrackCreateSchema),
+    validate('param', paramSchema),
+    validate('json', playlistTrackCreateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
         const { track_id } = c.req.valid('json');
@@ -163,7 +164,7 @@ playlistRoutes.post(
                 .for('share');
 
             if (!playlist) {
-                throw httpError(404, 'Playlist not found.');
+                throw problem(404, 'Playlist not found.');
             }
 
             await requireLiveParent(tx, tracks, track_id, 'track_id', 'track');
@@ -175,7 +176,7 @@ playlistRoutes.post(
                 .returning();
 
             if (!added) {
-                throw httpError(409, 'The track is already in the playlist.');
+                throw problem(409, 'The track is already in the playlist.', { code: 'duplicate_value' });
             }
 
             return added;
@@ -198,7 +199,7 @@ const removePlaylistTrack = describeDelete({
 playlistRoutes.delete(
     '/:id/tracks/:track_id',
     describeRoute(removePlaylistTrack),
-    validator('param', playlistTrackParamSchema),
+    validate('param', playlistTrackParamSchema),
     async (c) => {
         const { id, track_id } = c.req.valid('param');
 
@@ -208,7 +209,7 @@ playlistRoutes.delete(
             .returning();
 
         if (!data) {
-            return c.json({ error: 'The playlist does not contain that track.' }, 404);
+            throw problem(404, 'The playlist does not contain that track.');
         }
 
         return c.json({ data });

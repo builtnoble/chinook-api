@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { tracks } from '@/db/chinookSchema';
 import trackRoutes from '@/routes/tracks';
 import { appFor, send } from '../support/app';
+import { problemBody } from '../support/problem';
 import { stubDb } from '../support/stubDb';
 
 const app = appFor(trackRoutes);
@@ -56,7 +57,9 @@ describe('POST /', () => {
             const res = await send(app, 'POST', '/', body);
 
             expect(res.status).toBe(422);
-            expect(await res.json()).toEqual({ error: `${field} does not refer to an existing ${label}.` });
+            expect(await res.json()).toEqual(
+                problemBody(422, `${field} does not refer to an existing ${label}.`, 'invalid_reference'),
+            );
             expect(stub.methods()).not.toContain('insert');
         },
     );
@@ -101,7 +104,9 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/5', { album_id: 99 });
 
         expect(res.status).toBe(422);
-        expect(await res.json()).toEqual({ error: 'album_id does not refer to an existing album.' });
+        expect(await res.json()).toEqual(
+            problemBody(422, 'album_id does not refer to an existing album.', 'invalid_reference'),
+        );
         expect(stub.methods()).not.toContain('update');
     });
 
@@ -111,7 +116,7 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/5', { album_id: 99 });
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Track not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Track not found.'));
         expect(shareLocks()).toBe(0);
     });
 
@@ -142,7 +147,7 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/5');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Track not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Track not found.'));
         expect(stub.methods()).not.toContain('findFirst');
     });
 });

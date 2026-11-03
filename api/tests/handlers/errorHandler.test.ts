@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from 'bun:test';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { validator } from 'hono-openapi';
 import z from 'zod';
 import errorHandler from '@/handlers/errorHandler';
+import { validate } from '@/utils/validate';
+import { problemBody } from '../support/problem';
 
 let logged: ReturnType<typeof spyOn>;
 
@@ -34,14 +35,15 @@ const appThrowing = (error: unknown) => {
 
 describe('errorHandler', () => {
     it.each([
-        ['23505', 409, 'A row with that value already exists.'],
-        ['23503', 422, 'The row refers to a parent that does not exist.'],
-        ['22001', 422, 'A value is too long for its column.'],
-    ])('maps Postgres error %s to %i', async (code, status, error) => {
-        const res = await appThrowing(drizzleError(code)).request('/');
+        ['23505', 409, 'A row with that value already exists.', 'duplicate_value'],
+        ['23503', 422, 'The row refers to a parent that does not exist.', 'invalid_reference'],
+        ['22001', 422, 'A value is too long for its column.', 'value_too_long'],
+    ])('maps Postgres error %s to a %i problem', async (sqlstate, status, detail, code) => {
+        const res = await appThrowing(drizzleError(sqlstate)).request('/');
 
         expect(res.status).toBe(status);
-        expect(await res.json()).toEqual({ error });
+        expect(res.headers.get('Content-Type')).toBe('application/problem+json');
+        expect(await res.json()).toEqual(problemBody(status, detail, code));
     });
 
     it('never returns the SQL or the driver message', async () => {
@@ -59,7 +61,7 @@ describe('errorHandler', () => {
         const res = await appThrowing(failure).request('/');
 
         expect(res.status).toBe(500);
-        expect(await res.json()).toEqual({ error: 'Internal server error.' });
+        expect(await res.json()).toEqual(problemBody(500, 'An unexpected error occurred.'));
         expect(logged).toHaveBeenCalledWith(failure);
     });
 
@@ -70,19 +72,20 @@ describe('errorHandler', () => {
         expect(await res.text()).not.toContain('10.0.0.5');
     });
 
-    it('returns an HTTPException with its own status and message', async () => {
+    it('answers an HTTPException with its own status and message as a problem', async () => {
         const res = await appThrowing(new HTTPException(400, { message: 'Malformed JSON in request body' })).request(
             '/',
         );
 
         expect(res.status).toBe(400);
-        expect(await res.json()).toEqual({ error: 'Malformed JSON in request body' });
+        expect(res.headers.get('Content-Type')).toBe('application/problem+json');
+        expect(await res.json()).toEqual(problemBody(400, 'Malformed JSON in request body'));
     });
 
     it('answers malformed JSON, as the validator rejects it, with 400', async () => {
         const app = new Hono()
             .onError(errorHandler)
-            .post('/', validator('json', z.object({ name: z.string() })), (c) => c.json({ ok: true }));
+            .post('/', validate('json', z.object({ name: z.string() })), (c) => c.json({ ok: true }));
 
         const res = await app.request('/', {
             method: 'POST',
@@ -91,6 +94,6 @@ describe('errorHandler', () => {
         });
 
         expect(res.status).toBe(400);
-        expect(await res.json()).toEqual({ error: 'Malformed JSON in request body' });
+        expect(await res.json()).toEqual(problemBody(400, 'Malformed JSON in request body'));
     });
 });

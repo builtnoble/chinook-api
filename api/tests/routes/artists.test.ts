@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { albums, artists, tracks } from '@/db/chinookSchema';
 import artistRoutes from '@/routes/artists';
 import { appFor, send } from '../support/app';
+import { problemBody } from '../support/problem';
 import { stubDb } from '../support/stubDb';
 
 const app = appFor(artistRoutes);
@@ -46,7 +47,7 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/7', { name: 'AC/DC' });
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Artist not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Artist not found.'));
     });
 });
 
@@ -74,7 +75,7 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/7');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Artist not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Artist not found.'));
         expect(stub.methods()).not.toContain('update');
     });
 
@@ -84,9 +85,9 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/7');
 
         expect(res.status).toBe(409);
-        expect(await res.json()).toEqual({
-            error: 'The artist has 2 albums. Delete them first, or pass cascade=true.',
-        });
+        expect(await res.json()).toEqual(
+            problemBody(409, 'The artist has 2 albums. Delete them first, or pass cascade=true.', 'delete_blocked'),
+        );
         expect(stub.methods()).not.toContain('update');
     });
 
@@ -95,7 +96,9 @@ describe('DELETE /:id', () => {
 
         const res = await send(app, 'DELETE', '/7');
 
-        expect(await res.json()).toEqual({ error: 'The artist has 1 album. Delete them first, or pass cascade=true.' });
+        expect(await res.json()).toEqual(
+            problemBody(409, 'The artist has 1 album. Delete them first, or pass cascade=true.', 'delete_blocked'),
+        );
     });
 
     it('with cascade=true soft-deletes the tracks, then the albums, then the artist', async () => {

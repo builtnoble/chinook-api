@@ -3,6 +3,7 @@ import type { Hono } from 'hono';
 import genreRoutes from '@/routes/genres';
 import mediaTypeRoutes from '@/routes/mediaTypes';
 import { appFor, send } from '../support/app';
+import { problemBody } from '../support/problem';
 import { stubDb } from '../support/stubDb';
 
 // Genres and media types are the same shape: a name, soft-deleted, and blocked
@@ -55,7 +56,7 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             const res = await send(app, 'POST', '/', '{"name": ');
 
             expect(res.status).toBe(400);
-            expect(await res.json()).toEqual({ error: 'Malformed JSON in request body' });
+            expect(await res.json()).toEqual(problemBody(400, 'Malformed JSON in request body'));
         });
 
         it('maps a unique violation to 409 without the SQL', async () => {
@@ -84,7 +85,7 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             const res = await send(app, 'PATCH', '/4', { name: 'Renamed' });
 
             expect(res.status).toBe(404);
-            expect(await res.json()).toEqual({ error: notFound });
+            expect(await res.json()).toEqual(problemBody(404, notFound));
         });
 
         it.each<[string, Record<string, unknown>]>([
@@ -125,7 +126,7 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             const res = await send(app, 'DELETE', '/4');
 
             expect(res.status).toBe(404);
-            expect(await res.json()).toEqual({ error: notFound });
+            expect(await res.json()).toEqual(problemBody(404, notFound));
             expect(stub.methods()).not.toContain('update');
         });
 
@@ -135,7 +136,9 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
             const res = await send(app, 'DELETE', '/4');
 
             expect(res.status).toBe(409);
-            expect(await res.json()).toEqual({ error: `${used} 3 tracks. Reassign them first.` });
+            expect(await res.json()).toEqual(
+                problemBody(409, `${used} 3 tracks. Reassign them first.`, 'delete_blocked'),
+            );
             expect(stub.methods()).not.toContain('update');
         });
 
@@ -144,7 +147,9 @@ describe.each(resources)('writes to $name', ({ routes, notFound, used }) => {
 
             const res = await send(app, 'DELETE', '/4');
 
-            expect(await res.json()).toEqual({ error: `${used} 1 track. Reassign them first.` });
+            expect(await res.json()).toEqual(
+                problemBody(409, `${used} 1 track. Reassign them first.`, 'delete_blocked'),
+            );
         });
     });
 });

@@ -3,7 +3,7 @@ import type { AnyPgColumn, PgTable } from 'drizzle-orm/pg-core';
 import omit from 'lodash-es/omit';
 import type { Transaction } from '@/db';
 import type { albums, artists, genres, media_types, tracks } from '@/db/chinookSchema';
-import { httpError } from '@/utils/httpError';
+import { problem } from '@/lib/problem-details';
 
 // Deleting a row sets deleted_at, so every read leaves those rows out and never
 // returns the column. Pass `withoutDeletedAt` as a relational query's
@@ -37,6 +37,6 @@ export const requireLiveParent = async (
         .for('share');
 
     if (!row) {
-        throw httpError(422, `${field} does not refer to an existing ${label}.`);
+        throw problem(422, `${field} does not refer to an existing ${label}.`, { code: 'invalid_reference' });
     }
 };

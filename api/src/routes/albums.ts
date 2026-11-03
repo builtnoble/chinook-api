@@ -1,15 +1,16 @@
 import { and, eq, isNull, type SQL, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
-import { describeRoute, validator } from 'hono-openapi';
+import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
+import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { countOf } from '@/utils/helpers';
-import { httpError } from '@/utils/httpError';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
+import { validate } from '@/utils/validate';
 
 const albumRoutes = new Hono();
 
@@ -33,7 +34,7 @@ const getAlbums = describeList({
 albumRoutes.get(
     '/',
     describeRoute(getAlbums),
-    validator('query', querySchema),
+    validate('query', querySchema),
     paginationMiddleware(albums),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
@@ -64,13 +65,13 @@ const getAlbumByID = describeByID({
     schema: albumSchema,
 });
 
-albumRoutes.get('/:id', describeRoute(getAlbumByID), validator('param', paramSchema), async (c) => {
+albumRoutes.get('/:id', describeRoute(getAlbumByID), validate('param', paramSchema), async (c) => {
     const { id } = c.req.valid('param');
 
     const data = await findAlbum(db, and(eq(albums.id, id), notDeleted(albums)) as SQL);
 
     if (!data) {
-        return c.json({ error: 'Album not found.' }, 404);
+        throw problem(404, 'Album not found.');
     }
 
     return c.json({ data });
@@ -86,7 +87,7 @@ const createAlbum = describeCreate({
     body: albumCreateSchema,
 });
 
-albumRoutes.post('/', describeRoute(createAlbum), validator('json', albumCreateSchema), async (c) => {
+albumRoutes.post('/', describeRoute(createAlbum), validate('json', albumCreateSchema), async (c) => {
     const body = c.req.valid('json');
 
     const data = await db.transaction(async (tx) => {
@@ -113,8 +114,8 @@ const updateAlbum = describeUpdate({
 albumRoutes.patch(
     '/:id',
     describeRoute(updateAlbum),
-    validator('param', paramSchema),
-    validator('json', albumUpdateSchema),
+    validate('param', paramSchema),
+    validate('json', albumUpdateSchema),
     async (c) => {
         const { id } = c.req.valid('param');
         const body = c.req.valid('json');
@@ -123,7 +124,7 @@ albumRoutes.patch(
             const live = and(eq(albums.id, id), notDeleted(albums)) as SQL;
 
             if (!(await findAlbum(tx, live))) {
-                throw httpError(404, 'Album not found.');
+                throw problem(404, 'Album not found.');
             }
 
             // The parent is locked before the album, as a delete of the artist
@@ -135,7 +136,7 @@ albumRoutes.patch(
             const updated = await tx.update(albums).set(body).where(live).returning({ id: albums.id });
 
             if (!updated.length) {
-                throw httpError(404, 'Album not found.');
+                throw problem(404, 'Album not found.');
             }
 
             return findAlbum(tx, eq(albums.id, id));
@@ -153,13 +154,14 @@ const deleteAlbum = describeDelete({
         'Deletes the album with the given id and returns it with its artist. The album is kept but no longer listed. While the album has tracks the delete is refused with 409, unless `cascade=true`, which deletes the tracks too, all or nothing. An unknown or deleted id returns 404. Requires the admin role.',
     schema: albumSchema,
     blockedBy: 'The album still has tracks, and `cascade=true` was not passed.',
+    blockedExample: 'The album has 12 tracks. Delete them first, or pass cascade=true.',
 });
 
 albumRoutes.delete(
     '/:id',
     describeRoute(deleteAlbum),
-    validator('param', paramSchema),
-    validator('query', cascadeQuerySchema),
+    validate('param', paramSchema),
+    validate('query', cascadeQuerySchema),
     async (c) => {
         const { id } = c.req.valid('param');
         const cascade = c.req.valid('query').cascade === 'true';
@@ -174,15 +176,16 @@ albumRoutes.delete(
                 .for('update');
 
             if (!album) {
-                throw httpError(404, 'Album not found.');
+                throw problem(404, 'Album not found.');
             }
 
             const liveTracks = await tx.$count(tracks, and(eq(tracks.album_id, id), isNull(tracks.deleted_at)));
 
             if (liveTracks && !cascade) {
-                throw httpError(
+                throw problem(
                     409,
                     `The album has ${countOf(liveTracks, 'track')}. Delete them first, or pass cascade=true.`,
+                    { code: 'delete_blocked' },
                 );
             }
 

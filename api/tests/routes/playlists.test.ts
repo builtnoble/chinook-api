@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { playlist_tracks as playlistTracks } from '@/db/chinookSchema';
 import playlistRoutes from '@/routes/playlists';
 import { appFor, send } from '../support/app';
+import { problemBody } from '../support/problem';
 import { stubDb } from '../support/stubDb';
 
 const app = appFor(playlistRoutes);
@@ -45,7 +46,7 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/3', { name: 'Renamed' });
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Playlist not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Playlist not found.'));
     });
 
     it('answers 400 for an empty body', async () => {
@@ -72,7 +73,7 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/3');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Playlist not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Playlist not found.'));
     });
 });
 
@@ -98,7 +99,7 @@ describe('POST /:id/tracks', () => {
         const res = await send(app, 'POST', '/3/tracks', { track_id: 8 });
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Playlist not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Playlist not found.'));
         expect(stub.methods()).not.toContain('insert');
     });
 
@@ -108,7 +109,9 @@ describe('POST /:id/tracks', () => {
         const res = await send(app, 'POST', '/3/tracks', { track_id: 8 });
 
         expect(res.status).toBe(422);
-        expect(await res.json()).toEqual({ error: 'track_id does not refer to an existing track.' });
+        expect(await res.json()).toEqual(
+            problemBody(422, 'track_id does not refer to an existing track.', 'invalid_reference'),
+        );
         expect(stub.methods()).not.toContain('insert');
     });
 
@@ -118,7 +121,7 @@ describe('POST /:id/tracks', () => {
         const res = await send(app, 'POST', '/3/tracks', { track_id: 8 });
 
         expect(res.status).toBe(409);
-        expect(await res.json()).toEqual({ error: 'The track is already in the playlist.' });
+        expect(await res.json()).toEqual(problemBody(409, 'The track is already in the playlist.', 'duplicate_value'));
         expect(stub.methods()).toContain('onConflictDoNothing');
     });
 
@@ -151,7 +154,7 @@ describe('DELETE /:id/tracks/:track_id', () => {
         const res = await send(app, 'DELETE', '/3/tracks/8');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'The playlist does not contain that track.' });
+        expect(await res.json()).toEqual(problemBody(404, 'The playlist does not contain that track.'));
     });
 
     it('answers 400 for an id that is not a number', async () => {

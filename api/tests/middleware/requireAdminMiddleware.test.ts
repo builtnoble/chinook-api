@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import requireAdminMiddleware from '@/middleware/requireAdminMiddleware';
+import { problemBody } from '../support/problem';
 
 const appFor = (user: { role?: string | null } | null) => {
     const app = new Hono();
@@ -28,7 +29,7 @@ describe('requireAdminMiddleware', () => {
         const res = await write(appFor({ role: 'user' }), method);
 
         expect(res.status).toBe(403);
-        expect(await res.json()).toEqual({ error: 'This action requires the admin role.' });
+        expect(await res.json()).toEqual(problemBody(403, 'This action requires the admin role.'));
     });
 
     it('rejects a user with no role, as the default plugin role is not an admin', async () => {

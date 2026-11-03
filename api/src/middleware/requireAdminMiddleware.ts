@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { problem } from '@/lib/problem-details';
 import type { auth } from '@/utils/auth';
 
 // Reads stay open to any signed-in user, so only methods that change data need
@@ -15,7 +16,7 @@ const requireAdminMiddleware = createMiddleware<{
     }
 
     if (c.get('user')?.role !== 'admin') {
-        return c.json({ error: 'This action requires the admin role.' }, 403);
+        throw problem(403, 'This action requires the admin role.');
     }
 
     await next();

@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { problem } from '@/lib/problem-details';
 import { getAllowedOrigins, getBaseUrl } from '@/utils/helpers';
 
 const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
@@ -20,7 +21,7 @@ const originGuardMiddleware = createMiddleware(async (c: Context, next) => {
     const origin = c.req.header('Origin');
 
     if (!origin || ![...getAllowedOrigins(), new URL(getBaseUrl()).origin].includes(origin)) {
-        return c.json({ error: 'The request comes from an origin that is not allowed.' }, 403);
+        throw problem(403, 'The request comes from an origin that is not allowed.', { code: 'origin_not_allowed' });
     }
 
     await next();

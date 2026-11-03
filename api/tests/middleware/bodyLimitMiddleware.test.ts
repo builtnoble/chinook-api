@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import bodyLimitMiddleware, { maxBodyBytes } from '@/middleware/bodyLimitMiddleware';
+import { problemBody } from '../support/problem';
 
 const app = new Hono().use(bodyLimitMiddleware).post('/', async (c) => c.json({ length: (await c.req.text()).length }));
 
@@ -18,7 +19,7 @@ describe('bodyLimitMiddleware', () => {
         const res = await post('x'.repeat(maxBodyBytes + 1));
 
         expect(res.status).toBe(413);
-        expect(await res.json()).toEqual({ error: 'The request body is too large.' });
+        expect(await res.json()).toEqual(problemBody(413, 'The request body is too large.'));
     });
 
     it('rejects an oversized body that does not declare its length', async () => {

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'bun:test';
 import { albums, tracks } from '@/db/chinookSchema';
 import albumRoutes from '@/routes/albums';
 import { appFor, send } from '../support/app';
+import { problemBody } from '../support/problem';
 import { stubDb } from '../support/stubDb';
 
 const app = appFor(albumRoutes);
@@ -33,7 +34,9 @@ describe('POST /', () => {
         const res = await send(app, 'POST', '/', { title: 'Restless and Wild', artist_id: 3 });
 
         expect(res.status).toBe(422);
-        expect(await res.json()).toEqual({ error: 'artist_id does not refer to an existing artist.' });
+        expect(await res.json()).toEqual(
+            problemBody(422, 'artist_id does not refer to an existing artist.', 'invalid_reference'),
+        );
         expect(stub.methods()).not.toContain('insert');
     });
 
@@ -72,7 +75,9 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/9', { artist_id: 99 });
 
         expect(res.status).toBe(422);
-        expect(await res.json()).toEqual({ error: 'artist_id does not refer to an existing artist.' });
+        expect(await res.json()).toEqual(
+            problemBody(422, 'artist_id does not refer to an existing artist.', 'invalid_reference'),
+        );
         expect(stub.methods()).not.toContain('update');
     });
 
@@ -82,7 +87,7 @@ describe('PATCH /:id', () => {
         const res = await send(app, 'PATCH', '/9', { artist_id: 99 });
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Album not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Album not found.'));
         expect(stub.methods()).not.toContain('select');
     });
 
@@ -114,7 +119,7 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/9');
 
         expect(res.status).toBe(404);
-        expect(await res.json()).toEqual({ error: 'Album not found.' });
+        expect(await res.json()).toEqual(problemBody(404, 'Album not found.'));
         expect(stub.methods()).not.toContain('update');
     });
 
@@ -124,9 +129,9 @@ describe('DELETE /:id', () => {
         const res = await send(app, 'DELETE', '/9');
 
         expect(res.status).toBe(409);
-        expect(await res.json()).toEqual({
-            error: 'The album has 12 tracks. Delete them first, or pass cascade=true.',
-        });
+        expect(await res.json()).toEqual(
+            problemBody(409, 'The album has 12 tracks. Delete them first, or pass cascade=true.', 'delete_blocked'),
+        );
         expect(stub.methods()).not.toContain('update');
     });
 
