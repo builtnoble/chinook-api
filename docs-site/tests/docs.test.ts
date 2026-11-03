@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { compile } from '@mdx-js/mdx';
-import { loadPages } from './index';
+import { loadPages } from '@/index';
 
 // The published pages are generated from the Markdown in docs/, so a Markdown
 // change that MDX cannot compile has to fail here and not when the site is

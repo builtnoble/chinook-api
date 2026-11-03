@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const script = new URL('./third-party-licenses.mjs', import.meta.url).pathname;
+const script = new URL('../../scripts/third-party-licenses.mjs', import.meta.url).pathname;
 const roots: string[] = [];
 
 type Fake = { dir: string; manifest: Record<string, unknown>; license?: string };

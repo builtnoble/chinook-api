@@ -6,7 +6,10 @@
         "types": ["bun"],
         "strict": true,
         "noEmit": true,
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "paths": {
+            "@/*": ["./generator/*"]
+        }
     },
-    "include": ["generator"]
+    "include": ["generator", "scripts", "tests"]
 }

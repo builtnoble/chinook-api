@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { compile } from '@mdx-js/mdx';
-import { markdownToMdx } from './markdown';
-import { UnsupportedError } from './schema';
+import { markdownToMdx } from '@/markdown';
+import { UnsupportedError } from '@/schema';
 
 const options = {
     path: 'docs/GUIDE.md',

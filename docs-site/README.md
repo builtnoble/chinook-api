@@ -17,7 +17,8 @@ If you only want to use the docs, you do not need any of this: `docker compose u
 
 | Path                 | Purpose                                                                         |
 | -------------------- | ------------------------------------------------------------------------------- |
-| `generator/`         | OpenAPI to MDX, and Markdown to MDX, with tests (`bun test`)                    |
+| `generator/`         | OpenAPI to MDX, and Markdown to MDX                                             |
+| `tests/`             | The tests (`bun test`), laid out like the code they test, with sample specs in `fixtures/` |
 | `content/pages.json` | Which files in `docs/` are published, with their titles and card descriptions   |
 | `Dockerfile`         | Builds the site into an nginx image                                             |
 | `nginx.conf`         | Serves the static export (`/albums` is `albums.html`)                           |
