@@ -76,8 +76,10 @@ which packages they list, and writes `third-party-licenses.txt` into the image; 
 that build are not part of the image, and the publish workflow checks that no `.map` files are served.
 
 The step fails the image build if a bundled package has no license text and no declared license, or a license that is
-not permissive (GPL, LGPL, MPL and the like), so a new dependency that needs a decision cannot slip in. The script
-has its own tests, which run without the theme.
+not permissive (GPL, LGPL, MPL and the like), so a new dependency that needs a decision cannot slip in. A license
+expression is read as SPDX reads it: `MIT OR GPL-3.0` passes because one side is permissive, `MIT AND GPL-3.0` does
+not, and an exception (`WITH`) or a string that is not SPDX is left to a person. The script has its own tests, which
+run without the theme.
 
 ## Publishing
 

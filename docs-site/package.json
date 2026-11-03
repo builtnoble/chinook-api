@@ -20,6 +20,7 @@
         "openapi-sampler": "^1.7.10",
         "remark-gfm": "^4.0.1",
         "remark-parse": "^11.0.0",
+        "spdx-expression-parse": "^5.0.0",
         "unified": "^11.0.5",
         "unist-util-visit": "^5.2.0"
     },

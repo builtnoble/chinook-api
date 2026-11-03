@@ -44,13 +44,15 @@ Their licenses were checked when these notices were written:
     BSD-3-Clause or 0BSD). Four packages from the Better Auth family omit the `license` field in
     their package.json: `@better-auth/core`, `@better-auth/telemetry` and `@better-fetch/fetch` ship an MIT license
     file, and `better-call` ships none but is MIT-licensed in [its repository](https://github.com/Bekacru/better-call).
--   **`docs-site/`**: all 130 production packages (`unified`, `remark-parse`, `remark-gfm`, `@sindresorhus/slugify`,
-    `@readme/httpsnippet`, `openapi-sampler`, `@apidevtools/json-schema-ref-parser`, `mdast-util-mdx` and their
-    dependencies, which the generator uses to convert Markdown, to name anchors, to write the request examples, to
-    fill in example values, to resolve `$ref`s and to write the pages) are under permissive licenses (MIT,
-    BSD-2-Clause, BSD-3-Clause, ISC, PSF-2.0, or MIT OR CC0-1.0). The one PSF-2.0 package is `argparse`, which
-    `js-yaml` needs. Its 48 further development packages (the MDX compiler, the OpenAPI types and their
-    dependencies) are MIT, ISC or BSD-3-Clause.
+-   **`docs-site/`**: all 133 production packages (`unified`, `remark-parse`, `remark-gfm`, `@sindresorhus/slugify`,
+    `@readme/httpsnippet`, `openapi-sampler`, `@apidevtools/json-schema-ref-parser`, `mdast-util-mdx`,
+    `spdx-expression-parse` and their dependencies, which the generator uses to convert Markdown, to name anchors, to
+    write the request examples, to fill in example values, to resolve `$ref`s and to write the pages, and which the
+    license script uses to read license expressions) are under permissive licenses (MIT, BSD-2-Clause, BSD-3-Clause,
+    ISC, PSF-2.0, CC0-1.0, or MIT OR CC0-1.0). One is under an attribution license: `spdx-exceptions`, a list of
+    license exceptions by The Linux Foundation, is CC-BY-3.0. The license script uses it while the image is built,
+    and it is not in the image. The one PSF-2.0 package is `argparse`, which `js-yaml` needs. Its 48 further
+    development packages (the MDX compiler, the OpenAPI types and their dependencies) are MIT, ISC or BSD-3-Clause.
 -   **The repository root**: its 15 development packages (Biome, the Bun types, `type-fest` and their dependencies) are
     MIT, MIT OR Apache-2.0 or MIT OR CC0-1.0.
 -   **The docs theme's build** (in the private repository) uses some tools under other licenses: `lightningcss`

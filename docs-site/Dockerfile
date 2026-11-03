@@ -28,7 +28,8 @@ RUN bun run openapi:export /out/openapi.json
 
 # 2. Turn the spec and the Markdown in docs/ into the theme's pages. The
 # generator needs only its own production dependencies, so the install is
-# filtered to this package and skips the development ones.
+# filtered to this package and skips the development ones. The license script
+# is bundled here with its one dependency, for the stage that runs it.
 FROM --platform=$BUILDPLATFORM oven/bun:1.2-debian AS content
 WORKDIR /repo
 COPY package.json bun.lock bunfig.toml ./
@@ -38,8 +39,10 @@ RUN bun install --frozen-lockfile --production --filter @chinook-api/docs-site
 COPY docs/ docs/
 COPY docs-site/generator docs-site/generator
 COPY docs-site/content docs-site/content
+COPY docs-site/scripts/third-party-licenses.mjs docs-site/scripts/
 COPY --from=spec /out/openapi.json /out/openapi.json
 RUN bun docs-site/generator/index.ts --spec /out/openapi.json --pages docs-site/content/pages.json --out /out/content
+RUN bun build docs-site/scripts/third-party-licenses.mjs --target bun --outfile /out/third-party-licenses.mjs
 
 # 3. The theme with the generated pages written into it, installed and ready to
 # build.
@@ -57,14 +60,19 @@ ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
 FROM site-src AS site
 RUN npm run build
 
+# Bun's binary, for the license script. The next stage is Node on Alpine, so it
+# comes from Bun's Alpine image.
+FROM --platform=$BUILDPLATFORM oven/bun:1.2-alpine AS bun
+
 # 3b. Build it again with source maps, only to learn which packages are bundled
 # into its JavaScript, and write their license notices. The maps and this build
 # are not part of the image. The CSS framework's code is in the output too, so
 # it is listed by name.
 FROM site-src AS licenses
-COPY docs-site/scripts/third-party-licenses.mjs /tools/third-party-licenses.mjs
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=content /out/third-party-licenses.mjs /tools/third-party-licenses.mjs
 RUN SOURCEMAPS=true npm run build \
-    && node /tools/third-party-licenses.mjs /site /third-party-licenses.txt --also tailwindcss,@tailwindcss/typography
+    && bun /tools/third-party-licenses.mjs /site /third-party-licenses.txt --also tailwindcss,@tailwindcss/typography
 
 # 4. Serve it. Only static files and the license notices are copied in.
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime

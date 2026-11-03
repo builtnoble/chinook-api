@@ -152,6 +152,39 @@ describe('third-party-licenses', () => {
         expect(stderr).toContain('copyleft@1.0.0: license GPL-3.0');
     });
 
+    it('accepts an OR when one side is permissive, and an AND only when both are', () => {
+        const either = project(
+            ['./node_modules/dual/i.js'],
+            [{ dir: 'node_modules/dual', manifest: { name: 'dual', version: '1.0.0', license: '(GPL-3.0 OR MIT)' } }],
+        );
+        const both = project(
+            ['./node_modules/pair/i.js'],
+            [{ dir: 'node_modules/pair', manifest: { name: 'pair', version: '1.0.0', license: 'MIT AND GPL-3.0' } }],
+        );
+
+        expect(run(either).code).toBe(0);
+        expect(run(both).stderr).toContain('pair@1.0.0: license MIT AND GPL-3.0');
+    });
+
+    it('leaves an exception, and a license that is not SPDX, to a person', () => {
+        const exception = project(
+            ['./node_modules/with/i.js'],
+            [
+                {
+                    dir: 'node_modules/with',
+                    manifest: { name: 'with', version: '1.0.0', license: 'Apache-2.0 WITH LLVM-exception' },
+                },
+            ],
+        );
+        const prose = project(
+            ['./node_modules/prose/i.js'],
+            [{ dir: 'node_modules/prose', manifest: { name: 'prose', version: '1.0.0', license: 'Apache 2.0' } }],
+        );
+
+        expect(run(exception).stderr).toContain('with@1.0.0: license Apache-2.0 WITH LLVM-exception');
+        expect(run(prose).stderr).toContain('prose@1.0.0: license Apache 2.0');
+    });
+
     it('fails on a package with no declared license, and when no maps list any package', () => {
         const undeclared = project(
             ['./node_modules/mystery/i.js'],

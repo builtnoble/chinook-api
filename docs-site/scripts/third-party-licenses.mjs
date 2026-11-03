@@ -8,7 +8,7 @@
 // build tools and libraries that only run during the build (the CSS compiler,
 // image libraries) are not in the output and are not listed.
 //
-//   node third-party-licenses.mjs <project dir> <output file>
+//   bun third-party-licenses.mjs <project dir> <output file>
 //     [--also name,name]
 //
 // <project dir> holds the built `out/` (with .map files) and `node_modules/`.
@@ -18,12 +18,16 @@
 // Fails if a bundled package has no recognized permissive license, or no
 // license text and no declared license, so a new dependency that needs a
 // decision cannot slip into the image unnoticed.
-import { readdir, readFile, stat, writeFile } from 'node:fs/promises';
+//
+// The image build bundles this file with the one package it imports, because
+// the stage that runs it holds only the theme's packages, and gives that stage
+// Bun to run it with.
 import { join } from 'node:path';
+import parse from 'spdx-expression-parse';
 
-const [projectDir, outputFile, ...flags] = process.argv.slice(2);
+const [projectDir, outputFile, ...flags] = Bun.argv.slice(2);
 if (!projectDir || !outputFile) {
-    console.error('Usage: node third-party-licenses.mjs <project dir> <output file> [--also name,name]');
+    console.error('Usage: bun third-party-licenses.mjs <project dir> <output file> [--also name,name]');
     process.exit(2);
 }
 const also = flags[0] === '--also' ? (flags[1] ?? '').split(',').filter(Boolean) : [];
@@ -33,14 +37,23 @@ const also = flags[0] === '--also' ? (flags[1] ?? '').split(',').filter(Boolean)
 const PERMISSIVE = /^(MIT|MIT-0|ISC|BSD-2-Clause|BSD-3-Clause|Apache-2\.0|0BSD|CC0-1\.0|Unlicense|BlueOak-1\.0\.0)$/;
 const LICENSE_FILE = /^(licen[cs]e|copying|notice)(\.|$)/i;
 
-const walk = async (dir) => {
-    const found = [];
-    for (const entry of await readdir(dir, { withFileTypes: true })) {
-        const path = join(dir, entry.name);
-        if (entry.isDirectory()) found.push(...(await walk(path)));
-        else if (entry.name.endsWith('.map')) found.push(path);
+// Whether permissive licenses alone satisfy an SPDX expression: one side of an
+// OR is enough and both sides of an AND are needed. An exception (WITH) changes
+// the terms, so it is left to a person, as is anything that does not parse.
+const accepted = (node) => {
+    if ('license' in node) return PERMISSIVE.test(node.license) && !node.exception;
+
+    return node.conjunction === 'or'
+        ? accepted(node.left) || accepted(node.right)
+        : accepted(node.left) && accepted(node.right);
+};
+
+const acceptable = (license) => {
+    try {
+        return accepted(parse(license));
+    } catch {
+        return false;
     }
-    return found;
 };
 
 // "webpack://_N_E/./node_modules/a/node_modules/@s/b/dist/x.js" ->
@@ -57,8 +70,9 @@ const packageDirOf = (source) => {
 };
 
 const dirs = new Set(also.map((name) => `node_modules/${name}`));
-for (const file of await walk(join(projectDir, 'out'))) {
-    const { sources = [] } = JSON.parse(await readFile(file, 'utf8'));
+const maps = new Bun.Glob('**/*.map').scan({ cwd: join(projectDir, 'out'), absolute: true });
+for await (const file of maps) {
+    const { sources = [] } = await Bun.file(file).json();
     for (const source of sources) {
         const dir = packageDirOf(source);
         if (dir) dirs.add(dir);
@@ -90,28 +104,25 @@ const packages = new Map();
 const problems = [];
 for (const dir of [...dirs].sort()) {
     const path = join(projectDir, dir);
-    const manifest = JSON.parse((await readFile(join(path, 'package.json'), 'utf8').catch(() => 'null')) ?? 'null');
+    const manifest = await Bun.file(join(path, 'package.json'))
+        .json()
+        .catch(() => null);
     if (!manifest) {
         problems.push(`${dir}: no package.json`);
         continue;
     }
 
-    const names = (await readdir(path)).filter((name) => LICENSE_FILE.test(name));
-    const files = [];
-    for (const name of names.sort()) {
-        if ((await stat(join(path, name))).isFile())
-            files.push({ name, text: (await readFile(join(path, name), 'utf8')).trim() });
-    }
+    const listed = await Array.fromAsync(new Bun.Glob('*').scan({ cwd: path, onlyFiles: true, followSymlinks: true }));
+    const files = await Promise.all(
+        listed
+            .filter((name) => LICENSE_FILE.test(name))
+            .sort()
+            .map(async (name) => ({ name, text: (await Bun.file(join(path, name)).text()).trim() })),
+    );
 
     const license = declaredLicense(manifest);
     const id = `${manifest.name}@${manifest.version}`;
-    if (
-        !license ||
-        !license
-            .split(/ OR | AND |[()]/)
-            .filter(Boolean)
-            .every((part) => PERMISSIVE.test(part.trim()))
-    ) {
+    if (!license || !acceptable(license)) {
         problems.push(`${id}: license ${license ?? '(not declared)'} is not one this file accepts`);
     }
     if (files.length === 0 && !license) problems.push(`${id}: no license text and no declared license`);
@@ -153,5 +164,5 @@ The site's design is derived from the Tailwind Plus Protocol template, which is 
 
 `;
 
-await writeFile(outputFile, `${header}${sections.join('\n')}`);
+await Bun.write(outputFile, `${header}${sections.join('\n')}`);
 console.log(`Wrote ${packages.size} notices to ${outputFile}`);
