@@ -49,21 +49,25 @@ to pick from.
 ### Send an `Origin` header with the auth requests
 
 The auth routes reject a `POST` that has a cookie but no `Origin` header, with `403` and the `code`
-`missing_or_null_origin`. Insomnia keeps the session cookie from sign-up and sends it on every later
-request, but it sends no `Origin`, so sign-in and sign-out fail unless you add one. Create a folder for
-the auth requests (sign-up, sign-in, sign-out) and add this in the folder's **Headers**:
+`missing_or_null_origin`. Writes to the data routes (`POST`, `PATCH` and `DELETE`) have a similar rule: with
+a cookie and no allowed `Origin`, they get `403` with the `code` `origin_not_allowed`. Insomnia keeps the
+session cookie from sign-up and sends it on every later request, but it sends no `Origin`, so these fail
+unless you add one. Create a folder for the auth requests (sign-up, sign-in, sign-out) and another for the
+writes, and add this in each folder's **Headers**:
 
 | Header | Value |
 | --- | --- |
 | `Origin` | `{{ _.base_url }}` |
 
 The API always trusts its own base URL (`BETTER_AUTH_URL` in `.env`), so this passes as long as
-`base_url` matches it. Requests without a cookie, such as the first sign-up, work either way.
+`base_url` matches it. Requests without a cookie, such as the first sign-up, work either way, and so do
+requests that send a bearer token (see [Authenticate requests](#5-authenticate-requests)).
 
 ### Import the data endpoints (optional)
 
-Importing `http://api.chinook.localhost/openapi.json` creates a request for each of the 12 data routes
-(a list and a by-id request for albums, artists, genres, media types, playlists and tracks). Imported
+Importing `http://api.chinook.localhost/openapi.json` creates a request for each of the 32 data routes:
+the reads and the writes for albums, artists, genres, media types, playlists and tracks, and adding and
+removing a playlist's tracks. Imported
 requests use the spec's server URL, `http://api.chinook.localhost`, and not your environment variable.
 `/api/auth/*` is not included, so create those requests by hand. If the imported requests return `401`,
 set the auth yourself as in [Authenticate requests](#5-authenticate-requests).
@@ -174,6 +178,10 @@ sign-in request's last response, using Insomnia's response tags.
 
 ## 6. Call the endpoints
 
+### Read data
+
+Any signed-in user can read.
+
 | Route | Notes |
 | --- | --- |
 | `GET /api/artists`, `/api/artists/{id}` | 275 artists |
@@ -209,6 +217,56 @@ GET {{ _.base_url }}/api/artists?limit=2
 
 Single records come back as `{ "data": { … } }`.
 
+### Create, change and delete data
+
+Writes need an admin. A signed-in ordinary user gets `403` (see
+[Create an admin account](#create-an-admin-account)). Send a JSON body with the `Content-Type:
+application/json` header, and the `Origin` header from step 2 if you rely on the cookie.
+
+| Route | Body |
+| --- | --- |
+| `POST /api/artists` | `name` |
+| `POST /api/albums` | `title`, `artist_id` |
+| `POST /api/genres`, `/api/media-types`, `/api/playlists` | `name` |
+| `POST /api/tracks` | `name`, `media_type_id`, `milliseconds` and `unit_price` (a string such as `"0.99"`), and optionally `album_id`, `genre_id`, `composer` and `bytes` |
+| `PATCH /api/{resource}/{id}` | Any of the fields above, but at least one |
+| `DELETE /api/{resource}/{id}` | None. Add `?cascade=true` for an artist or album that still has albums or tracks |
+| `POST /api/playlists/{id}/tracks` | `track_id` |
+| `DELETE /api/playlists/{id}/tracks/{track_id}` | None |
+
+A create returns `201`, and an update or delete returns `200`. Each returns the record as `{ "data": … }`,
+in the same shape as a read. A delete returns the record that was removed.
+
+```http
+POST {{ _.base_url }}/api/artists
+```
+
+```json
+{ "name": "Example Artist" }
+```
+
+```json
+{ "data": { "id": 276, "name": "Example Artist" } }
+```
+
+The `id` is whatever comes next in your database. Change the artist, then delete it:
+
+```http
+PATCH {{ _.base_url }}/api/artists/276
+```
+
+```json
+{ "name": "Renamed Artist" }
+```
+
+```http
+DELETE {{ _.base_url }}/api/artists/276
+```
+
+After the delete, `GET {{ _.base_url }}/api/artists/276` returns `404`: deleting an artist, album, genre,
+media type or track keeps the row but hides it, so lists, counts and reads no longer include it. Playlists
+are removed for good, along with their list of tracks, and the tracks themselves are not touched.
+
 ### Errors
 
 Errors are problem documents with the content type `application/problem+json`: a `status`, a `title`,
@@ -223,6 +281,12 @@ for the format and every code.
 | Non-numeric id, e.g. `/api/artists/abc` | `400` | `validation_failed` | The request is not valid. |
 | An id that does not exist, or a deleted row | `404` | `not_found` | Artist not found. |
 | A write by a signed-in user who is not an admin | `403` | `forbidden` | This action requires the admin role. |
+| A cookie write without an allowed `Origin` | `403` | `origin_not_allowed` | The request comes from an origin that is not allowed. |
+| A body that is not valid JSON | `400` | `bad_request` | Malformed JSON in request body |
+| A body over 100 KB | `413` | `content_too_large` | The request body is too large. |
+| A parent that does not exist or is deleted, e.g. an unknown `artist_id` | `422` | `invalid_reference` | The row refers to a parent that does not exist. |
+| Adding a track that is already in the playlist | `409` | `duplicate_value` | A row with that value already exists. |
+| Deleting an artist that still has albums | `409` | `delete_blocked` | The artist has 2 albums. Delete them first, or pass cascade=true. |
 
 A missing id is a `404`, not a `200` with an empty result, and the `detail` names the resource. For the
 non-numeric id, the `errors` list in the same document says which value was wrong:
@@ -248,6 +312,12 @@ stops working: the next data request is a `401`.
 - **`403` `missing_or_null_origin` on sign-in or sign-out.** The request had the session cookie but no
   `Origin` header. Add the header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests),
   or delete the saved cookies for the host in Insomnia's cookie manager and send the request again.
+- **`403` `origin_not_allowed` on a write.** The request had the session cookie but no `Origin` that the API
+  trusts. Add the `Origin` header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests),
+  or authenticate with a bearer token, which needs no `Origin`.
+- **`409` `delete_blocked`.** The artist or album still has albums or tracks. Delete them first, or add
+  `?cascade=true` to the delete. A genre or media type that tracks still use cannot be deleted until those tracks
+  are changed or deleted.
 - **`403` `invalid_origin`.** The `Origin` is not one the API trusts. The trusted origins are
   `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL` in `.env`). A browser request from
   `http://api.chinook.localhost` gets this unless `BETTER_AUTH_URL` is that address (older copies of
@@ -275,6 +345,10 @@ curl -X POST http://api.chinook.localhost/api/auth/sign-in/email -H 'Content-Typ
   -d '{"email":"you@example.com","password":"at-least-8-characters"}'
 
 curl 'http://api.chinook.localhost/api/artists?limit=2' -H 'Authorization: Bearer <token>'
+
+# as an admin
+curl -X POST http://api.chinook.localhost/api/artists -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' -d '{"name":"Example Artist"}'
 
 curl -X POST http://api.chinook.localhost/api/auth/sign-out -H 'Content-Type: application/json' \
   -H 'Authorization: Bearer <token>' -d '{}'

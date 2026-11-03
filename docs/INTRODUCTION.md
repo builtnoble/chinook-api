@@ -7,8 +7,8 @@ media types, invoices, customers and employees). It is a testing ground for fron
 example of how quickly a typed, signed-in API can be built with modern TypeScript tools.
 
 The database holds all of those tables, but only albums, artists, genres, media types, playlists and
-tracks have routes so far, and every route is a read-only `GET`. Write and delete routes are still to
-come. The database itself accepts writes.
+tracks have routes so far. Anyone who is signed in can read them. Creating, changing and deleting data
+needs the admin role.
 
 What it aims for:
 
@@ -20,8 +20,8 @@ What it aims for:
 - **Consistent conventions.** Names are snake_case, like the Chinook SQL. Pagination is predictable.
   The OpenAPI docs come from the same schemas that check requests.
 
-It is not a production system of record. There is no rate limiting or caching, and the data is mostly
-read-only reference data with a thin sign-in layer on top.
+It is not a production system of record. There is no rate limiting or caching, and the data is sample
+reference data with a thin sign-in layer on top.
 
 ## How it fits together
 
@@ -37,7 +37,10 @@ Hono app (api/src/index.ts)
   ├─ errors and unknown routes       → problem documents (api/src/handlers/errorHandler.ts)
   └─ /api/*  (api/src/api.ts)
         ├─ snakeCaseKeysMiddleware   → rewrites outgoing JSON keys to snake_case
+        ├─ bodyLimitMiddleware       → refuses bodies over 100 KB (413)
+        ├─ originGuardMiddleware     → cookie writes need an allowed Origin (403)
         ├─ authMiddleware            → verifies session, 401s if absent
+        ├─ requireAdminMiddleware    → writes need the admin role (403)
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
               ├─ validate(query/param/json) → Zod schemas (api/src/utils/schema/)
               ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
@@ -80,17 +83,57 @@ Take `GET /api/tracks`:
    `deleted_at`.
 6. The response body is rewritten with snake_case keys before it is sent.
 
+## Writing data
+
+Artists, albums, genres, media types, playlists and tracks each have `POST /api/{resource}`,
+`PATCH /api/{resource}/{id}` and `DELETE /api/{resource}/{id}`. A playlist's tracks have
+`POST /api/playlists/{id}/tracks`, with `{ "track_id": 1 }` as the body, and
+`DELETE /api/playlists/{id}/tracks/{track_id}`. All of them need the admin role. An update sends only the
+fields to change, and must change at least one.
+
+A write goes through the same steps as a read, with these checks first, in this order:
+
+1. A body over 100 KB gets `413`, whether or not the request says how long it is.
+2. A request that sends a session cookie (and no bearer token) must come from an allowed origin, or it gets
+   `403` with the code `origin_not_allowed`. Bearer-token requests skip this check, because a page on another
+   site cannot set that header.
+3. No session is `401`. A signed-in user who is not an admin is `403`.
+
+The body must be JSON, and fields the route does not know are rejected. A write that touches several rows,
+such as a cascade or a create that first checks its parent, runs in one transaction, so a failure leaves the
+data as it was.
+
+A create answers `201`, and an update or delete answers `200`. All three return the record as `{ "data": ... }`,
+in the same shape as a read: an album comes with its artist, and a track with its album, genre and media type.
+A delete returns the record that was removed.
+
+- **Deleting keeps the row.** Artists, albums, genres, media types and tracks are not removed. Deleting sets
+  `deleted_at`, so the item disappears from lists, counts and reads (its id is `404`), and invoices that include
+  a deleted track stay intact. Playlists are deleted for good, along with their list of tracks. The tracks
+  themselves are not touched.
+- **Deleting a parent.** An artist that still has albums, or an album that still has tracks, is refused with
+  `409` and the code `delete_blocked`. Add `?cascade=true` to delete everything below it as well (an artist's
+  albums and their tracks). That happens all or nothing. A genre or media type cannot be deleted while tracks
+  still use it; change or delete those tracks first.
+- **References.** A write that names a parent that does not exist or is deleted (`artist_id`, `album_id`,
+  `genre_id`, `media_type_id`, or a playlist's `track_id`) is `422` with the code `invalid_reference`. Adding a
+  track that is already in the playlist is `409` with the code `duplicate_value`.
+
 **Sign-in.** Better Auth keeps its own tables (`users`, `sessions`, `accounts` and `verifications`,
 in `api/src/db/authSchema.ts`) next to the Chinook tables, in the same database. `/api/auth/*` goes
 straight to Better Auth, so those endpoints need no sign-in, while everything under `/api/*` needs a
-valid bearer session. Successful `/api/auth/*` responses keep Better Auth's camelCase keys. Failures
+valid bearer session. Signing up always creates an ordinary user. Admins are created from the command line
+(see the README), and Better Auth's admin plugin adds endpoints under `/api/auth/admin/*` that only admins can
+use (see [its documentation](https://www.better-auth.com/docs/plugins/admin)). Successful `/api/auth/*`
+responses keep Better Auth's camelCase keys. Failures
 are rewritten as problem documents that copy only the message and the code, because Better Auth can
 attach a raw error, such as a failing SQL statement with its values, and that must not reach the client.
 
 **Other origins.** A frontend on another origin is allowed by listing it in `CORS_ORIGINS`, separated
 by commas. The same list sets Better Auth's trusted origins, which also always include its own base
 URL (`BETTER_AUTH_URL`). An origin that is not listed gets no CORS headers, and its cookie requests to
-`/api/auth/*` get a `403` with the code `invalid_origin`.
+`/api/auth/*` get a `403` with the code `invalid_origin`. The same list decides which origins may send
+cookie-authenticated writes to `/api/*`; any other origin gets `403` with `origin_not_allowed`.
 
 **OpenAPI and the docs site.** `/openapi.json` is generated from the same route definitions and Zod
 schemas that check requests, so the docs match the code. The docs site is built from it:
@@ -109,9 +152,12 @@ in `api/drizzle.config.ts`) only manages what the API adds:
 - `0002` makes three foreign keys cascade on delete, as they do in the current image (`invoice_lines`
   to `invoices`, and `playlist_tracks` to `playlists` and `tracks`). It only changes databases made
   from the image before 1.0.
-- `0003` adds `tracks.deleted_at`. Deleting a track sets it and keeps the row, so invoice lines still
-  point at a real track. Image 1.1 and later create the column themselves, so `0003` only changes
-  databases made from an older image.
+- `0003` adds `tracks.deleted_at`. Image 1.1 and later create the column themselves, so `0003` only
+  changes databases made from an older image.
+- `0004` adds `deleted_at` to artists, albums, genres and media types in the same way. Image 1.2 and later
+  create those columns, so `0004` only changes databases made from an older image.
+- `0005` adds the columns Better Auth's admin plugin needs (`role` and the ban fields on `users`, and
+  `impersonated_by` on `sessions`), and three indexes on the auth tables.
 
 `api/src/db/chinookSchema.ts` mirrors the image's `init.sql`. If the two drift apart, the next
 `drizzle-kit generate` proposes the difference as a migration, so check it against the image before

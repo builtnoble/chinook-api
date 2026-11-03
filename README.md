@@ -23,7 +23,8 @@ my first project with Bun and Hono, and going from a clean slate to a working AP
 -   **PostgreSQL** - the Chinook data, in a custom Docker image
 -   **Biome** - linting and formatting
 
-The API serves the Chinook data over REST. A docs site, generated from the API's own `/openapi.json`, runs
+The API serves the Chinook data over REST: anyone signed in can read it, and admins can create, update and
+delete it. A docs site, generated from the API's own `/openapi.json`, runs
 next to it with a reference page for every resource and a guide.
 
 ---
@@ -50,7 +51,11 @@ Without a valid session the answer is `401 Unauthorized`.
 
 Any signed-in user can read. Writes (`POST`, `PATCH` and `DELETE`) need the `admin` role, and a signed-in
 user without it gets `403`. Signing up always creates an ordinary user, so the first admin is created from
-the command line; see [Create an admin](#create-an-admin).
+the command line; see [Create an admin](#create-an-admin). Better Auth's admin plugin also adds endpoints under
+`/api/auth/admin/*` for admins.
+
+**Known limitation:** sign-up is open and email addresses are not verified. Anyone can register, but only as an
+ordinary user. Before you expose an instance publicly, close sign-up or add email verification.
 
 ---
 
@@ -102,6 +107,10 @@ allow no cross-origin browser requests.
 Better Auth trusts the same list, so a listed frontend can also sign in and out when its requests carry
 cookies. Its own base URL (`BETTER_AUTH_URL`) is always trusted. An origin in neither place gets a `403` with
 the code `invalid_origin` on those requests.
+
+The list also covers writes. A write to `/api/*` that carries a session cookie must come from a listed origin
+(or the base URL), or it gets `403` with the code `origin_not_allowed`. Requests with a bearer token are not
+affected.
 
 > **Upgrading an existing `.env`:** `BETTER_AUTH_URL` used to be `http://localhost:3000`. To call the API from a
 > browser at `http://api.chinook.localhost`, set it to that address (or list the origin in `CORS_ORIGINS`).
@@ -212,6 +221,22 @@ Example response:
 	}
 }
 ```
+
+Writes need an admin. This creates an artist and answers `201` with the new record:
+
+```
+POST /api/artists
+Authorization: Bearer <admin_access_token>
+Content-Type: application/json
+
+{ "name": "Example Artist" }
+```
+
+`PATCH /api/artists/{id}` changes an artist and `DELETE /api/artists/{id}` removes it. Artists, albums, genres,
+media types and tracks are hidden rather than erased when deleted, and `?cascade=true` also deletes what
+depends on an artist or album. Playlists have the same three routes, and a playlist's tracks are added and
+removed with `POST /api/playlists/{id}/tracks` and `DELETE /api/playlists/{id}/tracks/{track_id}`. The details
+are in [docs/INTRODUCTION.md](docs/INTRODUCTION.md#writing-data).
 
 ---
 
