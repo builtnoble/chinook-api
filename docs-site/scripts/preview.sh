@@ -36,9 +36,12 @@ echo "Generating the pages..."
 bun generator/index.ts --spec "$PREVIEW_DIR/openapi.json" --pages content/pages.json --out "$SITE"
 
 # Regenerates the pages when docs/, the generator or the API change; the dev
-# server hot-reloads what it writes.
-bun scripts/watch.ts "$SITE" "$PREVIEW_DIR/openapi.json" &
-trap 'kill $! 2>/dev/null' EXIT
+# server hot-reloads what it writes. `bun --watch` follows what a script
+# imports: the API's code for the spec, and the spec, the guides and the
+# generator for the pages.
+(cd ../api && exec bun --watch --no-clear-screen scripts/export-openapi.ts "$OLDPWD/$PREVIEW_DIR/openapi.json") &
+bun --watch --no-clear-screen generator/index.ts --spec "$PREVIEW_DIR/openapi.json" --pages content/pages.json --out "$SITE" &
+trap 'kill $(jobs -p) 2>/dev/null' EXIT
 
 cd "$SITE"
 [ -d node_modules ] || npm ci

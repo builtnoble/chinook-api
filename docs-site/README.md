@@ -22,7 +22,6 @@ If you only want to use the docs, you do not need any of this: `docker compose u
 | `Dockerfile`         | Builds the site into an nginx image                                             |
 | `nginx.conf`         | Serves the static export (`/albums` is `albums.html`)                           |
 | `scripts/preview.sh` | Runs the site locally against your copy of the theme, reloading as the sources change |
-| `scripts/watch.ts`   | Regenerates the pages when `docs/`, the generator or the API change             |
 | `scripts/third-party-licenses.mjs` | Writes the license notices for the packages bundled into the site (see below) |
 
 Pages are written into the theme at build time and the theme is never read by the generator, so the generator and the

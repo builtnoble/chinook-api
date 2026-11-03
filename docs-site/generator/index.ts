@@ -78,6 +78,14 @@ export const writeChanged = async (out: string, files: Record<string, string>): 
     return written;
 };
 
+// The inputs are imported and not read, so that `bun --watch` follows them and
+// runs the generator again when one changes.
+const importJson = async <T>(path: string): Promise<T> =>
+    (await import(resolve(path), { with: { type: 'json' } })).default;
+
+const importText = async (path: string): Promise<string> =>
+    (await import(resolve(path), { with: { type: 'text' } })).default;
+
 type PageEntry = { file: string; title: string; description?: string };
 
 // Where the published Markdown lives. Paths are relative to this file, and
@@ -93,7 +101,7 @@ type Manifest = {
 // Reads the Markdown files a manifest lists and converts them to MDX. The
 // Markdown files stay the only copy.
 export const loadPages = async (manifestPath: string): Promise<Content> => {
-    const manifest = JSON.parse(await readFile(manifestPath, 'utf8')) as Manifest;
+    const manifest = await importJson<Manifest>(manifestPath);
     const base = dirname(manifestPath);
     const root = resolve(base, manifest.root);
     const repoPath = (file: string) => relative(root, resolve(base, file)).split('\\').join('/');
@@ -103,7 +111,7 @@ export const loadPages = async (manifestPath: string): Promise<Content> => {
     for (const guide of manifest.guides) published.set(repoPath(guide.file), guide.href);
 
     const convert = async (entry: PageEntry, home: boolean) =>
-        markdownToMdx(await readFile(resolve(base, entry.file), 'utf8'), {
+        markdownToMdx(await importText(resolve(base, entry.file)), {
             path: repoPath(entry.file),
             published,
             repository: manifest.repository,
@@ -136,14 +144,16 @@ if (import.meta.main) {
     }
 
     try {
-        const spec = JSON.parse(await readFile(values.spec, 'utf8')) as OpenAPIObject;
+        const spec = await importJson<OpenAPIObject>(values.spec);
         const files = generate(spec, values.pages ? await loadPages(values.pages) : {});
 
         const written = await writeChanged(values.out, files);
 
         console.log(`Wrote ${written.length} of ${Object.keys(files).length} files to ${values.out}`);
     } catch (error) {
+        // Not process.exit: that would also end `bun --watch`, which should keep
+        // watching and try again when the source is fixed.
         console.error(error instanceof Error ? error.message : error);
-        process.exit(1);
+        process.exitCode = 1;
     }
 }
