@@ -14,8 +14,8 @@ Most people never run this image directly. `docker compose up -d` in the
 docker run --rm -p 3001:8080 builtnoble/chinook-docs:edge
 ```
 
-Then open <http://localhost:3001>. The request examples in the docs point at `http://api.chinook.localhost`, which is
-where the compose stack serves the API.
+Then open <http://localhost:3001>. The request examples in the docs use `http://api.chinook.localhost`, where the
+compose stack serves the API.
 
 ## Tags
 
@@ -25,25 +25,25 @@ where the compose stack serves the API.
 | `1.2.3`, `1.2`, `1`       | A release, following the repository's `v*` tags                 |
 | `latest`                  | The latest release                                              |
 
-The docs match the API of the same version, so use a tag that matches the checkout you run the API from. In compose,
-`DOCS_TAG` in `.env` picks it. Images are published for `linux/amd64` and `linux/arm64`.
+The docs match the API of the same version, so use the tag that matches the version of the API you run. In
+compose, `DOCS_TAG` in `.env` sets it. Images are published for `linux/amd64` and `linux/arm64`.
 
 ## About the image
 
 -   Serves on port `8080` and runs as a non-root user (`nginx-unprivileged`).
 -   Has a healthcheck, so compose can wait for it.
 -   Needs no configuration or environment variables.
--   Holds only compiled static files. No source, no Node.js and no build tools are in it.
+-   Holds only the built static files, with no source, Node.js or build tools.
 
 ## Source and license
 
 The generator, the Dockerfile and the documents are in the
 [chinook-api repository](https://github.com/builtnoble/chinook-api/tree/main/docs-site).
 
-The site's design is derived from the [Protocol](https://tailwindcss.com/plus/templates/protocol) template from
-Tailwind Plus and is used under the [Tailwind Plus license](https://tailwindcss.com/plus/license). The template's source
-is not published, and this image contains only the compiled site.
+The site's design comes from the [Protocol](https://tailwindcss.com/plus/templates/protocol) template from Tailwind
+Plus, used under the [Tailwind Plus license](https://tailwindcss.com/plus/license). The template's source is not
+published, and this image contains only the built site.
 
-The open-source libraries bundled into the site are listed with their licenses at `/third-party-licenses.txt`, which the
-site's footer links to. The image is built on `nginxinc/nginx-unprivileged`, whose software stays under its own
+The open-source libraries bundled into the site are listed with their licenses at `/third-party-licenses.txt`, which
+the site's footer links to. The image is built on `nginxinc/nginx-unprivileged`, whose software stays under its own
 licenses.

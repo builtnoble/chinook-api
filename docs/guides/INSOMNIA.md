@@ -1,7 +1,7 @@
 # Testing the API with Insomnia
 
 How to create an account and call the Chinook API from [Insomnia](https://insomnia.rest). Written for
-Insomnia 13.x; menu names move around a little between versions.
+Insomnia 13.x; menu names can differ a little in other versions.
 
 ## 1. Start the API
 
@@ -10,21 +10,24 @@ docker compose up -d --build   # the Chinook database, the API, the docs site an
 bun install && (cd api && bunx drizzle-kit migrate)   # first run only: installs and creates the auth tables
 ```
 
-The API is then at `http://api.chinook.localhost` (through the proxy) and at `http://localhost:3000` (directly). The
-`.localhost` names point at your own machine, so there is nothing to configure. If port 80 is taken, set `PROXY_PORT`
-in `.env` and add the port to the address, or use `http://localhost:3000` throughout.
+The API is then at `http://api.chinook.localhost` (through the proxy) and at `http://localhost:3000`
+(directly). The `.localhost` names point at your own machine, so there is nothing to set up. If port 80
+is taken, set `PROXY_PORT` in `.env` and add the port to the address, or use `http://localhost:3000`
+throughout.
 
-Check it is up: `curl http://api.chinook.localhost/health` returns `{"status":"ok","message":"API healthy"}`.
+Check it is up: `curl http://api.chinook.localhost/health` returns
+`{"status":"ok","message":"API healthy"}`.
 
-To run the API from source instead, for example while changing it, start only the database and run the server on your
-machine, which listens on `http://localhost:3000`:
+To run the API from source instead, start only the database and run the server on your machine. It
+listens on `http://localhost:3000`:
 
 ```sh
 docker compose up -d db
 cd api && bun run dev
 ```
 
-If the `app` container is running, stop it first (`docker compose stop app`), because it also uses port 3000.
+If the `app` container is running, stop it first (`docker compose stop app`), because it also uses
+port 3000.
 
 ## 2. Set up Insomnia
 
@@ -40,35 +43,30 @@ Create a base environment with the API's address:
 
 Use `http://localhost:3000` instead if you run the API from source.
 
-Use it in request URLs as `{{ _.base_url }}`. In any text field, `Control+Space` opens a list of
-variables to pick from, which inserts the exact syntax for your version.
+Use it in request URLs as `{{ _.base_url }}`. In any text field, `Control+Space` lists the variables
+to pick from.
 
 ### Send an `Origin` header with the auth requests
 
-The auth routes reject any `POST` that carries a cookie but no `Origin` header, with `403`
-and the `code` `missing_or_null_origin`. Insomnia keeps the session cookie from
-sign-up and sends it on every later request, and it sends no `Origin` of its own, so sign-in and sign-out fail
-unless you add one. Create a folder for the auth requests (sign-up, sign-in, sign-out) and, in the folder's
-**Headers**, add:
+The auth routes reject a `POST` that has a cookie but no `Origin` header, with `403` and the `code`
+`missing_or_null_origin`. Insomnia keeps the session cookie from sign-up and sends it on every later
+request, but it sends no `Origin`, so sign-in and sign-out fail unless you add one. Create a folder for
+the auth requests (sign-up, sign-in, sign-out) and add this in the folder's **Headers**:
 
 | Header | Value |
 | --- | --- |
 | `Origin` | `{{ _.base_url }}` |
 
-The API always trusts its own base URL (`BETTER_AUTH_URL` in `.env`), so this value passes as long as `base_url`
-matches it. Requests without a cookie, such as the first sign-up, work either way.
+The API always trusts its own base URL (`BETTER_AUTH_URL` in `.env`), so this passes as long as
+`base_url` matches it. Requests without a cookie, such as the first sign-up, work either way.
 
 ### Import the data endpoints (optional)
 
-The API publishes its own OpenAPI document at `http://api.chinook.localhost/openapi.json`. Importing it from that
-URL creates a request for each of the 12 data routes (a list and a by-id request for albums, artists,
-genres, media types, playlists and tracks). Three things to know:
-
-- Imported requests use the spec's first server URL, `http://api.chinook.localhost`, not your environment variable.
-- The spec declares a bearer security scheme and marks every data route as requiring it, but how Insomnia applies that
-  on import depends on its version. If imported requests come back `401`, set the auth yourself as in
-  [Authenticate requests](#5-authenticate-requests).
-- It does not include `/api/auth/*`. Create those requests by hand (next sections).
+Importing `http://api.chinook.localhost/openapi.json` creates a request for each of the 12 data routes
+(a list and a by-id request for albums, artists, genres, media types, playlists and tracks). Imported
+requests use the spec's server URL, `http://api.chinook.localhost`, and not your environment variable.
+`/api/auth/*` is not included, so create those requests by hand. If the imported requests return `401`,
+set the auth yourself as in [Authenticate requests](#5-authenticate-requests).
 
 ## 3. Create an account
 
@@ -106,10 +104,11 @@ A successful sign-up returns `200` and signs you in:
 ```
 
 The response headers include `set-auth-token` (the session token) and
-`set-cookie: better-auth.session_token=…; Max-Age=604800; Path=/; HttpOnly; SameSite=Lax`. Sessions last
-7 days.
+`set-cookie: better-auth.session_token=…; Max-Age=604800; Path=/; HttpOnly; SameSite=Lax`. Sessions
+last 7 days.
 
-These failures are problem documents, like the errors of the data routes (see [Errors](../INTRODUCTION.md#errors)).
+These failures are problem documents, like the errors of the data routes (see
+[Errors](../INTRODUCTION.md#errors)).
 
 | Case | Status | `code` | `detail` |
 | --- | --- | --- | --- |
@@ -119,17 +118,18 @@ These failures are problem documents, like the errors of the data routes (see [E
 
 ### Create an admin account
 
-An account made with the request above is an ordinary user. It can read every route, but a write (`POST`, `PATCH` or
-`DELETE`) returns `403` with the `detail` `This action requires the admin role.`. To send writes, create an admin
-from the command line instead of signing up:
+An account made with the request above is an ordinary user. It can read every route, but a write
+(`POST`, `PATCH` or `DELETE`) returns `403` with the `detail` `This action requires the admin role.`.
+To send writes, create an admin from the command line instead of signing up:
 
 ```sh
 cd api && bun run create-admin --email admin@example.com --name "Admin"
 ```
 
-It asks for a password (passing `--password` leaves it in your shell history) and, if any users already exist, asks
-`Create an admin user anyway?`; answer `y` or pass `--yes`. The database must be running and migrated, but the API does
-not need to be. Skip the sign-up request and go to step 4: sign in with that email and password.
+It asks for a password (passing `--password` leaves it in your shell history) and, if any users
+already exist, asks `Create an admin user anyway?`; answer `y` or pass `--yes`. The database must be
+running and migrated, but the API does not need to be. Skip the sign-up request and go to step 4: sign
+in with that email and password.
 
 ## 4. Sign in
 
@@ -142,8 +142,8 @@ not need to be. Skip the sign-up request and go to step 4: sign in with that ema
 }
 ```
 
-Returns `200` with `{"redirect":false,"token":"…","user":{…}}` and the same `set-auth-token` header and
-cookie as sign-up. A wrong password and an unknown email both return `401`:
+Returns `200` with `{"redirect":false,"token":"…","user":{…}}` and the same `set-auth-token` header
+and cookie as sign-up. A wrong password and an unknown email both return `401`:
 
 ```json
 {
@@ -157,21 +157,20 @@ cookie as sign-up. A wrong password and an unknown email both return `401`:
 
 ## 5. Authenticate requests
 
-Every `/api/*` data route needs a session. `/health`, `/openapi.json` and `/api/auth/*` do not. There are two
-ways to send one; either works.
+Every `/api/*` data route needs a session. `/health`, `/openapi.json` and `/api/auth/*` do not. Either
+of these works:
 
-**Cookie (nothing to configure).** Sign-up and sign-in set the `better-auth.session_token` cookie. Insomnia
-keeps the cookies it receives and sends them on later requests to the same host, so after you sign in,
-the data requests are authenticated automatically.
+**Cookie (nothing to set up).** Sign-up and sign-in set the `better-auth.session_token` cookie.
+Insomnia keeps the cookies it receives and sends them on later requests to the same host, so once you
+have signed in, the data requests are authenticated automatically.
 
-**Bearer token.** On a request, folder or collection, set Auth to *Bearer Token* and use the session token:
+**Bearer token.** On a request, folder or collection, set Auth to *Bearer Token* and use either:
 
 - the `token` field of the sign-up or sign-in response body (32 characters), or
-- the `set-auth-token` response header (a longer, URL-encoded signed value).
+- the `set-auth-token` response header (a longer, URL-encoded value).
 
-Both are accepted. To avoid pasting the token after every sign-in, set the token field to a value read from
-the sign-in request's last response (the `token` attribute of its JSON body) with Insomnia's response
-chaining.
+To avoid pasting the token after every sign-in, set the token field to the `token` attribute of the
+sign-in request's last response, using Insomnia's response tags.
 
 ## 6. Call the endpoints
 
@@ -184,8 +183,8 @@ chaining.
 | `GET /api/playlists`, `/api/playlists/{id}` | 18 playlists |
 | `GET /api/tracks`, `/api/tracks/{id}` | 3503 tracks; each includes `album` (with its `artist`), `genre` and `media_type` |
 
-List routes take `page` and `limit` query parameters; with no `limit` you get 10 rows (fewer if the table
-is smaller). Keys in responses are snake_case.
+List routes take `page` and `limit` query parameters. With no `limit` you get 10 rows (fewer if the
+table is smaller). Keys in responses are snake_case.
 
 ```http
 GET {{ _.base_url }}/api/artists?limit=2
@@ -212,9 +211,9 @@ Single records come back as `{ "data": { … } }`.
 
 ### Errors
 
-Errors are problem documents with the content type `application/problem+json`: a `status`, a `title`, a `detail`
-that explains this occurrence, and a `code` to match on. See [Errors](../INTRODUCTION.md#errors) for the format and
-every code.
+Errors are problem documents with the content type `application/problem+json`: a `status`, a `title`,
+a `detail` that explains this case, and a `code` to match on. See [Errors](../INTRODUCTION.md#errors)
+for the format and every code.
 
 | Request | Status | `code` | `detail` |
 | --- | --- | --- | --- |
@@ -225,52 +224,46 @@ every code.
 | An id that does not exist, or a deleted row | `404` | `not_found` | Artist not found. |
 | A write by a signed-in user who is not an admin | `403` | `forbidden` | This action requires the admin role. |
 
-A missing id is a `404`, not a `200` with an empty result. The `detail` names the resource. For the non-numeric id, the
-`errors` list in the same document says which value was wrong: `"field": "/id", "in": "path"`.
+A missing id is a `404`, not a `200` with an empty result, and the `detail` names the resource. For the
+non-numeric id, the `errors` list in the same document says which value was wrong:
+`"field": "/id", "in": "path"`.
 
 ## 7. Sign out
 
-`POST {{ _.base_url }}/api/auth/sign-out` with `{}` as the JSON body and your session attached (cookie or
-Bearer token), and the `Origin` header from step 2. Returns `200` `{"success":true}`, and the token stops working: the next data request is a
-`401`.
-
-## A suggested test run
-
-1. Sign up (step 3), then sign in (step 4).
-2. `GET /api/artists?limit=2`, then `GET /api/artists/1`.
-3. `GET /api/tracks/1` and `GET /api/albums/1`, which both nest the record under `data`.
-4. `GET /api/artists?page=9999` and `GET /api/artists/abc` for the error shapes.
-5. Sign out, then repeat step 2 and confirm the `401`.
+`POST {{ _.base_url }}/api/auth/sign-out` with `{}` as the JSON body, your session attached (cookie or
+bearer token), and the `Origin` header from step 2. It returns `200` `{"success":true}`, and the token
+stops working: the next data request is a `401`.
 
 ## Troubleshooting
 
-- **`500` on sign-up or sign-in.** The API cannot reach the database (`docker compose ps` should show `db` as
-  healthy), or the auth tables do not exist yet: run `bunx drizzle-kit migrate`.
-- **`401` on data routes.** You are not signed in, the session was signed out, or the session expired
-  (7 days).
+- **`500` on sign-up or sign-in.** The API cannot reach the database (`docker compose ps` should show
+  `db` as healthy), or the auth tables do not exist yet. Run `bunx drizzle-kit migrate`.
+- **`401` on data routes.** You are not signed in, you signed out, or the session expired (7 days).
 - **Port 3000 already in use.** If you run the API with `bun run dev`, stop the `app` container first
   (`docker compose stop app`).
-- **`api.chinook.localhost` does not resolve, or port 80 is in use.** Most systems resolve `*.localhost` to the local
-  machine by themselves. If yours does not, or the proxy cannot bind port 80, use `http://localhost:3000` (set
-  `base_url` accordingly), or set `PROXY_PORT` in `.env` and put that port in the address.
-- **`403` `missing_or_null_origin` on sign-in or sign-out.** The request carried the session cookie but no `Origin`
-  header. Add the header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests), or delete
-  the saved cookies for the host in Insomnia's cookie manager and send the request again.
-- **`403` `invalid_origin`.** The `Origin` is not one the API trusts. `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL`
-  in `.env`) are the trusted origins. A browser request from `http://api.chinook.localhost` gets this unless
-  `BETTER_AUTH_URL` is that address (older copies of `.env` have `http://localhost:3000`). See the README for
-  configuring a frontend.
-- **`403` `This action requires the admin role.`** You are signed in as an ordinary user. Create an admin as in
-  [Create an admin account](#create-an-admin-account) and sign in with it.
-- **`create-admin` says `Failed to inspect existing users`.** The command cannot reach the database, or the auth tables
-  do not exist yet: the same causes as the `500` above. Check that `db` is healthy and run `bunx drizzle-kit migrate`.
-- **`create-admin` says `User already exists`.** That email already has an account. Use another email, or sign in
-  with the existing account.
-- **`create-admin` says `Cannot find module '@/db'`.** The Better Auth CLI was run from the wrong directory (use
-  `bun run create-admin` in `api/`, which sets the right one), and it cached its failed attempt. Delete `jiti` from your
-  temporary directory (`$TMPDIR/jiti`, or `/tmp/jiti` where `TMPDIR` is not set) and run the script again.
-- **Start over.** `docker compose down -v` deletes the database volume, accounts included, and re-seeds on
-  the next start (then run the migrations and `create-admin` again).
+- **`api.chinook.localhost` does not resolve, or port 80 is in use.** Most systems send `*.localhost`
+  to the local machine by themselves. If yours does not, or the proxy cannot use port 80, use
+  `http://localhost:3000` (and set `base_url` to match), or set `PROXY_PORT` in `.env` and put that
+  port in the address.
+- **`403` `missing_or_null_origin` on sign-in or sign-out.** The request had the session cookie but no
+  `Origin` header. Add the header as in [Send an `Origin` header](#send-an-origin-header-with-the-auth-requests),
+  or delete the saved cookies for the host in Insomnia's cookie manager and send the request again.
+- **`403` `invalid_origin`.** The `Origin` is not one the API trusts. The trusted origins are
+  `CORS_ORIGINS` and the base URL (`BETTER_AUTH_URL` in `.env`). A browser request from
+  `http://api.chinook.localhost` gets this unless `BETTER_AUTH_URL` is that address (older copies of
+  `.env` have `http://localhost:3000`). See the README for setting up a frontend.
+- **`403` `This action requires the admin role.`** You are signed in as an ordinary user. Create an
+  admin as in [Create an admin account](#create-an-admin-account) and sign in with it.
+- **`create-admin` says `Failed to inspect existing users`.** It cannot reach the database, or the auth
+  tables do not exist yet, which are the same causes as the `500` above. Check that `db` is healthy and
+  run `bunx drizzle-kit migrate`.
+- **`create-admin` says `User already exists`.** That email already has an account. Use another email,
+  or sign in with the existing account.
+- **`create-admin` says `Cannot find module '@/db'`.** The command was run from the wrong directory
+  (use `bun run create-admin` in `api/`), and it saved its failed attempt. Delete `jiti` from your
+  temporary directory (`$TMPDIR/jiti`, or `/tmp/jiti` if `TMPDIR` is not set) and run it again.
+- **Start over.** `docker compose down -v` deletes the database volume, accounts included, and loads
+  the data again on the next start. Then run the migrations and `create-admin` again.
 
 ## The same requests with curl
 
