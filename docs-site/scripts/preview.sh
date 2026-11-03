@@ -5,15 +5,16 @@
 #
 #   THEME_DIR    the chinook-docs-theme checkout (default: next to this
 #                repository)
-#   PREVIEW_DIR  where the copy lives (default: docs-site/.preview, ignored
-#                by git)
+#   PREVIEW_DIR  where the copy lives (default: next to the theme, as
+#                chinook-docs-theme-preview). Keep it outside this repository,
+#                or Next.js warns about the repository's lockfile.
 #   PORT         dev server port (default: 3001)
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
 THEME_DIR="${THEME_DIR:-../../chinook-docs-theme}"
-PREVIEW_DIR="${PREVIEW_DIR:-.preview}"
+PREVIEW_DIR="${PREVIEW_DIR:-${THEME_DIR%/}-preview}"
 PORT="${PORT:-3001}"
 SITE="$PREVIEW_DIR/site"
 

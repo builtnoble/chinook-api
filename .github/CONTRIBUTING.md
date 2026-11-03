@@ -176,7 +176,8 @@ cd docs-site
 bun run preview        # http://127.0.0.1:3001
 ```
 
-It copies the theme into `docs-site/.preview/` (ignored by git), generates the pages and starts the theme's dev server.
+It copies the theme into `chinook-docs-theme-preview`, next to the theme and outside this repository, generates the
+pages and starts the theme's dev server.
 It then watches `docs/`, `docs-site/content`, `docs-site/generator` and `api/src` and regenerates the pages when any
 of them change, so a saved edit shows up in the open browser tab without restarting. Leave it running.
 

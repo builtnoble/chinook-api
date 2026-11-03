@@ -37,11 +37,15 @@ cd docs-site
 bun run preview        # http://127.0.0.1:3001
 ```
 
-It exports the spec, copies the theme to `docs-site/.preview/` (ignored by git), generates the pages into the copy
-and starts the theme's dev server. It then watches `docs/`, `docs-site/content`, `docs-site/generator` and `api/src`
+It exports the spec, copies the theme to `chinook-docs-theme-preview`, next to the theme, generates the pages into the
+copy and starts the theme's dev server. It then watches `docs/`, `docs-site/content`, `docs-site/generator` and `api/src`
 and regenerates the pages when any of them change, so an edit shows up in the open browser tab without restarting.
 Leave it running. The first run installs the theme's dependencies. Set `PORT` to use another port, for example when
 `docker compose up` already serves the published docs on 3001.
+
+The copy is kept outside this repository on purpose. Next.js looks for lockfiles in every directory above the site it
+runs, and warns when it finds the repository's `bun.lock` as well as the theme's own `package-lock.json`. Set
+`PREVIEW_DIR` to put it somewhere else, but not inside the repository.
 
 ## Build the image
 
