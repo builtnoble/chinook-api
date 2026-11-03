@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { compile } from '@mdx-js/mdx';
+import type { OperationObject as Operation, SchemaObject as Schema, OpenAPIObject as Spec } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
 import { escapeMdx } from './render';
 import { UnsupportedError } from './schema';
-import type { Operation, Schema, Spec } from './types';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/openapi.json', import.meta.url), 'utf8')) as Spec;
 const contentDir = new URL('./fixtures/content', import.meta.url).pathname;
 
 // A one-operation spec, so each test states only what it changes.
 const specWith = (operation: Partial<Operation>, extra: Partial<Spec> = {}): Spec => ({
+    openapi: '3.1.0',
     info: { title: 'Test', version: '1.0.0' },
     tags: [{ name: 'Things', description: 'Some things.' }],
     paths: {
@@ -267,6 +268,14 @@ describe('operations', () => {
         expect(() => generate(specWith({ tags: ['Other'] }))).toThrow('tag "Other" is not declared');
         expect(() => generate(specWith({ summary: undefined }))).toThrow('a summary and a description are required');
     });
+
+    it('refuses a $ref where it expects a parameter, a request body or a response written out', () => {
+        const ref = { $ref: '#/components/x/Thing' };
+
+        expect(() => generate(specWith({ parameters: [ref] }))).toThrow('GET /things.parameters[0]: a $ref to');
+        expect(() => generate(specWith({ requestBody: ref }))).toThrow('GET /things.requestBody: a $ref to');
+        expect(() => generate(specWith({ responses: { 200: ref } }))).toThrow('GET /things.responses.200: a $ref to');
+    });
 });
 
 // A resource with the reads and the writes the API offers, so each test can say
@@ -280,7 +289,7 @@ const model: Schema = {
 const dataOf = (schema: Schema): Schema => ({ type: 'object', properties: { data: schema }, required: ['data'] });
 const json = (schema: Schema) => ({ 'application/json': { schema } });
 const secured = { security: [{ bearerAuth: [] }] };
-const idParameter = { in: 'path' as const, name: 'id', required: true, schema: { type: 'number' } };
+const idParameter = { in: 'path' as const, name: 'id', required: true, schema: { type: 'number' as const } };
 const errors = { 400: { description: 'Invalid.' }, 403: { description: 'Not an admin.' } };
 
 const writeSpec = (overrides: Record<string, Record<string, Partial<Operation>>> = {}): Spec => {
@@ -332,6 +341,7 @@ const writeSpec = (overrides: Record<string, Record<string, Partial<Operation>>>
     }
 
     return {
+        openapi: '3.1.0',
         info: { title: 'Test', version: '1.0.0' },
         servers: [{ url: 'http://api.test' }],
         tags: [{ name: 'Things', description: 'Some things.' }],
@@ -415,7 +425,7 @@ describe('write operations', () => {
         const spec = writeSpec({
             '/things': {
                 post: {
-                    ...writeSpec().paths['/things'].post,
+                    ...writeSpec().paths?.['/things']?.post,
                     requestBody: {
                         content: json({
                             type: 'object',
@@ -440,7 +450,7 @@ describe('write operations', () => {
             ),
         } satisfies Schema;
         const spec = writeSpec({
-            '/things': { post: { ...writeSpec().paths['/things'].post, requestBody: { content: json(long) } } },
+            '/things': { post: { ...writeSpec().paths?.['/things']?.post, requestBody: { content: json(long) } } },
         });
         const create = sectionOf(thingsPage(spec), 'Create a thing');
 
@@ -456,7 +466,7 @@ describe('write operations', () => {
             properties: { title: { type: 'string', examples: ["Rock 'n' Roll"] } },
         } satisfies Schema;
         const spec = writeSpec({
-            '/things': { post: { ...writeSpec().paths['/things'].post, requestBody: { content: json(quoted) } } },
+            '/things': { post: { ...writeSpec().paths?.['/things']?.post, requestBody: { content: json(quoted) } } },
         });
         const create = sectionOf(thingsPage(spec), 'Create a thing');
 
@@ -541,7 +551,7 @@ describe('write operations', () => {
         const spec = writeSpec({
             '/things': {
                 post: {
-                    ...writeSpec().paths['/things'].post,
+                    ...writeSpec().paths?.['/things']?.post,
                     requestBody: { content: { 'multipart/form-data': { schema: { type: 'object' } } } },
                 },
             },

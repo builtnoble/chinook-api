@@ -4,8 +4,8 @@
 // Usage: bun generator/check.ts <openapi.json>
 import { readFile } from 'node:fs/promises';
 import { compile } from '@mdx-js/mdx';
+import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { generate, loadPages } from './index';
-import type { Spec } from './types';
 
 const specPath = process.argv[2];
 if (!specPath) {
@@ -14,7 +14,7 @@ if (!specPath) {
 }
 
 try {
-    const spec = JSON.parse(await readFile(specPath, 'utf8')) as Spec;
+    const spec = JSON.parse(await readFile(specPath, 'utf8')) as OpenAPIObject;
     const files = generate(spec, await loadPages(new URL('../content/pages.json', import.meta.url).pathname));
 
     const pages = Object.entries(files).filter(([path]) => path.endsWith('.mdx'));

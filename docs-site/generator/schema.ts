@@ -1,6 +1,8 @@
-import type { Schema, Spec } from './types';
+import type { OpenAPIObject, ReferenceObject, SchemaObject } from 'openapi3-ts/oas31';
 
 export class UnsupportedError extends Error {}
+
+export const isReference = (value: object): value is ReferenceObject => '$ref' in value;
 
 type Kind = 'object' | 'array' | 'string' | 'number' | 'integer' | 'boolean' | 'null' | 'union' | 'any';
 
@@ -29,8 +31,13 @@ const UNSUPPORTED = ['not', 'if', 'then', 'else', 'patternProperties', 'dependen
 
 const KINDS = new Set(['object', 'array', 'string', 'number', 'integer', 'boolean', 'null']);
 
-export const normalize = (spec: Spec, schema: Schema, where: string, stack: string[] = []): Node => {
-    if (schema.$ref !== undefined) {
+export const normalize = (
+    spec: OpenAPIObject,
+    schema: SchemaObject | ReferenceObject,
+    where: string,
+    stack: string[] = [],
+): Node => {
+    if (isReference(schema)) {
         const match = /^#\/components\/schemas\/(.+)$/.exec(schema.$ref);
         const target = match ? spec.components?.schemas?.[match[1]] : undefined;
         if (!target) {

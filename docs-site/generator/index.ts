@@ -1,9 +1,16 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import type { OpenAPIObject } from 'openapi3-ts/oas31';
 import { markdownToMdx } from './markdown';
 import { endpointsByTag, renderTagPage, slugify } from './render';
-import type { Guide, Spec } from './types';
+
+export type Guide = {
+    title: string;
+    href: string;
+    description?: string;
+    source: string;
+};
 
 export type Content = {
     // The home page, shown in the sidebar outside Guides and Resources.
@@ -13,7 +20,7 @@ export type Content = {
 
 // Maps each output path (relative to the theme root) to its contents. Pure, so
 // tests can call it directly.
-export const generate = (spec: Spec, { introduction, guides = [] }: Content = {}): Record<string, string> => {
+export const generate = (spec: OpenAPIObject, { introduction, guides = [] }: Content = {}): Record<string, string> => {
     const baseUrl = spec.servers?.[0]?.url ?? '';
     const files: Record<string, string> = {};
 
@@ -129,7 +136,7 @@ if (import.meta.main) {
     }
 
     try {
-        const spec = JSON.parse(await readFile(values.spec, 'utf8')) as Spec;
+        const spec = JSON.parse(await readFile(values.spec, 'utf8')) as OpenAPIObject;
         const files = generate(spec, values.pages ? await loadPages(values.pages) : {});
 
         const written = await writeChanged(values.out, files);

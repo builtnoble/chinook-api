@@ -1,9 +1,36 @@
-import { type Node, normalize, type Row, rows, sample, typeLabel, UnsupportedError, unwrapData } from './schema';
-import type { Operation, Parameter, Schema, Spec } from './types';
+import type {
+    MediaTypeObject,
+    OpenAPIObject,
+    OperationObject,
+    ParameterObject,
+    ReferenceObject,
+    SchemaObject,
+} from 'openapi3-ts/oas31';
+import {
+    isReference,
+    type Node,
+    normalize,
+    type Row,
+    rows,
+    sample,
+    typeLabel,
+    UnsupportedError,
+    unwrapData,
+} from './schema';
 
-export type Endpoint = { method: string; path: string; operation: Operation };
+const METHODS = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
-const METHODS = ['get', 'post', 'put', 'patch', 'delete'];
+export type Endpoint = { method: (typeof METHODS)[number]; path: string; operation: OperationObject };
+
+// The generator reads parameters, request bodies and responses where they are
+// written, so a `$ref` to one of them is refused.
+const inline = <T extends object>(value: T | ReferenceObject, where: string): T => {
+    if (isReference(value)) {
+        throw new UnsupportedError(`${where}: a $ref to ${value.$ref} is not supported here`);
+    }
+
+    return value;
+};
 
 export const slugify = (text: string) =>
     text
@@ -54,7 +81,7 @@ const propertyRows = (items: Row[]) =>
 
 const label = (path: string) => path.replace(/\{(\w+)\}/g, ':$1');
 
-const parameterRow = (spec: Spec, parameter: Parameter, where: string): Row => {
+const parameterRow = (spec: OpenAPIObject, parameter: ParameterObject, where: string): Row => {
     const node = normalize(spec, parameter.schema ?? {}, `${where}.${parameter.name}`);
     return {
         name: parameter.name,
@@ -66,29 +93,35 @@ const parameterRow = (spec: Spec, parameter: Parameter, where: string): Row => {
 
 // A response body is `application/json`, or a `+json` type such as the
 // `application/problem+json` of an error.
-const jsonSchemaOf = (content?: Record<string, { schema?: Schema }>): Schema | undefined => {
+const jsonSchemaOf = (content?: Record<string, MediaTypeObject>): SchemaObject | ReferenceObject | undefined => {
     const types = Object.keys(content ?? {});
     const type = types.find((name) => name === 'application/json') ?? types.find((name) => name.endsWith('+json'));
 
     return type ? content?.[type]?.schema : undefined;
 };
 
-const responseNode = (spec: Spec, operation: Operation, status: string, where: string): Node | undefined => {
-    const schema = jsonSchemaOf(operation.responses?.[status]?.content);
+const responseNode = (
+    spec: OpenAPIObject,
+    operation: OperationObject,
+    status: string,
+    where: string,
+): Node | undefined => {
+    const response = operation.responses?.[status];
+    const schema = response ? jsonSchemaOf(inline(response, `${where}.responses.${status}`).content) : undefined;
     return schema ? normalize(spec, schema, `${where}.responses.${status}`) : undefined;
 };
 
 // A read answers 200 and a create 201, so the page documents whichever 2xx the
 // operation declares.
-const successStatus = (operation: Operation): string | undefined =>
+const successStatus = (operation: OperationObject): string | undefined =>
     Object.keys(operation.responses ?? {})
         .sort()
         .find((status) => status.startsWith('2'));
 
-const requestNode = (spec: Spec, operation: Operation, where: string): Node | undefined => {
+const requestNode = (spec: OpenAPIObject, operation: OperationObject, where: string): Node | undefined => {
     if (!operation.requestBody) return undefined;
 
-    const schema = operation.requestBody.content?.['application/json']?.schema;
+    const schema = inline(operation.requestBody, `${where}.requestBody`).content?.['application/json']?.schema;
     if (!schema) {
         throw new UnsupportedError(`${where}: only a JSON request body is supported`);
     }
@@ -97,7 +130,7 @@ const requestNode = (spec: Spec, operation: Operation, where: string): Node | un
 };
 
 // The model comes from a read, since a write may answer with a different shape.
-const modelOf = (spec: Spec, endpoints: Endpoint[]): Node | undefined => {
+const modelOf = (spec: OpenAPIObject, endpoints: Endpoint[]): Node | undefined => {
     const reads = endpoints.filter((endpoint) => endpoint.method === 'get');
     const byID = reads.find((endpoint) => endpoint.path.includes('{'));
     const list = reads.find((endpoint) => !endpoint.path.includes('{'));
@@ -166,13 +199,15 @@ const jsLiteral = (value: unknown, depth = 0): string => {
 const shellQuote = (text: string) => `'${text.replace(/'/g, `'\\''`)}'`;
 
 const requestExamples = (
-    spec: Spec,
+    spec: OpenAPIObject,
     { method, path, operation }: Endpoint,
     model: Node | undefined,
     baseUrl: string,
 ): string => {
     const where = `${method.toUpperCase()} ${path}`;
-    const parameters = operation.parameters ?? [];
+    const parameters = (operation.parameters ?? []).map((parameter, index) =>
+        inline(parameter, `${where}.parameters[${index}]`),
+    );
     const concrete = path.replace(/\{(\w+)\}/g, (_, name: string) => {
         const parameter = parameters.find((candidate) => candidate.name === name);
         return String(sample(normalize(spec, parameter?.schema ?? {}, `${where}.${name}`)));
@@ -229,7 +264,7 @@ const requestExamples = (
     ].join('\n');
 };
 
-const responseExamples = (spec: Spec, { method, path, operation }: Endpoint): string[] => {
+const responseExamples = (spec: OpenAPIObject, { method, path, operation }: Endpoint): string[] => {
     const where = `${method.toUpperCase()} ${path}`;
     const blocks: string[] = [];
 
@@ -247,10 +282,18 @@ const responseExamples = (spec: Spec, { method, path, operation }: Endpoint): st
     return blocks;
 };
 
-const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | undefined, baseUrl: string): string => {
+const section = (
+    spec: OpenAPIObject,
+    endpoint: Endpoint,
+    tag: string,
+    model: Node | undefined,
+    baseUrl: string,
+): string => {
     const { method, path, operation } = endpoint;
     const where = `${method.toUpperCase()} ${path}`;
-    const parameters = (operation.parameters ?? []).map((parameter) => parameterRow(spec, parameter, where));
+    const parameters = (operation.parameters ?? []).map((parameter, index) =>
+        parameterRow(spec, inline(parameter, `${where}.parameters[${index}]`), where),
+    );
     const required = parameters.filter((row) => row.required);
     const optional = parameters.filter((row) => !row.required);
 
@@ -322,13 +365,14 @@ const section = (spec: Spec, endpoint: Endpoint, tag: string, model: Node | unde
     ].join('\n');
 };
 
-export const endpointsByTag = (spec: Spec): Map<string, Endpoint[]> => {
+export const endpointsByTag = (spec: OpenAPIObject): Map<string, Endpoint[]> => {
     const declared = new Map((spec.tags ?? []).map((tag) => [tag.name, tag.description]));
     const byTag = new Map<string, Endpoint[]>((spec.tags ?? []).map((tag) => [tag.name, []]));
 
-    for (const [path, methods] of Object.entries(spec.paths)) {
-        for (const [method, operation] of Object.entries(methods)) {
-            if (!METHODS.includes(method)) continue;
+    for (const [path, item] of Object.entries(spec.paths ?? {})) {
+        for (const method of METHODS) {
+            const operation = item[method];
+            if (!operation) continue;
 
             const where = `${method.toUpperCase()} ${path}`;
             const [tag, ...rest] = operation.tags ?? [];
@@ -361,7 +405,7 @@ export const endpointsByTag = (spec: Spec): Map<string, Endpoint[]> => {
     return byTag;
 };
 
-export const renderTagPage = (spec: Spec, tag: string, endpoints: Endpoint[], baseUrl: string): string => {
+export const renderTagPage = (spec: OpenAPIObject, tag: string, endpoints: Endpoint[], baseUrl: string): string => {
     const description = spec.tags?.find((candidate) => candidate.name === tag)?.description ?? '';
     const model = modelOf(spec, endpoints);
     const name = singular(tag);
