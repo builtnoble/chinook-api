@@ -5,12 +5,12 @@ import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { countOf } from '@/utils/helpers';
+import { countOf } from '@/utils/countHelper';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { validate } from '@/utils/requestValidationHelper';
 import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
-import { validate } from '@/utils/validate';
 
 const albumRoutes = new Hono();
 

@@ -6,10 +6,10 @@ import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { validate } from '@/utils/requestValidationHelper';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/softDelete';
-import { validate } from '@/utils/validate';
 
 const trackRoutes = new Hono();
 

@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import z from 'zod';
 import errorHandler from '@/handlers/errorHandler';
-import { validate } from '@/utils/validate';
+import { validate } from '@/utils/requestValidationHelper';
 import { problemBody } from '../support/problem';
 
 let logged: ReturnType<typeof spyOn>;

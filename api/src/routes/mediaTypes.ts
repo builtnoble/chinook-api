@@ -5,8 +5,9 @@ import db from '@/db';
 import { media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
 import paginationMiddleware from '@/middleware/paginationMiddleware';
-import { countOf } from '@/utils/helpers';
+import { countOf } from '@/utils/countHelper';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/utils/openapi';
+import { validate } from '@/utils/requestValidationHelper';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import {
     mediaTypeCreateSchema,
@@ -14,7 +15,6 @@ import {
     mediaTypeUpdateSchema,
 } from '@/utils/schema/resources/mediaTypeSchema';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/softDelete';
-import { validate } from '@/utils/validate';
 
 const mediaTypeRoutes = new Hono();
 

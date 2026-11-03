@@ -107,7 +107,7 @@ Better Auth attaches the raw error, such as a failing SQL statement with its val
 and that must not reach the client.
 
 **Cross-origin browsers:** a frontend on another origin is allowed by listing it, comma-separated, in
-`CORS_ORIGINS`. `getAllowedOrigins()` (`api/src/utils/helpers.ts`) parses that variable from the process
+`CORS_ORIGINS`. `getAllowedOrigins()` (`api/src/utils/envHelper.ts`) parses that variable from the process
 environment on every call, and two things consume it: the CORS middleware in `api/src/index.ts`, and Better
 Auth's `trustedOrigins` in `api/src/utils/auth.ts`. Better Auth also always trusts its own base URL
 (`BETTER_AUTH_URL`). An origin missing from both lists gets no CORS headers, and cookie-carrying requests
@@ -210,7 +210,7 @@ code, in lower case, is the `code`: `invalid_email_or_password`, `user_already_e
 
 The code is in `api/src/lib/problem-details/`, which knows nothing about this application and has its own README. The
 application connects it in three places: `api/src/handlers/errorHandler.ts` (which also maps Postgres errors),
-`validate()` in `api/src/utils/validate.ts`, and the middleware and routes that throw `problem(...)`.
+`validate()` in `api/src/utils/requestValidationHelper.ts`, and the middleware and routes that throw `problem(...)`.
 
 ## Key decisions and trade-offs
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { Hono } from 'hono';
 import z from 'zod';
 import errorHandler from '@/handlers/errorHandler';
-import { validate } from '@/utils/validate';
+import { validate } from '@/utils/requestValidationHelper';
 
 const app = new Hono()
     .onError(errorHandler)
