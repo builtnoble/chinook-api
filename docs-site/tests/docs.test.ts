@@ -10,7 +10,7 @@ describe('the published documents', () => {
         const pages = await loadPages(new URL('../content/pages.json', import.meta.url).pathname);
         const sources = [pages.introduction, ...(pages.guides ?? []).map((guide) => guide.source)];
 
-        expect(sources).toHaveLength(2);
+        expect(sources).toHaveLength(3);
         for (const source of sources) {
             await expect(compile(source as string)).resolves.toBeDefined();
         }
