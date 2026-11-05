@@ -12,6 +12,12 @@
             "href": "/insomnia",
             "title": "Insomnia",
             "description": "Create an account and call the API from Insomnia."
+        },
+        {
+            "file": "../../docs/guides/BETTER_AUTH_CLIENT.md",
+            "href": "/better-auth-client",
+            "title": "Better Auth client",
+            "description": "Sign in from a browser app and handle the API's errors."
         }
     ]
 }
