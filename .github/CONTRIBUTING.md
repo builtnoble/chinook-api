@@ -14,7 +14,7 @@ The repository holds two projects that are built and run separately:
 | ------------ | ------------------------------------------------------------------------------------------------ |
 | `api/`       | The Hono API: source, Drizzle schema and migrations, its Dockerfile and tests                    |
 | `docs-site/` | The generator and Docker image for the API docs site (see [docs-site/README.md](../docs-site/README.md)) |
-| `docs/`      | The Markdown that becomes the docs site's Introduction and Insomnia guide                        |
+| `docs/`      | The Markdown that becomes the docs site's Introduction and guides                                |
 | `proxy/`     | The Caddy config that serves `api.chinook.localhost` and `docs.chinook.localhost`                |
 
 `.env`, `.env.example` and `docker-compose.yml` are shared and stay at the root.
@@ -139,7 +139,7 @@ The docs site is generated, so each page has one place to edit. See
 -   **A new route** needs a tag, a summary and a description in its `describeRoute` options, for example through
     `describeList` and `describeByID` in `api/src/openapi/index.ts`. A test fails without them. Its reference page
     then appears on the site by itself.
--   **The Introduction and the Insomnia guide** are `docs/INTRODUCTION.md` and `docs/guides/INSOMNIA.md`. Edit the
+-   **The Introduction and the guides** are `docs/INTRODUCTION.md` and the files in `docs/guides/`. Edit the
     Markdown, and avoid HTML comments and GitHub-only alerts such as `> [!NOTE]`, which MDX cannot read. The
     generator names the line, and a test compiles the real files.
 -   **The site's design** is a licensed template in a private repository, so it cannot be changed in a pull

@@ -3,7 +3,7 @@
 The API documentation for `chinook.docs`. It is generated, not written here:
 
 - **The API reference** (one page per resource) comes from the API's `/openapi.json`.
-- **The Introduction and the Insomnia guide** come from `docs/INTRODUCTION.md` and `docs/guides/INSOMNIA.md`.
+- **The Introduction and the guides** come from `docs/INTRODUCTION.md` and the files in `docs/guides/`.
   Edit those files; they are the only copy.
 
 This directory holds the generator that turns both into pages, and the Dockerfile that builds the site. It holds
