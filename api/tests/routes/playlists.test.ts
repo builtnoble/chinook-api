@@ -77,6 +77,87 @@ describe('DELETE /:id', () => {
     });
 });
 
+describe('GET /:id/tracks', () => {
+    const track = { id: 8, name: 'Intro', album: {}, genre: {}, media_type: {} };
+
+    it('checks the playlist, counts its live tracks and answers 200 with a page of them', async () => {
+        stub = stubDb([{ id: 3 }], [{ total: 25 }], [track]);
+
+        const res = await send(app, 'GET', '/3/tracks?page=2&limit=10');
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({
+            data: [track],
+            pagination: {
+                currentPage: 2,
+                perPage: 10,
+                totalItems: 25,
+                totalPages: 3,
+                prevPageUrl: '/3/tracks?page=1',
+                nextPageUrl: '/3/tracks?page=3',
+            },
+        });
+        expect(stub.unused()).toBe(0);
+    });
+
+    it('lists the tracks, not the entries, and skips deleted tracks', async () => {
+        stub = stubDb([{ id: 3 }], [{ total: 1 }], [track]);
+
+        await send(app, 'GET', '/3/tracks');
+
+        const [, [query]] = stub.calls.find(([method]) => method === 'findMany') as [string, [object]];
+
+        expect(query).toMatchObject({ columns: { deleted_at: false }, limit: 1, offset: 0 });
+        expect(Object.keys((query as { with: object }).with)).toEqual(['album', 'genre', 'media_type']);
+        expect(stub.methods()).toContain('innerJoin');
+    });
+
+    it('answers 200 with an empty page for a playlist with no tracks', async () => {
+        stub = stubDb([{ id: 3 }], [{ total: 0 }], []);
+
+        const res = await send(app, 'GET', '/3/tracks');
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toEqual({
+            data: [],
+            pagination: {
+                currentPage: 1,
+                perPage: 0,
+                totalItems: 0,
+                totalPages: 0,
+                prevPageUrl: null,
+                nextPageUrl: null,
+            },
+        });
+    });
+
+    it('answers 404 for an unknown playlist, before it counts anything', async () => {
+        stub = stubDb([]);
+
+        const res = await send(app, 'GET', '/3/tracks');
+
+        expect(res.status).toBe(404);
+        expect(await res.json()).toEqual(problemBody(404, 'Playlist not found.'));
+        expect(stub.methods()).not.toContain('innerJoin');
+    });
+
+    it('answers 400 for a page out of range', async () => {
+        stub = stubDb([{ id: 3 }], [{ total: 25 }]);
+
+        const res = await send(app, 'GET', '/3/tracks?page=4');
+
+        expect(res.status).toBe(400);
+        expect(await res.json()).toEqual(problemBody(400, 'Page cannot exceed 3.', 'page_out_of_range'));
+    });
+
+    it('answers 400 for an id that is not a number, before any query', async () => {
+        stub = stubDb();
+
+        expect((await send(app, 'GET', '/abc/tracks')).status).toBe(400);
+        expect(stub.calls).toEqual([]);
+    });
+});
+
 describe('POST /:id/tracks', () => {
     const added = { playlist_id: 3, track_id: 8 };
 
