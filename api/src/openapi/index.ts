@@ -33,6 +33,8 @@ const jsonResponse = (description: string, schema: ZodType) => ({
 // The sample row attached to a model schema with `.meta({ examples })`.
 const sampleOf = (schema: ZodType) => (schema.meta()?.examples as unknown[] | undefined)?.[0];
 
+// A list under another item, such as the tracks in a playlist, sets `parent` to
+// also document the 404 for an unknown parent id.
 export const describeList = ({
     operationId,
     tag,
@@ -40,7 +42,8 @@ export const describeList = ({
     description,
     schema,
     path,
-}: RouteDescription & { path: string }): DescribeRouteOptions => ({
+    parent = false,
+}: RouteDescription & { path: string; parent?: boolean }): DescribeRouteOptions => ({
     operationId,
     tags: [tag],
     summary,
@@ -72,6 +75,7 @@ export const describeList = ({
             problemExample(400, 'Limit cannot exceed 347.', { code: 'limit_out_of_range' }),
         ),
         401: unauthorized,
+        ...(parent ? { 404: notFound(tag) } : {}),
     },
 });
 

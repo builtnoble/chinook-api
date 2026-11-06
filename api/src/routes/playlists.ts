@@ -1,13 +1,14 @@
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq, inArray } from 'drizzle-orm';
 import { Hono } from 'hono';
 import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import paginationMiddleware, { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { validate } from '@/utils/helpers/requestValidationHelper';
-import { requireLiveParent } from '@/utils/helpers/softDeleteHelper';
+import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
+import { withTrackRelations } from '@/utils/helpers/trackHelper';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
 import {
@@ -15,6 +16,7 @@ import {
     playlistTrackParamSchema,
     playlistTrackSchema,
 } from '@/utils/schema/resources/playlistTrackSchema';
+import { trackSchema } from '@/utils/schema/resources/trackSchema';
 
 const playlistRoutes = new Hono();
 
@@ -133,6 +135,73 @@ playlistRoutes.delete('/:id', describeRoute(deletePlaylist), validate('param', p
 
     return c.json({ data });
 });
+
+const getPlaylistTracks = describeList({
+    operationId: 'getPlaylistTracks',
+    tag: 'Playlists',
+    summary: 'List the tracks in a playlist',
+    description:
+        'Returns a paginated list of the tracks in the playlist with the given id, ordered by track id. Each track includes its album (with the album artist), genre and media type. Deleted tracks are left out. An unknown id returns 404.',
+    schema: trackSchema,
+    path: '/api/playlists/1/tracks',
+    parent: true,
+});
+
+// The playlist must exist, so one with no tracks is an empty page and not a
+// 404. Only its tracks that are not deleted are counted, to match what the
+// route lists.
+const countPlaylistTracks = paginateBy(async (c) => {
+    const id = Number(c.req.param('id'));
+
+    const [playlist] = await db.select({ id: playlists.id }).from(playlists).where(eq(playlists.id, id));
+
+    if (!playlist) {
+        throw problem(404, 'Playlist not found.');
+    }
+
+    const [{ total }] = await db
+        .select({ total: count() })
+        .from(playlist_tracks)
+        .innerJoin(tracks, eq(tracks.id, playlist_tracks.track_id))
+        .where(and(eq(playlist_tracks.playlist_id, id), notDeleted(tracks)));
+
+    return total;
+});
+
+playlistRoutes.get(
+    '/:id/tracks',
+    describeRoute(getPlaylistTracks),
+    validate('param', paramSchema),
+    validate('query', querySchema),
+    countPlaylistTracks,
+    async (c) => {
+        const { id } = c.req.valid('param');
+        const { offset, ...pagination } = c.get('pagination');
+
+        const rows = await db.query.tracks.findMany({
+            columns: withoutDeletedAt,
+            where: and(
+                notDeleted(tracks),
+                inArray(
+                    tracks.id,
+                    db
+                        .select({ id: playlist_tracks.track_id })
+                        .from(playlist_tracks)
+                        .where(eq(playlist_tracks.playlist_id, id)),
+                ),
+            ),
+            orderBy: (tracks, { asc }) => asc(tracks.id),
+            with: withTrackRelations,
+            limit: pagination.perPage,
+            offset,
+        });
+
+        return c.json({
+            data: rows,
+            pagination,
+        });
+    },
+);
 
 const addPlaylistTrack = describeCreate({
     operationId: 'addPlaylistTrack',
