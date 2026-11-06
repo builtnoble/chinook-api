@@ -4,12 +4,13 @@ import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { countOf } from '@/utils/helpers/countHelper';
+import { mediaTypesWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { type MediaTypeQuery, mediaTypeQuerySchema, paramSchema } from '@/utils/schema/requestSchema';
 import {
     mediaTypeCreateSchema,
     mediaTypeSchema,
@@ -22,7 +23,8 @@ const getMediaTypes = describeList({
     operationId: 'getMediaTypes',
     tag: 'Media Types',
     summary: 'List all media types',
-    description: 'Returns a paginated list of media types.',
+    description:
+        'Returns a paginated list of media types, ordered by id. Add `q` to search by name; the search is not ranked.',
     schema: mediaTypeSchema,
     path: '/api/media-types',
 });
@@ -30,14 +32,15 @@ const getMediaTypes = describeList({
 mediaTypeRoutes.get(
     '/',
     describeRoute(getMediaTypes),
-    validate('query', querySchema),
-    paginationMiddleware(media_types),
+    validate('query', mediaTypeQuerySchema),
+    paginateBy<MediaTypeQuery>((query) => db.$count(media_types, mediaTypesWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const rows = await db.query.media_types.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted(media_types),
+            where: mediaTypesWhere(c.req.valid('query')),
+            orderBy: (media_types, { asc }) => asc(media_types.id),
             limit: pagination.perPage,
             offset,
         });

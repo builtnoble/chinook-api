@@ -4,12 +4,13 @@ import { describeRoute } from 'hono-openapi';
 import db, { type Transaction } from '@/db';
 import { albums, genres, media_types, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
+import { tracksWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
 import { withTrackRelations } from '@/utils/helpers/trackHelper';
-import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { paramSchema, type TrackQuery, trackQuerySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 
 const trackRoutes = new Hono();
@@ -47,7 +48,7 @@ const getTracks = describeList({
     tag: 'Tracks',
     summary: 'List all tracks',
     description:
-        'Returns a paginated list of tracks. Each track includes its album (with the album artist), genre and media type, ordered by id.',
+        'Returns a paginated list of tracks, ordered by id. Each track includes its album (with the album artist), genre and media type. Add `q` to search by track name, album title or artist name, and `album_id`, `genre_id` or `media_type_id` to filter; all of them combine, and the search is not ranked.',
     schema: trackSchema,
     path: '/api/tracks',
 });
@@ -55,14 +56,14 @@ const getTracks = describeList({
 trackRoutes.get(
     '/',
     describeRoute(getTracks),
-    validate('query', querySchema),
-    paginationMiddleware(tracks),
+    validate('query', trackQuerySchema),
+    paginateBy<TrackQuery>((query) => db.$count(tracks, tracksWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const rows = await db.query.tracks.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted(tracks),
+            where: tracksWhere(c.req.valid('query')),
             orderBy: (albums, { asc }) => asc(albums.id),
             with: withTrackRelations,
             limit: pagination.perPage,

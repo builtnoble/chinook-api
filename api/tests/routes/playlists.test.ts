@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it } from 'bun:test';
+import type { SQL } from 'drizzle-orm';
 import { playlist_tracks as playlistTracks } from '@/db/chinookSchema';
 import playlistRoutes from '@/routes/playlists';
 import { appFor, send } from '../support/app';
 import { problemBody } from '../support/problem';
+import { render } from '../support/sql';
 import { stubDb } from '../support/stubDb';
 
 const app = appFor(playlistRoutes);
@@ -79,9 +81,10 @@ describe('DELETE /:id', () => {
 
 describe('GET /:id/tracks', () => {
     const track = { id: 8, name: 'Intro', album: {}, genre: {}, media_type: {} };
+    const call = (method: string) => stub.calls.find(([name]) => name === method)?.[1] as unknown[];
 
     it('checks the playlist, counts its live tracks and answers 200 with a page of them', async () => {
-        stub = stubDb([{ id: 3 }], [{ total: 25 }], [track]);
+        stub = stubDb([{ id: 3 }], 25, [track]);
 
         const res = await send(app, 'GET', '/3/tracks?page=2&limit=10');
 
@@ -93,27 +96,30 @@ describe('GET /:id/tracks', () => {
                 perPage: 10,
                 totalItems: 25,
                 totalPages: 3,
-                prevPageUrl: '/3/tracks?page=1',
-                nextPageUrl: '/3/tracks?page=3',
+                prevPageUrl: '/3/tracks?limit=10&page=1',
+                nextPageUrl: '/3/tracks?limit=10&page=3',
             },
         });
         expect(stub.unused()).toBe(0);
     });
 
     it('lists the tracks, not the entries, and skips deleted tracks', async () => {
-        stub = stubDb([{ id: 3 }], [{ total: 1 }], [track]);
+        stub = stubDb([{ id: 3 }], 1, [track]);
 
         await send(app, 'GET', '/3/tracks');
 
-        const [, [query]] = stub.calls.find(([method]) => method === 'findMany') as [string, [object]];
+        const [query] = call('findMany') as [{ where: SQL }];
+        const { sql, params } = render(query.where);
 
         expect(query).toMatchObject({ columns: { deleted_at: false }, limit: 1, offset: 0 });
-        expect(Object.keys((query as { with: object }).with)).toEqual(['album', 'genre', 'media_type']);
-        expect(stub.methods()).toContain('innerJoin');
+        expect(Object.keys((query as unknown as { with: object }).with)).toEqual(['album', 'genre', 'media_type']);
+        expect(sql).toContain('"tracks"."deleted_at" is null');
+        expect(sql).toContain('"tracks"."id" in (select "track_id" from "playlist_tracks"');
+        expect(params).toEqual([3]);
     });
 
     it('answers 200 with an empty page for a playlist with no tracks', async () => {
-        stub = stubDb([{ id: 3 }], [{ total: 0 }], []);
+        stub = stubDb([{ id: 3 }], 0, []);
 
         const res = await send(app, 'GET', '/3/tracks');
 
@@ -138,11 +144,11 @@ describe('GET /:id/tracks', () => {
 
         expect(res.status).toBe(404);
         expect(await res.json()).toEqual(problemBody(404, 'Playlist not found.'));
-        expect(stub.methods()).not.toContain('innerJoin');
+        expect(stub.methods()).not.toContain('$count');
     });
 
     it('answers 400 for a page out of range', async () => {
-        stub = stubDb([{ id: 3 }], [{ total: 25 }]);
+        stub = stubDb([{ id: 3 }], 25);
 
         const res = await send(app, 'GET', '/3/tracks?page=4');
 
@@ -155,6 +161,67 @@ describe('GET /:id/tracks', () => {
 
         expect((await send(app, 'GET', '/abc/tracks')).status).toBe(400);
         expect(stub.calls).toEqual([]);
+    });
+
+    describe('with filters', () => {
+        const filters = 'q=queen+love&genre_id=1&album_id=2&media_type_id=3';
+
+        it('counts and lists the playlist tracks with the same condition, built from the filters', async () => {
+            stub = stubDb([{ id: 3 }], 25, [track]);
+
+            const res = await send(app, 'GET', `/3/tracks?${filters}&limit=10&page=2`);
+
+            expect(res.status).toBe(200);
+
+            const counted = render(call('$count')[1] as SQL);
+            const listed = render((call('findMany')[0] as { where: SQL }).where);
+
+            expect(counted).toEqual(listed);
+            expect(counted.params).toEqual(expect.arrayContaining([2, 1, 3, '%queen%', '%love%', 3]));
+            expect(counted.sql).toContain('"playlist_tracks"."playlist_id" = $');
+        });
+
+        it('keeps the filters in the page links', async () => {
+            stub = stubDb([{ id: 3 }], 25, [track]);
+
+            const res = await send(app, 'GET', `/3/tracks?${filters}&limit=10&page=2`);
+            const { pagination } = (await res.json()) as { pagination: Record<string, string> };
+            const kept = 'album_id=2&genre_id=1&limit=10&media_type_id=3&q=queen+love';
+
+            expect(pagination.prevPageUrl).toBe(`/3/tracks?${kept}&page=1`);
+            expect(pagination.nextPageUrl).toBe(`/3/tracks?${kept}&page=3`);
+        });
+
+        it('answers 200 with an empty page when none of the playlist tracks match', async () => {
+            stub = stubDb([{ id: 3 }], 0, []);
+
+            const res = await send(app, 'GET', '/3/tracks?q=nothing');
+
+            expect(res.status).toBe(200);
+            expect(await res.json()).toMatchObject({ data: [], pagination: { totalItems: 0 } });
+        });
+
+        it('still answers 404 for an unknown playlist, before it filters anything', async () => {
+            stub = stubDb([]);
+
+            const res = await send(app, 'GET', `/3/tracks?${filters}`);
+
+            expect(res.status).toBe(404);
+            expect(stub.methods()).not.toContain('$count');
+        });
+
+        it('answers 400 validation_failed for a filter that is not valid, before any query', async () => {
+            stub = stubDb();
+
+            for (const query of ['genre_id=0', 'album_id=abc', `q=${'a'.repeat(101)}`, 'q=a+b+c+d+e+f']) {
+                const res = await send(app, 'GET', `/3/tracks?${query}`);
+
+                expect(res.status).toBe(400);
+                expect(((await res.json()) as { code: string }).code).toBe('validation_failed');
+            }
+
+            expect(stub.calls).toEqual([]);
+        });
     });
 });
 

@@ -4,12 +4,13 @@ import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { genres, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { countOf } from '@/utils/helpers/countHelper';
+import { genresWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { type GenreQuery, genreQuerySchema, paramSchema } from '@/utils/schema/requestSchema';
 import { genreCreateSchema, genreSchema, genreUpdateSchema } from '@/utils/schema/resources/genreSchema';
 
 const genreRoutes = new Hono();
@@ -18,7 +19,8 @@ const getGenres = describeList({
     operationId: 'getGenres',
     tag: 'Genres',
     summary: 'List all genres',
-    description: 'Returns a paginated list of genres.',
+    description:
+        'Returns a paginated list of genres, ordered by id. Add `q` to search by name; the search is not ranked.',
     schema: genreSchema,
     path: '/api/genres',
 });
@@ -26,14 +28,15 @@ const getGenres = describeList({
 genreRoutes.get(
     '/',
     describeRoute(getGenres),
-    validate('query', querySchema),
-    paginationMiddleware(genres),
+    validate('query', genreQuerySchema),
+    paginateBy<GenreQuery>((query) => db.$count(genres, genresWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const rows = await db.query.genres.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted(genres),
+            where: genresWhere(c.req.valid('query')),
+            orderBy: (genres, { asc }) => asc(genres.id),
             limit: pagination.perPage,
             offset,
         });

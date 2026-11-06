@@ -4,12 +4,13 @@ import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { countOf } from '@/utils/helpers/countHelper';
+import { artistsWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { columnsWithoutDeletedAt, notDeleted, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { type ArtistQuery, artistQuerySchema, cascadeQuerySchema, paramSchema } from '@/utils/schema/requestSchema';
 import { artistCreateSchema, artistSchema, artistUpdateSchema } from '@/utils/schema/resources/artistSchema';
 
 const artistRoutes = new Hono();
@@ -18,7 +19,8 @@ const getArtists = describeList({
     operationId: 'getArtists',
     tag: 'Artists',
     summary: 'List all artists',
-    description: 'Returns a paginated list of artists.',
+    description:
+        'Returns a paginated list of artists, ordered by id. Add `q` to search by name; the search is not ranked.',
     schema: artistSchema,
     path: '/api/artists',
 });
@@ -26,14 +28,15 @@ const getArtists = describeList({
 artistRoutes.get(
     '/',
     describeRoute(getArtists),
-    validate('query', querySchema),
-    paginationMiddleware(artists),
+    validate('query', artistQuerySchema),
+    paginateBy<ArtistQuery>((query) => db.$count(artists, artistsWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const rows = await db.query.artists.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted(artists),
+            where: artistsWhere(c.req.valid('query')),
+            orderBy: (artists, { asc }) => asc(artists.id),
             limit: pagination.perPage,
             offset,
         });

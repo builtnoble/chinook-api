@@ -1,20 +1,19 @@
-import { getTableColumns, isNull } from 'drizzle-orm';
-import type { PgTable } from 'drizzle-orm/pg-core';
 import type { Context as GenericContext } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import type { Bindings } from 'hono/types';
-import type { ZodType, z } from 'zod';
-import db from '@/db';
+import type { z } from 'zod';
 import { problem } from '@/lib/problem-details';
 import { getPageUrls } from '@/utils/helpers/paginationHelper';
 import type { querySchema } from '@/utils/schema/requestSchema';
 
-type QuerySchema<T extends ZodType> = {
+type Query = z.infer<typeof querySchema>;
+
+type QuerySchema = {
     out: {
-        query: z.infer<T>;
+        query: Query;
     };
     in: {
-        query: z.input<T>;
+        query: z.input<typeof querySchema>;
     };
 };
 
@@ -31,17 +30,18 @@ type PaginationVariables = {
 type Context = GenericContext<
     { Bindings: Bindings; Variables: { pagination: PaginationVariables } },
     string,
-    QuerySchema<typeof querySchema>
+    QuerySchema
 >;
 
-// Pages the rows `countItems` counts, which a route that lists only some of a
-// table's rows uses to count just those.
-export const paginateBy = (countItems: (c: Context) => Promise<number>) =>
+// Pages the rows `countItems` counts. A list route counts the rows its filters
+// leave, with the same `where` it lists them with. It is given the validated
+// query, which can have more than `page` and `limit`, and the context.
+export const paginateBy = <Q extends Query = Query>(countItems: (query: Q, c: Context) => Promise<number>) =>
     createMiddleware<{ Bindings: Bindings; Variables: { pagination: PaginationVariables } }>(
         async (c: Context, next) => {
-            const totalItems = await countItems(c);
+            const validated = c.req.valid('query') as Q;
+            const totalItems = await countItems(validated, c);
 
-            const validated = c.req.valid('query');
             const currentPage = validated.page || 1;
             const perPage = validated.limit || Math.min(totalItems, 10);
 
@@ -60,22 +60,10 @@ export const paginateBy = (countItems: (c: Context) => Promise<number>) =>
                 throw problem(400, `Limit cannot exceed ${totalItems}.`, { code: 'limit_out_of_range' });
             }
 
-            const { prevPageUrl, nextPageUrl } = getPageUrls(c.req.path, currentPage, totalPages);
+            const { prevPageUrl, nextPageUrl } = getPageUrls(c.req.path, currentPage, totalPages, validated);
 
             c.set('pagination', { currentPage, perPage, offset, totalItems, totalPages, prevPageUrl, nextPageUrl });
 
             await next();
         },
     );
-
-// Deleting a row sets deleted_at, so by default the count leaves those rows out
-// to match what the route lists. Tables without a deleted_at column are counted
-// in full; pass `false` to count every row.
-const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
-    const { deleted_at } = getTableColumns(table);
-    const where = excludeDeleted && deleted_at ? isNull(deleted_at) : undefined;
-
-    return paginateBy(() => db.$count(table, where));
-};
-
-export default paginationMiddleware;

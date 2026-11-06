@@ -4,12 +4,13 @@ import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { albums, artists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { countOf } from '@/utils/helpers/countHelper';
+import { albumsWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
-import { cascadeQuerySchema, paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import { type AlbumQuery, albumQuerySchema, cascadeQuerySchema, paramSchema } from '@/utils/schema/requestSchema';
 import { albumCreateSchema, albumSchema, albumUpdateSchema } from '@/utils/schema/resources/albumSchema';
 
 const albumRoutes = new Hono();
@@ -26,7 +27,8 @@ const getAlbums = describeList({
     operationId: 'getAlbums',
     tag: 'Albums',
     summary: 'List all albums',
-    description: 'Returns a paginated list of albums. Each album includes its artist.',
+    description:
+        "Returns a paginated list of albums, ordered by id. Each album includes its artist. Add `q` to search by title or artist name, and `artist_id` to list one artist's albums; the search is not ranked.",
     schema: albumSchema,
     path: '/api/albums',
 });
@@ -34,14 +36,15 @@ const getAlbums = describeList({
 albumRoutes.get(
     '/',
     describeRoute(getAlbums),
-    validate('query', querySchema),
-    paginationMiddleware(albums),
+    validate('query', albumQuerySchema),
+    paginateBy<AlbumQuery>((query) => db.$count(albums, albumsWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const rows = await db.query.albums.findMany({
             columns: withoutDeletedAt,
-            where: notDeleted(albums),
+            where: albumsWhere(c.req.valid('query')),
+            orderBy: (albums, { asc }) => asc(albums.id),
             with: {
                 artist: { columns: withoutDeletedAt },
             },
