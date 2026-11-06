@@ -65,9 +65,9 @@ requests that send a bearer token (see [Authenticate requests](#5-authenticate-r
 
 ### Import the data endpoints (optional)
 
-Importing `http://api.chinook.localhost/openapi.json` creates a request for each of the 32 data routes:
-the reads and the writes for albums, artists, genres, media types, playlists and tracks, and adding and
-removing a playlist's tracks. Imported
+Importing `http://api.chinook.localhost/openapi.json` creates a request for each of the 33 data routes:
+the reads and the writes for albums, artists, genres, media types, playlists and tracks, and listing, adding
+and removing a playlist's tracks. Imported
 requests use the spec's server URL, `http://api.chinook.localhost`, and not your environment variable.
 `/api/auth/*` is not included, so create those requests by hand. If the imported requests return `401`,
 set the auth yourself as in [Authenticate requests](#5-authenticate-requests).
@@ -189,6 +189,7 @@ Any signed-in user can read.
 | `GET /api/genres`, `/api/genres/{id}` | 25 genres |
 | `GET /api/media-types`, `/api/media-types/{id}` | 5 media types |
 | `GET /api/playlists`, `/api/playlists/{id}` | 18 playlists |
+| `GET /api/playlists/{id}/tracks` | A page of the playlist's tracks, in the same shape as `GET /api/tracks`; a playlist with no tracks gives an empty page |
 | `GET /api/tracks`, `/api/tracks/{id}` | 3503 tracks; each includes `album` (with its `artist`), `genre` and `media_type` |
 
 List routes take `page` and `limit` query parameters. With no `limit` you get 10 rows (fewer if the

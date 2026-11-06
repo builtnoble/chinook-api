@@ -243,9 +243,9 @@ Content-Type: application/json
 
 `PATCH /api/artists/{id}` changes an artist and `DELETE /api/artists/{id}` removes it. Artists, albums, genres,
 media types and tracks are hidden rather than erased when deleted, and `?cascade=true` also deletes what
-depends on an artist or album. Playlists have the same three routes, and a playlist's tracks are added and
-removed with `POST /api/playlists/{id}/tracks` and `DELETE /api/playlists/{id}/tracks/{track_id}`. The details
-are in [docs/INTRODUCTION.md](docs/INTRODUCTION.md#writing-data).
+depends on an artist or album. Playlists have the same three routes, and a playlist's tracks are
+listed with `GET /api/playlists/{id}/tracks`, added with `POST` to the same path, and removed with
+`DELETE /api/playlists/{id}/tracks/{track_id}`. The details are in [docs/INTRODUCTION.md](docs/INTRODUCTION.md#writing-data).
 
 ---
 
