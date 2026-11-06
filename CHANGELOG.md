@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### New
+
+-   **Search and filters on the list routes.** Every list route takes `q`, a case-insensitive text search of
+    the name (a track's name, album title and artist; an album's title and artist). It is split into up to 5
+    words, and every word has to be found. Albums take `artist_id`, and tracks take `album_id`, `genre_id`,
+    `media_type_id` and `not_in_playlist_id`, which leaves out the tracks already in a playlist.
+    `GET /api/playlists/{id}/tracks` takes the same filters as `GET /api/tracks`, but not `not_in_playlist_id`. The
+    pagination counts the matching rows, and the page links keep the filters and the `limit`. See
+    [docs/INTRODUCTION.md](docs/INTRODUCTION.md#searching-and-filtering).
+-   **`GET /api/playlists/{id}/tracks`** lists the tracks in a playlist.
+
+### Fixed
+
+-   **A list with no rows** is one empty page, with `total_pages: 0` and no next link. It had `null` pages and a
+    link to page 2.
+-   **Lists are ordered by `id`** on every list route, so paging through them is stable.
+
 ## 1.1.0 (2026-11-03)
 
 ### Breaking changes

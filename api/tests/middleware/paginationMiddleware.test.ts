@@ -24,8 +24,8 @@ describe('paginateBy', () => {
             offset: 10,
             totalItems: 25,
             totalPages: 3,
-            prevPageUrl: '/?page=1',
-            nextPageUrl: '/?page=3',
+            prevPageUrl: '/?limit=10&page=1',
+            nextPageUrl: '/?limit=10&page=3',
         });
     });
 

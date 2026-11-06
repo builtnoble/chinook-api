@@ -4,6 +4,7 @@ import { beforeAll, describe, expect, it } from 'bun:test';
 // enough in it to render a page.
 type Operation = {
     operationId?: string;
+    parameters?: { name: string; in: string; description?: string; schema?: { examples?: unknown[] } }[];
     requestBody?: { required?: boolean; content?: Record<string, unknown> };
     tags?: string[];
     summary?: string;
@@ -153,5 +154,57 @@ describe('openapi.json', () => {
 
             expect([name, success]).toEqual([name, [name.startsWith('POST ') ? '201' : '200']]);
         }
+    });
+
+    // The query parameters each list route takes, besides page and limit.
+    const filters: [string, string[]][] = [
+        ['/api/artists', ['q']],
+        ['/api/albums', ['q', 'artist_id']],
+        ['/api/genres', ['q']],
+        ['/api/media-types', ['q']],
+        ['/api/playlists', ['q']],
+        ['/api/tracks', ['q', 'album_id', 'genre_id', 'media_type_id', 'not_in_playlist_id']],
+        ['/api/playlists/{id}/tracks', ['q', 'album_id', 'genre_id', 'media_type_id']],
+    ];
+
+    it.each(filters)('documents the filters of GET %s', (path, names) => {
+        const query = spec.paths[path].get.parameters?.filter((parameter) => parameter.in === 'query') ?? [];
+
+        expect(query.map((parameter) => parameter.name)).toEqual(['limit', 'page', ...names]);
+
+        for (const parameter of query) {
+            expect([parameter.name, typeof parameter.description]).toEqual([parameter.name, 'string']);
+        }
+
+        for (const name of names) {
+            const parameter = query.find((item) => item.name === name);
+
+            expect([name, parameter?.schema?.examples?.length]).toEqual([name, 1]);
+        }
+    });
+
+    it.each(filters)('says on GET %s which fields q searches', (path) => {
+        const q = spec.paths[path].get.parameters?.find((parameter) => parameter.name === 'q');
+
+        expect(q?.description).toMatch(/Text to search for in the .*`(name|title)`/);
+        expect(q?.description).toContain('every term must be found');
+    });
+
+    it('takes q on the list routes and nowhere else', () => {
+        const withQ = operations
+            .filter(([, operation]) => operation.parameters?.some((parameter) => parameter.name === 'q'))
+            .map(([name]) => name);
+
+        expect(withQ.sort()).toEqual(filters.map(([path]) => `GET ${path}`).sort());
+    });
+
+    it('takes not_in_playlist_id on GET /api/tracks only', () => {
+        const withIt = operations
+            .filter(([, operation]) =>
+                operation.parameters?.some((parameter) => parameter.name === 'not_in_playlist_id'),
+            )
+            .map(([name]) => name);
+
+        expect(withIt).toEqual(['GET /api/tracks']);
     });
 });

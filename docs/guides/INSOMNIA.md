@@ -195,6 +195,12 @@ Any signed-in user can read.
 List routes take `page` and `limit` query parameters. With no `limit` you get 10 rows (fewer if the
 table is smaller). Keys in responses are snake_case.
 
+They also take `q`, a text search: `GET /api/tracks?q=queen love` finds tracks whose name, album title or
+artist matches every word. Albums take `artist_id`, and tracks take `album_id`, `genre_id`,
+`media_type_id` and `not_in_playlist_id` (leave out the tracks already in that playlist), to match exactly.
+They all combine, and the page links keep them. See
+[Searching and filtering](../INTRODUCTION.md#searching-and-filtering) for the rules.
+
 ```http
 GET {{ _.base_url }}/api/artists?limit=2
 ```
@@ -279,7 +285,7 @@ for the format and every code.
 | Any data route without a session, or after signing out | `401` | `unauthorized` | Missing or invalid credentials. |
 | `?page=` beyond the last page | `400` | `page_out_of_range` | Page cannot exceed 28. |
 | `?limit=` larger than the table | `400` | `limit_out_of_range` | Limit cannot exceed 25. |
-| Non-numeric id, e.g. `/api/artists/abc` | `400` | `validation_failed` | The request is not valid. |
+| Non-numeric id, e.g. `/api/artists/abc`, or a `q` over 100 characters or 5 words, or a filter id that is not a positive whole number | `400` | `validation_failed` | The request is not valid. |
 | An id that does not exist, or a deleted row | `404` | `not_found` | Artist not found. |
 | A write by a signed-in user who is not an admin | `403` | `forbidden` | This action requires the admin role. |
 | A cookie write without an allowed `Origin` | `403` | `origin_not_allowed` | The request comes from an origin that is not allowed. |

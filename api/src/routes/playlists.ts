@@ -1,15 +1,23 @@
-import { and, count, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
+import { QueryBuilder } from 'drizzle-orm/pg-core';
 import { Hono } from 'hono';
 import { describeRoute } from 'hono-openapi';
 import db from '@/db';
 import { playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
 import { problem } from '@/lib/problem-details';
-import paginationMiddleware, { paginateBy } from '@/middleware/paginationMiddleware';
+import { paginateBy } from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
+import { playlistsWhere, tracksWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
-import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
+import { requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
 import { withTrackRelations } from '@/utils/helpers/trackHelper';
-import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
+import {
+    type PlaylistQuery,
+    paramSchema,
+    playlistQuerySchema,
+    type TrackQuery,
+    trackQuerySchema,
+} from '@/utils/schema/requestSchema';
 import { playlistCreateSchema, playlistSchema, playlistUpdateSchema } from '@/utils/schema/resources/playlistSchema';
 import {
     playlistTrackCreateSchema,
@@ -20,11 +28,15 @@ import { trackSchema } from '@/utils/schema/resources/trackSchema';
 
 const playlistRoutes = new Hono();
 
+// Builds a subquery without a connection, so a condition only describes a query.
+const qb = new QueryBuilder();
+
 const getPlaylists = describeList({
     operationId: 'getPlaylists',
     tag: 'Playlists',
     summary: 'List all playlists',
-    description: 'Returns a paginated list of playlists.',
+    description:
+        'Returns a paginated list of playlists, ordered by id. Add `q` to search by name; the search is not ranked.',
     schema: playlistSchema,
     path: '/api/playlists',
 });
@@ -32,12 +44,14 @@ const getPlaylists = describeList({
 playlistRoutes.get(
     '/',
     describeRoute(getPlaylists),
-    validate('query', querySchema),
-    paginationMiddleware(playlists),
+    validate('query', playlistQuerySchema),
+    paginateBy<PlaylistQuery>((query) => db.$count(playlists, playlistsWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 
         const playlists = await db.query.playlists.findMany({
+            where: playlistsWhere(c.req.valid('query')),
+            orderBy: (playlists, { asc }) => asc(playlists.id),
             limit: pagination.perPage,
             offset,
         });
@@ -141,16 +155,29 @@ const getPlaylistTracks = describeList({
     tag: 'Playlists',
     summary: 'List the tracks in a playlist',
     description:
-        'Returns a paginated list of the tracks in the playlist with the given id, ordered by track id. Each track includes its album (with the album artist), genre and media type. Deleted tracks are left out. An unknown id returns 404.',
+        'Returns a paginated list of the tracks in the playlist with the given id, ordered by track id. Each track includes its album (with the album artist), genre and media type. Deleted tracks are left out. It takes the same `q`, `album_id`, `genre_id` and `media_type_id` filters as `GET /api/tracks`. An unknown id returns 404.',
     schema: trackSchema,
     path: '/api/playlists/1/tracks',
     parent: true,
 });
 
-// The playlist must exist, so one with no tracks is an empty page and not a
-// 404. Only its tracks that are not deleted are counted, to match what the
-// route lists.
-const countPlaylistTracks = paginateBy(async (c) => {
+// The tracks of the playlist that pass the filters, for both the count and the
+// list.
+const playlistTracksWhere = (id: number, query: TrackQuery) =>
+    and(
+        tracksWhere(query),
+        inArray(
+            tracks.id,
+            qb
+                .select({ id: playlist_tracks.track_id })
+                .from(playlist_tracks)
+                .where(eq(playlist_tracks.playlist_id, id)),
+        ),
+    );
+
+// The playlist must exist, so one with no tracks, or none that pass the
+// filters, is an empty page and not a 404.
+const countPlaylistTracks = paginateBy<TrackQuery>(async (query, c) => {
     const id = Number(c.req.param('id'));
 
     const [playlist] = await db.select({ id: playlists.id }).from(playlists).where(eq(playlists.id, id));
@@ -159,20 +186,14 @@ const countPlaylistTracks = paginateBy(async (c) => {
         throw problem(404, 'Playlist not found.');
     }
 
-    const [{ total }] = await db
-        .select({ total: count() })
-        .from(playlist_tracks)
-        .innerJoin(tracks, eq(tracks.id, playlist_tracks.track_id))
-        .where(and(eq(playlist_tracks.playlist_id, id), notDeleted(tracks)));
-
-    return total;
+    return db.$count(tracks, playlistTracksWhere(id, query));
 });
 
 playlistRoutes.get(
     '/:id/tracks',
     describeRoute(getPlaylistTracks),
     validate('param', paramSchema),
-    validate('query', querySchema),
+    validate('query', trackQuerySchema),
     countPlaylistTracks,
     async (c) => {
         const { id } = c.req.valid('param');
@@ -180,16 +201,7 @@ playlistRoutes.get(
 
         const rows = await db.query.tracks.findMany({
             columns: withoutDeletedAt,
-            where: and(
-                notDeleted(tracks),
-                inArray(
-                    tracks.id,
-                    db
-                        .select({ id: playlist_tracks.track_id })
-                        .from(playlist_tracks)
-                        .where(eq(playlist_tracks.playlist_id, id)),
-                ),
-            ),
+            where: playlistTracksWhere(id, c.req.valid('query')),
             orderBy: (tracks, { asc }) => asc(tracks.id),
             with: withTrackRelations,
             limit: pagination.perPage,

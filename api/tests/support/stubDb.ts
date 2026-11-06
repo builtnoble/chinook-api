@@ -40,7 +40,7 @@ export const stubDb = (...script: unknown[]) => {
 
     // A call straight on `db` is recorded like one on a transaction, so a route
     // can use either.
-    const direct = (method: 'select' | 'insert' | 'update' | 'delete') =>
+    const direct = (method: 'select' | 'insert' | 'update' | 'delete' | '$count') =>
         spyOn(db, method).mockImplementation(((...args: unknown[]) => {
             calls.push([method, args]);
 
@@ -52,6 +52,7 @@ export const stubDb = (...script: unknown[]) => {
         direct('insert'),
         direct('update'),
         direct('delete'),
+        direct('$count'),
         // The transaction callback gets the same chain, so its queries draw
         // from the same script. Its relational reads go through `db.query`,
         // which is stubbed below.

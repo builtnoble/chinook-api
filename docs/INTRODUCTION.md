@@ -43,7 +43,7 @@ Hono app (api/src/index.ts)
         ├─ requireAdminMiddleware    → writes need the admin role (403)
         └─ route modules             → albums, artists, genres, media-types, playlists, tracks
               ├─ validate(query/param/json) → Zod schemas (api/src/utils/schema/)
-              ├─ paginationMiddleware     → page/limit → offset, prev/next URLs
+              ├─ paginateBy               → counts the filtered rows; page/limit → offset, prev/next URLs
               └─ Drizzle query            → api/src/db (chinook and auth schemas)
                                                 │
                                                 ▼
@@ -76,8 +76,9 @@ Take `GET /api/tracks`:
    before any route code runs.
 3. The route checks the query and path against its Zod schema. A bad request gets a problem document
    that lists every issue (see Errors).
-4. A list route then checks the page and limit against the number of rows, and answers `400` if the
-   page is out of range. Soft-deleted rows (rows with a `deleted_at` value) are not counted.
+4. A list route then counts the rows that pass its filters (see Searching and filtering) and checks the
+   page and limit against that number, answering `400` if either is out of range. Soft-deleted rows (rows
+   with a `deleted_at` value) are not counted.
 5. The route reads the rows and their related rows (a track's album, artist, genre and media type) in
    one query. Tracks, albums, artists, genres and media types skip soft-deleted rows and never return
    `deleted_at`.
@@ -86,6 +87,41 @@ Take `GET /api/tracks`:
 `GET /api/playlists/{id}/tracks` lists a playlist's tracks the same way, in the same shape as `GET /api/tracks`.
 It first checks that the playlist exists (`404` if not) and counts only the tracks that are not deleted. A
 playlist with no tracks gives one empty page.
+
+## Searching and filtering
+
+Every list route takes `q`, a text search. Albums and tracks also take exact-match filters. Results stay in
+`id` order; they are not ranked.
+
+| Route | Parameters | `q` searches |
+| --- | --- | --- |
+| `GET /api/artists` | `q` | the artist `name` |
+| `GET /api/albums` | `q`, `artist_id` | the album `title` and the artist's `name` |
+| `GET /api/genres` | `q` | the genre `name` |
+| `GET /api/media-types` | `q` | the media type `name` |
+| `GET /api/playlists` | `q` | the playlist `name` |
+| `GET /api/tracks` | `q`, `album_id`, `genre_id`, `media_type_id`, `not_in_playlist_id` | the track `name`, the album `title` and the album artist's `name` |
+| `GET /api/playlists/{id}/tracks` | the same as `GET /api/tracks`, but not `not_in_playlist_id` | the same as `GET /api/tracks` |
+
+- **`q`** is trimmed and split on spaces into terms. A row matches when every term is found, ignoring case,
+  in at least one of the fields above, so `queen love` finds the track "Love of My Life" by Queen even
+  though no single field has both words. A term matches anywhere in a field, and `%`, `_` and `\` match as
+  themselves. It can be 100 characters and 5 terms; more is `400` with the code `validation_failed`. An
+  empty `q` is no search, so a cleared search box can send `?q=`.
+- **`artist_id`, `album_id`, `genre_id`, `media_type_id` and `not_in_playlist_id`** are positive whole numbers; anything else is
+  `400` with the code `validation_failed`. An id that does not exist is not an error, it matches nothing. A
+  track with no album or genre never matches a filter on it. `not_in_playlist_id` is the other way round: it
+  leaves out the tracks that are in that playlist, so a playlist that does not exist, or has no tracks, leaves
+  out nothing. It is for a picker that adds tracks to a playlist.
+- **Everything combines with AND**, and deleted rows never match. A track can still be found by its own name
+  when its album or artist is deleted, but not through the deleted name.
+- **The pagination counts the rows that match.** No match is one empty page, and a `limit` above the number
+  of matches is `limit_out_of_range`. The `prev_page_url` and `next_page_url` keep the filters and the
+  limit, for example `/api/tracks?genre_id=1&q=love&page=2`.
+- **`GET /api/playlists/{id}/tracks`** is `404` for an unknown playlist before it filters anything. A
+  playlist whose tracks all fail the filters is an empty page.
+
+Query parameters a route does not know are ignored.
 
 ## Writing data
 
