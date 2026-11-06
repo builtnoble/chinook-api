@@ -34,16 +34,12 @@ type Context = GenericContext<
     QuerySchema<typeof querySchema>
 >;
 
-// Deleting a row sets deleted_at, so by default the count leaves those rows out
-// to match what the route lists. Tables without a deleted_at column are counted
-// in full; pass `false` to count every row.
-const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
-    const { deleted_at } = getTableColumns(table);
-    const where = excludeDeleted && deleted_at ? isNull(deleted_at) : undefined;
-
-    return createMiddleware<{ Bindings: Bindings; Variables: { pagination: PaginationVariables } }>(
+// Pages the rows `countItems` counts, which a route that lists only some of a
+// table's rows uses to count just those.
+export const paginateBy = (countItems: (c: Context) => Promise<number>) =>
+    createMiddleware<{ Bindings: Bindings; Variables: { pagination: PaginationVariables } }>(
         async (c: Context, next) => {
-            const totalItems = await db.$count(table, where);
+            const totalItems = await countItems(c);
 
             const validated = c.req.valid('query');
             const currentPage = validated.page || 1;
@@ -51,10 +47,13 @@ const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
 
             const offset = (currentPage - 1) * perPage;
 
-            const totalPages = Math.ceil(totalItems / perPage);
+            // With no rows there is one empty page, so the first page is not
+            // out of range.
+            const totalPages = perPage ? Math.ceil(totalItems / perPage) : 0;
+            const lastPage = Math.max(totalPages, 1);
 
-            if (currentPage > totalPages) {
-                throw problem(400, `Page cannot exceed ${totalPages}.`, { code: 'page_out_of_range' });
+            if (currentPage > lastPage) {
+                throw problem(400, `Page cannot exceed ${lastPage}.`, { code: 'page_out_of_range' });
             }
 
             if (perPage > totalItems) {
@@ -68,6 +67,15 @@ const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
             await next();
         },
     );
+
+// Deleting a row sets deleted_at, so by default the count leaves those rows out
+// to match what the route lists. Tables without a deleted_at column are counted
+// in full; pass `false` to count every row.
+const paginationMiddleware = (table: PgTable, excludeDeleted = true) => {
+    const { deleted_at } = getTableColumns(table);
+    const where = excludeDeleted && deleted_at ? isNull(deleted_at) : undefined;
+
+    return paginateBy(() => db.$count(table, where));
 };
 
 export default paginationMiddleware;

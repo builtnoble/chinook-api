@@ -7,7 +7,7 @@ export const getPageUrls = (
     const prevPageUrl = prevPageNum === 0 ? null : `${path}?page=${prevPageNum}`;
 
     const nextPageNum = currPage + 1;
-    const nextPageUrl = totalPages === 1 || currPage === totalPages ? null : `${path}?page=${nextPageNum}`;
+    const nextPageUrl = currPage >= totalPages ? null : `${path}?page=${nextPageNum}`;
 
     return { prevPageUrl, nextPageUrl };
 };
