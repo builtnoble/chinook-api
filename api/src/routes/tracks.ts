@@ -8,6 +8,7 @@ import paginationMiddleware from '@/middleware/paginationMiddleware';
 import { describeByID, describeCreate, describeDelete, describeList, describeUpdate } from '@/openapi';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
+import { withTrackRelations } from '@/utils/helpers/trackHelper';
 import { paramSchema, querySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 
@@ -19,16 +20,7 @@ const findTrack = (executor: Pick<typeof db, 'query'>, where: SQL) =>
     executor.query.tracks.findFirst({
         columns: withoutDeletedAt,
         where,
-        with: {
-            album: {
-                columns: withoutDeletedAt,
-                with: {
-                    artist: { columns: withoutDeletedAt },
-                },
-            },
-            genre: { columns: withoutDeletedAt },
-            media_type: { columns: withoutDeletedAt },
-        },
+        with: withTrackRelations,
     });
 
 type References = { album_id?: number | null; genre_id?: number | null; media_type_id?: number };
@@ -72,16 +64,7 @@ trackRoutes.get(
             columns: withoutDeletedAt,
             where: notDeleted(tracks),
             orderBy: (albums, { asc }) => asc(albums.id),
-            with: {
-                album: {
-                    columns: withoutDeletedAt,
-                    with: {
-                        artist: { columns: withoutDeletedAt },
-                    },
-                },
-                genre: { columns: withoutDeletedAt },
-                media_type: { columns: withoutDeletedAt },
-            },
+            with: withTrackRelations,
             limit: pagination.perPage,
             offset,
         });
