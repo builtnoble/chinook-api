@@ -83,6 +83,10 @@ Take `GET /api/tracks`:
    `deleted_at`.
 6. The response body is rewritten with snake_case keys before it is sent.
 
+`GET /api/playlists/{id}/tracks` lists a playlist's tracks the same way, in the same shape as `GET /api/tracks`.
+It first checks that the playlist exists (`404` if not) and counts only the tracks that are not deleted. A
+playlist with no tracks gives one empty page.
+
 ## Writing data
 
 Artists, albums, genres, media types, playlists and tracks each have `POST /api/{resource}`,
