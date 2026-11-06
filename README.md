@@ -220,6 +220,10 @@ GET /api/artists/1
 Authorization: Bearer <access_token>
 ```
 
+Lists take `page` and `limit`, a text search `q`, and some exact-match filters, for example
+`GET /api/tracks?q=queen love&genre_id=1`. The rules are in
+[docs/INTRODUCTION.md](docs/INTRODUCTION.md#searching-and-filtering).
+
 Example response:
 
 ```
