@@ -10,7 +10,7 @@ import { tracksWhere } from '@/utils/helpers/filterHelper';
 import { validate } from '@/utils/helpers/requestValidationHelper';
 import { notDeleted, requireLiveParent, withoutDeletedAt } from '@/utils/helpers/softDeleteHelper';
 import { withTrackRelations } from '@/utils/helpers/trackHelper';
-import { paramSchema, type TrackQuery, trackQuerySchema } from '@/utils/schema/requestSchema';
+import { paramSchema, type TrackListQuery, trackListQuerySchema } from '@/utils/schema/requestSchema';
 import { trackCreateSchema, trackSchema, trackUpdateSchema } from '@/utils/schema/resources/trackSchema';
 
 const trackRoutes = new Hono();
@@ -48,7 +48,7 @@ const getTracks = describeList({
     tag: 'Tracks',
     summary: 'List all tracks',
     description:
-        'Returns a paginated list of tracks, ordered by id. Each track includes its album (with the album artist), genre and media type. Add `q` to search by track name, album title or artist name, and `album_id`, `genre_id` or `media_type_id` to filter; all of them combine, and the search is not ranked.',
+        'Returns a paginated list of tracks, ordered by id. Each track includes its album (with the album artist), genre and media type. Add `q` to search by track name, album title or artist name, and `album_id`, `genre_id`, `media_type_id` or `not_in_playlist_id` to filter; all of them combine, and the search is not ranked.',
     schema: trackSchema,
     path: '/api/tracks',
 });
@@ -56,8 +56,8 @@ const getTracks = describeList({
 trackRoutes.get(
     '/',
     describeRoute(getTracks),
-    validate('query', trackQuerySchema),
-    paginateBy<TrackQuery>((query) => db.$count(tracks, tracksWhere(query))),
+    validate('query', trackListQuerySchema),
+    paginateBy<TrackListQuery>((query) => db.$count(tracks, tracksWhere(query))),
     async (c) => {
         const { offset, ...pagination } = c.get('pagination');
 

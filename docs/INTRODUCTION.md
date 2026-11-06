@@ -100,17 +100,19 @@ Every list route takes `q`, a text search. Albums and tracks also take exact-mat
 | `GET /api/genres` | `q` | the genre `name` |
 | `GET /api/media-types` | `q` | the media type `name` |
 | `GET /api/playlists` | `q` | the playlist `name` |
-| `GET /api/tracks` | `q`, `album_id`, `genre_id`, `media_type_id` | the track `name`, the album `title` and the album artist's `name` |
-| `GET /api/playlists/{id}/tracks` | the same as `GET /api/tracks` | the same as `GET /api/tracks` |
+| `GET /api/tracks` | `q`, `album_id`, `genre_id`, `media_type_id`, `not_in_playlist_id` | the track `name`, the album `title` and the album artist's `name` |
+| `GET /api/playlists/{id}/tracks` | the same as `GET /api/tracks`, but not `not_in_playlist_id` | the same as `GET /api/tracks` |
 
 - **`q`** is trimmed and split on spaces into terms. A row matches when every term is found, ignoring case,
   in at least one of the fields above, so `queen love` finds the track "Love of My Life" by Queen even
   though no single field has both words. A term matches anywhere in a field, and `%`, `_` and `\` match as
   themselves. It can be 100 characters and 5 terms; more is `400` with the code `validation_failed`. An
   empty `q` is no search, so a cleared search box can send `?q=`.
-- **`artist_id`, `album_id`, `genre_id` and `media_type_id`** are positive whole numbers; anything else is
+- **`artist_id`, `album_id`, `genre_id`, `media_type_id` and `not_in_playlist_id`** are positive whole numbers; anything else is
   `400` with the code `validation_failed`. An id that does not exist is not an error, it matches nothing. A
-  track with no album or genre never matches a filter on it.
+  track with no album or genre never matches a filter on it. `not_in_playlist_id` is the other way round: it
+  leaves out the tracks that are in that playlist, so a playlist that does not exist, or has no tracks, leaves
+  out nothing. It is for a picker that adds tracks to a playlist.
 - **Everything combines with AND**, and deleted rows never match. A track can still be found by its own name
   when its album or artist is deleted, but not through the deleted name.
 - **The pagination counts the rows that match.** No match is one empty page, and a `limit` above the number

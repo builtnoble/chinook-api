@@ -62,6 +62,27 @@ describe('tracksWhere', () => {
         expect(params.slice(0, 3)).toEqual([2, 3, 1]);
     });
 
+    it('leaves out the tracks in a playlist, with a subquery that is not a join', () => {
+        const { sql, params } = render(tracksWhere({ not_in_playlist_id: 7 }));
+
+        expect(sql).toBe(
+            '("tracks"."deleted_at" is null and not exists (select 1 from "playlist_tracks" where ("playlist_tracks"."track_id" = "tracks"."id" and "playlist_tracks"."playlist_id" = $1)))',
+        );
+        expect(params).toEqual([7]);
+    });
+
+    it('adds nothing without not_in_playlist_id', () => {
+        expect(render(tracksWhere({ genre_id: 3 })).sql).not.toContain('playlist_tracks');
+    });
+
+    it('combines it with the search and the other filters with AND', () => {
+        const { sql, params } = render(tracksWhere({ q: 'love', genre_id: 3, not_in_playlist_id: 7 }));
+
+        expect(sql).toContain('"tracks"."genre_id" = $1 and not exists (select 1 from "playlist_tracks"');
+        expect(sql).toContain('"tracks"."name" ilike');
+        expect(params.slice(0, 2)).toEqual([3, 7]);
+    });
+
     it('treats an empty search as no search', () => {
         expect(render(tracksWhere({ q: '' }))).toEqual(render(tracksWhere({})));
     });

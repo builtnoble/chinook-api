@@ -25,7 +25,7 @@ const resources: { name: string; routes: Hono; filters: Record<string, string>; 
     {
         name: 'tracks',
         routes: trackRoutes,
-        filters: { album_id: '2', genre_id: '3', media_type_id: '1' },
+        filters: { album_id: '2', genre_id: '3', media_type_id: '1', not_in_playlist_id: '7' },
         deletedAt: true,
     },
 ];
@@ -147,7 +147,7 @@ describe.each(resources)('GET / for $name', ({ routes, filters, deletedAt }) => 
 
 describe('the id filters', () => {
     it.each<[string, Hono, string[]]>([
-        ['tracks', trackRoutes, ['album_id', 'genre_id', 'media_type_id']],
+        ['tracks', trackRoutes, ['album_id', 'genre_id', 'media_type_id', 'not_in_playlist_id']],
         ['albums', albumRoutes, ['artist_id']],
     ])(
         'on %s answer 400 validation_failed for a value that is not a positive whole number',
@@ -177,5 +177,45 @@ describe('the id filters', () => {
 
         expect(res.status).toBe(200);
         expect(render(call('$count')[1] as SQL).params).toEqual([99999]);
+    });
+
+    it('answer 200, not 404, for a playlist that does not exist, and leave nothing out for it', async () => {
+        stub = stubDb(3, []);
+
+        const res = await send(appFor(trackRoutes), 'GET', '/?not_in_playlist_id=99999');
+        const counted = render(call('$count')[1] as SQL);
+
+        expect(res.status).toBe(200);
+        expect(counted.sql).toContain('not exists (select 1 from "playlist_tracks"');
+        expect(counted.params).toEqual([99999]);
+        expect(stub.methods()).not.toContain('select');
+    });
+});
+
+describe('GET / for tracks with not_in_playlist_id', () => {
+    const app = appFor(trackRoutes);
+
+    it('counts the tracks that remain, and the page links keep the playlist', async () => {
+        stub = stubDb(25, []);
+
+        const res = await send(app, 'GET', '/?not_in_playlist_id=7&genre_id=1&q=love&limit=10&page=2');
+        const { pagination } = (await res.json()) as { pagination: Record<string, unknown> };
+
+        expect(pagination).toMatchObject({ totalItems: 25, totalPages: 3 });
+        expect(pagination.prevPageUrl).toBe('/?genre_id=1&limit=10&not_in_playlist_id=7&q=love&page=1');
+        expect(pagination.nextPageUrl).toBe('/?genre_id=1&limit=10&not_in_playlist_id=7&q=love&page=3');
+    });
+
+    it('combines with the search and the other filters, in the count and the list', async () => {
+        stub = stubDb(1, []);
+
+        await send(app, 'GET', '/?not_in_playlist_id=7&genre_id=1&q=love');
+
+        const counted = render(call('$count')[1] as SQL);
+
+        expect(counted).toEqual(render((call('findMany')[0] as { where: SQL }).where));
+        expect(counted.sql).toContain('"tracks"."genre_id" = $1 and not exists');
+        expect(counted.sql).toContain('"tracks"."name" ilike');
+        expect(counted.params).toEqual(expect.arrayContaining([1, 7, '%love%']));
     });
 });

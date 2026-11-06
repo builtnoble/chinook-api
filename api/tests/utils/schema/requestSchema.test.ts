@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 import z from 'zod';
-import { albumQuerySchema, artistQuerySchema, trackQuerySchema, updateSchema } from '@/utils/schema/requestSchema';
+import {
+    albumQuerySchema,
+    artistQuerySchema,
+    trackListQuerySchema,
+    trackQuerySchema,
+    updateSchema,
+} from '@/utils/schema/requestSchema';
 
 const schema = updateSchema(z.object({ name: z.string().min(1), size: z.number() }));
 
@@ -83,5 +89,26 @@ describe('the id filters', () => {
 
     it('ignores a parameter it does not know', () => {
         expect(parse({ sort: 'name', page: '2' }).success).toBe(true);
+    });
+});
+
+describe('not_in_playlist_id', () => {
+    it('takes a positive whole number, from the query string', () => {
+        expect(trackListQuerySchema.safeParse({ not_in_playlist_id: '7' }).data?.not_in_playlist_id).toBe(7);
+        expect(trackListQuerySchema.safeParse({}).success).toBe(true);
+    });
+
+    it.each(['abc', '0', '-1', '1.5', ''])('rejects %p', (value) => {
+        const result = trackListQuerySchema.safeParse({ not_in_playlist_id: value });
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues.map((issue) => issue.path.join('.'))).toEqual(['not_in_playlist_id']);
+    });
+
+    it("is not in a playlist's track query, where it is ignored", () => {
+        const result = trackQuerySchema.safeParse({ not_in_playlist_id: 'abc' });
+
+        expect(result.success).toBe(true);
+        expect(result.data).not.toHaveProperty('not_in_playlist_id');
     });
 });

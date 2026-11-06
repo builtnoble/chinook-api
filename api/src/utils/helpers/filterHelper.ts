@@ -1,6 +1,6 @@
-import { and, eq, exists, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, exists, notExists, or, type SQL, sql } from 'drizzle-orm';
 import { QueryBuilder } from 'drizzle-orm/pg-core';
-import { albums, artists, genres, media_types, playlists, tracks } from '@/db/chinookSchema';
+import { albums, artists, genres, media_types, playlist_tracks, playlists, tracks } from '@/db/chinookSchema';
 import { containing, everyTerm } from '@/utils/helpers/searchHelper';
 import { notDeleted } from '@/utils/helpers/softDeleteHelper';
 import type {
@@ -9,7 +9,7 @@ import type {
     GenreQuery,
     MediaTypeQuery,
     PlaylistQuery,
-    TrackQuery,
+    TrackListQuery,
 } from '@/utils/schema/requestSchema';
 
 // The subqueries below are built without a connection, so a condition only
@@ -81,11 +81,25 @@ const albumOrArtistNamed = (term: string) =>
             ),
     );
 
-export const tracksWhere = ({ q, album_id, genre_id, media_type_id }: TrackQuery) =>
+// Tracks that are not in the playlist. A playlist that does not exist has no
+// tracks, so it leaves none out.
+const notInPlaylist = (playlistId?: number): SQL | undefined =>
+    playlistId === undefined
+        ? undefined
+        : notExists(
+              qb
+                  .select({ one: sql`1` })
+                  .from(playlist_tracks)
+                  .where(and(eq(playlist_tracks.track_id, tracks.id), eq(playlist_tracks.playlist_id, playlistId))),
+          );
+
+// `not_in_playlist_id` is only in the query of `GET /api/tracks`.
+export const tracksWhere = ({ q, album_id, genre_id, media_type_id, not_in_playlist_id }: TrackListQuery) =>
     and(
         notDeleted(tracks),
         idIs(tracks.album_id, album_id),
         idIs(tracks.genre_id, genre_id),
         idIs(tracks.media_type_id, media_type_id),
+        notInPlaylist(not_in_playlist_id),
         everyTerm(q, (term) => or(containing(tracks.name, term), albumOrArtistNamed(term))),
     );

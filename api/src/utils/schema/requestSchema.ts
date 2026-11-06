@@ -55,12 +55,21 @@ export const trackQuerySchema = querySchema.extend({
     media_type_id: idFilter('Only tracks of the media type with this id.', 1),
 });
 
+// `GET /api/tracks` only. A playlist's own tracks already are that playlist's.
+export const trackListQuerySchema = trackQuerySchema.extend({
+    not_in_playlist_id: idFilter(
+        'Only tracks that are not in the playlist with this id. A playlist that does not exist excludes nothing.',
+        1,
+    ),
+});
+
 export type ArtistQuery = z.infer<typeof artistQuerySchema>;
 export type AlbumQuery = z.infer<typeof albumQuerySchema>;
 export type GenreQuery = z.infer<typeof genreQuerySchema>;
 export type MediaTypeQuery = z.infer<typeof mediaTypeQuerySchema>;
 export type PlaylistQuery = z.infer<typeof playlistQuerySchema>;
 export type TrackQuery = z.infer<typeof trackQuerySchema>;
+export type TrackListQuery = z.infer<typeof trackListQuerySchema>;
 
 export const paginationSchema = snakeCaseSchema(
     z.object({

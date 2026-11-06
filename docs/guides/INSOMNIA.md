@@ -196,8 +196,9 @@ List routes take `page` and `limit` query parameters. With no `limit` you get 10
 table is smaller). Keys in responses are snake_case.
 
 They also take `q`, a text search: `GET /api/tracks?q=queen love` finds tracks whose name, album title or
-artist matches every word. Albums take `artist_id`, and tracks take `album_id`, `genre_id` and
-`media_type_id`, to match exactly. They all combine, and the page links keep them. See
+artist matches every word. Albums take `artist_id`, and tracks take `album_id`, `genre_id`,
+`media_type_id` and `not_in_playlist_id` (leave out the tracks already in that playlist), to match exactly.
+They all combine, and the page links keep them. See
 [Searching and filtering](../INTRODUCTION.md#searching-and-filtering) for the rules.
 
 ```http

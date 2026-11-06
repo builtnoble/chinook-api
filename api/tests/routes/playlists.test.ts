@@ -163,6 +163,15 @@ describe('GET /:id/tracks', () => {
         expect(stub.calls).toEqual([]);
     });
 
+    it('ignores not_in_playlist_id, which only GET /api/tracks takes', async () => {
+        stub = stubDb([{ id: 3 }], 1, [track]);
+
+        const res = await send(app, 'GET', '/3/tracks?not_in_playlist_id=abc');
+
+        expect(res.status).toBe(200);
+        expect(render((call('findMany')[0] as { where: SQL }).where).sql).not.toContain('not exists');
+    });
+
     describe('with filters', () => {
         const filters = 'q=queen+love&genre_id=1&album_id=2&media_type_id=3';
 

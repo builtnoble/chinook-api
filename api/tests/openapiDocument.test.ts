@@ -163,7 +163,7 @@ describe('openapi.json', () => {
         ['/api/genres', ['q']],
         ['/api/media-types', ['q']],
         ['/api/playlists', ['q']],
-        ['/api/tracks', ['q', 'album_id', 'genre_id', 'media_type_id']],
+        ['/api/tracks', ['q', 'album_id', 'genre_id', 'media_type_id', 'not_in_playlist_id']],
         ['/api/playlists/{id}/tracks', ['q', 'album_id', 'genre_id', 'media_type_id']],
     ];
 
@@ -196,5 +196,15 @@ describe('openapi.json', () => {
             .map(([name]) => name);
 
         expect(withQ.sort()).toEqual(filters.map(([path]) => `GET ${path}`).sort());
+    });
+
+    it('takes not_in_playlist_id on GET /api/tracks only', () => {
+        const withIt = operations
+            .filter(([, operation]) =>
+                operation.parameters?.some((parameter) => parameter.name === 'not_in_playlist_id'),
+            )
+            .map(([name]) => name);
+
+        expect(withIt).toEqual(['GET /api/tracks']);
     });
 });
